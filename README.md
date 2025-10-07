@@ -3,32 +3,22 @@
 
 **Smart Meeting Notes AI** is an intelligent meeting-assistant platform that leverages **speech recognition** and **generative AI** to transform raw meeting conversations into **structured knowledge** — including **transcripts, key summaries, decisions, and actionable insights**.
 
----
 
 ## 🪄 What is Smart Meeting Notes AI?
 
-It’s designed for **teams, developers, and organizations** that need to turn long discussions into **clear, searchable, and shareable insights** — instantly.  
-By combining **ASR (Automatic Speech Recognition)** and **LLM-based summarization**, this project automates the entire meeting documentation workflow — from recording to summary generation.
+In modern organizations, meetings generate valuable information — yet much of it gets lost in manual note-taking and fragmented communication. **Smart Meeting Notes AI** eliminates this bottleneck by automating the entire documentation process.
+Managers or team leads can simply upload an existing transcript, import an audio recording, or record meetings directly on the platform. The system then uses **speech recognition (Whisper)** and **generative AI (GPT models)** to translate, analyze, and convert raw discussions into structured, standardized reports — including **Meeting Summary**, **Key Decisions**, and **Action Items.**
+
+Beyond summarization, the platform integrates with tools like **Trello** and **Slack**, allowing teams to seamlessly synchronize assigned tasks and track progress after each meeting. Designed for companies and enterprises, it also supports **role-based access control** to ensure data privacy, internal compliance, and team-level collaboration.
 
 > From hours of talking to seconds of understanding.
 
----
 
 ## 🧩 How It Works
 
-```mermaid
-flowchart TD
-A[🎙️ Audio Upload / Live Record] --> B[🧠 Speech-to-Text (OpenAI Whisper)]
-B --> C[📝 LLM Summarization (GPT Models)]
-C --> D[🔍 Insight Extraction (Topics, Decisions, Action Items)]
-D --> E[💾 Database Storage + API Access]
-E --> F[📊 Dashboard View / Data Export]
-```
+Watch the short demo below to see how Smart Meeting Notes AI transcribes, summarizes, and generates insights in real time.
+🎥 **Demo:** [Smart Meeting Notes AI: A solution](#)
 
-*(Optional: add a short GIF or YouTube demo here)*  
-🎥 **Demo:** [Coming soon — YouTube walkthrough](#)
-
----
 
 ## 🚀 Installation & Usage (End Users)
 
@@ -63,7 +53,6 @@ npm run dev
 Then visit `http://localhost:3000` to use the web interface.  
 Upload meeting audio, view transcripts, and generate summaries in real time.
 
----
 
 ## 🧰 Installation & Setup (Contributors)
 
@@ -93,7 +82,6 @@ npm run dev
 
 You’re now ready to develop locally with hot reloads for both API and UI.
 
----
 
 ## 👥 Contributor Expectations
 
@@ -107,7 +95,6 @@ We welcome contributions! Please follow these standards:
 > All contributions must pass automated checks before merging.  
 If you’re unsure where to start, check out the `good first issue` tag.
 
----
 
 ## 🐛 Known Issues
 
@@ -117,7 +104,6 @@ If you’re unsure where to start, check out the `good first issue` tag.
 
 We’re actively improving accuracy and scalability — feedback is welcome!
 
----
 
 ## 💰 Support the Project
 
@@ -127,14 +113,14 @@ If you find **Smart Meeting Notes AI** helpful, please consider supporting its d
 [☕ **Buy Me a Coffee**](https://www.buymeacoffee.com/yourname)  
 or simply ⭐ **star this repository** to show your support!
 
----
 
 ## 📄 License
 MIT License © 2025 — Smart Meeting Notes AI
 
----
 
-## 🧠 Author
-**Le Minh Hang**  
-Full-stack Developer | AI Product Builder  
-[GitHub](https://github.com/<yourname>) • [LinkedIn](https://linkedin.com/in/<your-link>)
+## 🧠 Authors
+**Le Minh Hang, Phan Thuy Ngan, Pham Hong Phong**  
+Frontend Developer | Frontend Developer | AI Product Builder  
+Made with ❤️ by the Synapse Team
+
+
