@@ -1,5 +1,4 @@
 # 🧠 Smart Meeting Notes AI
-## Transform your meetings into structured, actionable intelligence powered by speech recognition and generative AI.
 
 **Smart Meeting Notes AI** is an intelligent meeting-assistant platform that leverages **speech recognition** and **generative AI** to transform raw meeting conversations into **structured knowledge** — including **transcripts, key summaries, decisions, and actionable insights**.
 
@@ -83,35 +82,13 @@ npm run dev
 You’re now ready to develop locally with hot reloads for both API and UI.
 
 
-## 👥 Contributor Expectations
+## 🤝 Contributor Expectations
 
-We welcome contributions! Please follow these standards:
-- Open an **issue** first before submitting a feature or bug fix.
-- Fork the repository, then submit a **pull request** from your branch.
-- Use **conventional commits** and clear PR titles.
-- Keep commits **squashed** and atomic when possible.
-- Follow the existing **code style** (Prettier + ESLint).
+Our vision is for Smart Meeting Notes AI to become the universal intelligent layer for enterprise meeting automation — adaptable to any collaboration or productivity ecosystem.
+Whether your organization manages workflows through Slack, Trello, Notion, Microsoft Teams, or a custom internal platform, Smart Meeting Notes AI aims to integrate seamlessly to make every meeting actionable, searchable, and intelligent.
 
-> All contributions must pass automated checks before merging.  
-If you’re unsure where to start, check out the `good first issue` tag.
-
-
-## 🐛 Known Issues
-
-- 🔸 Real-time transcription latency may vary with large files  
-- 🔸 Speaker diarization not yet implemented  
-- 🔸 Summaries may require manual correction for long multi-speaker meetings  
-
-We’re actively improving accuracy and scalability — feedback is welcome!
-
-
-## 💰 Support the Project
-
-Building intelligent tools takes time and passion.  
-If you find **Smart Meeting Notes AI** helpful, please consider supporting its development ❤️
-
-[☕ **Buy Me a Coffee**](https://www.buymeacoffee.com/yourname)  
-or simply ⭐ **star this repository** to show your support!
+> We actively welcome community contributions!
+If your company or project uses a platform not yet supported, consider building an adapter or integration module for it.
 
 
 ## 📄 License
@@ -119,8 +96,6 @@ MIT License © 2025 — Smart Meeting Notes AI
 
 
 ## 🧠 Authors
-**Le Minh Hang, Phan Thuy Ngan, Pham Hong Phong**  
-Frontend Developer | Frontend Developer | AI Product Builder  
-Made with ❤️ by the Synapse Team
-
+Built with passion by Le Minh Hang, Phan Thuy Ngan, and Pham Hong Phong 
+Frontend Developers & AI Product Builders at Synapse Team 💡
 
