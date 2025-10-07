@@ -1,90 +1,140 @@
-# Vexere FE
+# 🧠 Smart Meeting Notes AI
+## Transform your meetings into structured, actionable intelligence powered by speech recognition and generative AI.
 
-## Mục lục
-
-- [Giới thiệu](#giới-thiệu)
-- [Cài đặt & Khởi động](#cài-đặt--khởi-động)
-- [Cấu trúc thư mục](#cấu-trúc-thư-mục)
-- [Quy tắc phát triển](#quy-tắc-phát-triển)
-- [Testing](#testing)
-- [Liên hệ](#liên-hệ)
+**Smart Meeting Notes AI** is an intelligent meeting-assistant platform that leverages **speech recognition** and **generative AI** to transform raw meeting conversations into **structured knowledge** — including **transcripts, key summaries, decisions, and actionable insights**.
 
 ---
 
-## Giới thiệu
+## 🪄 What is Smart Meeting Notes AI?
 
-Đây là frontend project sử dụng Next.js 15, React 19, TypeScript, shadcn/ui, React Query, Zod, và các best practice hiện đại.  
-Repo này tuân thủ các quy tắc phát triển nghiêm ngặt về code style, type safety, test coverage và cấu trúc thư mục.
+It’s designed for **teams, developers, and organizations** that need to turn long discussions into **clear, searchable, and shareable insights** — instantly.  
+By combining **ASR (Automatic Speech Recognition)** and **LLM-based summarization**, this project automates the entire meeting documentation workflow — from recording to summary generation.
+
+> From hours of talking to seconds of understanding.
 
 ---
 
-## Cài đặt & Khởi động
+## 🧩 How It Works
 
+```mermaid
+flowchart TD
+A[🎙️ Audio Upload / Live Record] --> B[🧠 Speech-to-Text (OpenAI Whisper)]
+B --> C[📝 LLM Summarization (GPT Models)]
+C --> D[🔍 Insight Extraction (Topics, Decisions, Action Items)]
+D --> E[💾 Database Storage + API Access]
+E --> F[📊 Dashboard View / Data Export]
+```
+
+*(Optional: add a short GIF or YouTube demo here)*  
+🎥 **Demo:** [Coming soon — YouTube walkthrough](#)
+
+---
+
+## 🚀 Installation & Usage (End Users)
+
+If you want to use **Smart Meeting Notes AI** as an application:
+
+### 1️⃣ Clone the repository
 ```bash
-pnpm install
-pnpm dev
+git clone https://github.com/<yourname>/smart-meeting-ai.git
+cd smart-meeting-ai
 ```
 
-Hoặc dùng npm/yarn tương ứng.
-
----
-
-## Cấu trúc thư mục
-
-```
-vexere-fe/
-├── app/                  # Next.js app directory (routing, page, layout, ...), chia module rõ ràng
-│   ├── auth/             # Các route xác thực: login, register
-│   ├── page.tsx          # Trang chính
-│   ├── layout.tsx        # Layout gốc
-│   └── ...
-├── components/           # UI components (shadcn/ui, custom component, provider, icon, ...)
-│   └── ui/               # Các component shadcn/ui (button, input, form, alert, ...)
-├── constants/            # Các hằng số dùng chung (query key, schema, config, ...)
-├── hooks/                # Custom React hooks (logic dùng lại)
-├── lib/                  # Helper, API client, utils
-│   ├── api/              # API helper (axios, ...)
-│   └── utils/            # Hàm tiện ích dùng lại
-├── types/                # TypeScript type, interface, enum
-│   ├── interfaces/       # Định nghĩa interface chung (API, model, ...)
-│   └── enums/            # Định nghĩa enum (nếu có)
-├── __tests__/            # Unit test cho page, component, module
-├── public/               # Static assets (ảnh, favicon, ...)
-├── .gitlab-ci.yml        # CI config
-├── package.json
-├── tsconfig.json
-├── README.md             # Hướng dẫn sử dụng repo
-└── ...
+### 2️⃣ Install dependencies
+```bash
+npm install
 ```
 
----
+### 3️⃣ Add environment configuration
+Create a `.env` file based on `.env.example`:
+```
+OPENAI_API_KEY=...
+DATABASE_URL=...
+JWT_SECRET=...
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+```
 
-## Quy tắc phát triển
+### 4️⃣ Start the development server
+```bash
+npm run dev
+```
 
-- **TypeScript 100%**: Ưu tiên interface, tránh enum, dùng const map, type-safe mọi nơi.
-- **Component logic rõ ràng**: Exports, subcomponents, helpers, types.
-- **Đặt tên descriptive, dùng auxiliary verbs**: `isLoading`, `hasError`, ...
-- **Event handler prefix `handle`**: `handleClick`, `handleSubmit`, ...
-- **DRY, functional, declarative code.**
-- **Early return cho logic rõ ràng.**
-- **Tất cả page mới phải có unit test tương ứng.**
-- **Sử dụng shadcn/ui cho UI, Zod cho validation, React Hook Form cho form.**
-- **Query key quản lý tập trung tại `constants/common.ts`.**
-- **Interface dùng chung quản lý tại `types/interfaces/common.ts`.**
-- **Schema dùng chung quản lý tại `constants/schema.ts`.**
-
----
-
-## Testing
-
-- Viết unit test cho mọi page, component, logic quan trọng.
-- Đặt file test trong `__tests__/` hoặc cùng thư mục với file chính.
-- Sử dụng Jest, Testing Library.
-- Không merge PR nếu thiếu test cho page mới.
+Then visit `http://localhost:3000` to use the web interface.  
+Upload meeting audio, view transcripts, and generate summaries in real time.
 
 ---
 
-## Liên hệ
+## 🧰 Installation & Setup (Contributors)
 
-- Đội ngũ phát triển: [Tên team/Slack/Email]
-- Đóng góp: Mở PR, tuân thủ quy tắc phát triển.
+If you’d like to contribute to development:
+
+### 1️⃣ Clone and install
+```bash
+git clone https://github.com/<yourname>/smart-meeting-ai.git
+cd smart-meeting-ai
+npm install
+```
+
+### 2️⃣ Database migration
+```bash
+npx prisma migrate dev
+```
+
+### 3️⃣ Run backend (NestJS)
+```bash
+npm run start:dev
+```
+
+### 4️⃣ Run frontend (Next.js)
+```bash
+npm run dev
+```
+
+You’re now ready to develop locally with hot reloads for both API and UI.
+
+---
+
+## 👥 Contributor Expectations
+
+We welcome contributions! Please follow these standards:
+- Open an **issue** first before submitting a feature or bug fix.
+- Fork the repository, then submit a **pull request** from your branch.
+- Use **conventional commits** and clear PR titles.
+- Keep commits **squashed** and atomic when possible.
+- Follow the existing **code style** (Prettier + ESLint).
+
+> All contributions must pass automated checks before merging.  
+If you’re unsure where to start, check out the `good first issue` tag.
+
+---
+
+## 🐛 Known Issues
+
+- 🔸 Real-time transcription latency may vary with large files  
+- 🔸 Speaker diarization not yet implemented  
+- 🔸 Summaries may require manual correction for long multi-speaker meetings  
+
+We’re actively improving accuracy and scalability — feedback is welcome!
+
+---
+
+## 💰 Support the Project
+
+Building intelligent tools takes time and passion.  
+If you find **Smart Meeting Notes AI** helpful, please consider supporting its development ❤️
+
+[☕ **Buy Me a Coffee**](https://www.buymeacoffee.com/yourname)  
+or simply ⭐ **star this repository** to show your support!
+
+---
+
+## 📄 License
+MIT License © 2025 — Smart Meeting Notes AI
+
+---
+
+## 🧠 Author
+**Le Minh Hang**  
+Full-stack Developer | AI Product Builder  
+[GitHub](https://github.com/<yourname>) • [LinkedIn](https://linkedin.com/in/<your-link>)
