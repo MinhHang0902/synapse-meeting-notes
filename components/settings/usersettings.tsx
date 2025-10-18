@@ -1,7 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { Search, Filter, ChevronLeft, ChevronRight, MoreVertical, User, Settings } from "lucide-react"
+import {
+  Search,
+  Filter,
+  ChevronLeft,
+  ChevronRight,
+  MoreVertical,
+  UserPlus,
+} from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 
@@ -26,10 +33,7 @@ const USERS: UserRow[] = [
   { id: "6", name: "John Smith", email: "john.smith@company.com", role: "User", status: "Inactive", lastLogin: "2024-02-09 08:30", created: "2024-01-05", initials: "JS", color: "bg-orange-200" },
 ]
 
-type TabKey = "users" | "system"
-
 export function UsersSettings() {
-  const [activeTab, setActiveTab] = useState<TabKey>("users")
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
 
@@ -47,189 +51,146 @@ export function UsersSettings() {
   const goPrev = () => setCurrentPage((p) => Math.max(1, p - 1))
   const goNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1))
 
-  const TabBtn = ({
-    tab,
-    icon: Icon,
-    label,
-  }: {
-    tab: TabKey
-    icon: typeof User
-    label: string
-  }) => {
-    const isActive = activeTab === tab
-    return (
-      <button
-        onClick={() => setActiveTab(tab)}
-        className={`group relative -mb-px flex items-center gap-2 pb-3 text-sm font-medium transition-colors
-          ${isActive ? "text-black" : "text-gray-700 hover:text-black"}`}
-      >
-        <Icon
-          className={`h-4 w-4 transition-colors
-            ${isActive ? "text-black" : "text-gray-400 group-hover:text-black"}`}
-        />
-        {label}
-        {/* underline */}
-        <span
-          className={`pointer-events-none absolute inset-x-0 -bottom-px h-[2px] rounded
-            ${isActive ? "bg-black" : "bg-transparent group-hover:bg-black/60"}`}
-        />
-      </button>
-    )
-  }
-
   return (
     <div className="space-y-6">
-      {/* Tabs header (black on hover/active) */}
-      <div className="border-b border-gray-200">
-        <div className="flex items-center gap-6">
-          <TabBtn tab="users" icon={User} label="Users Settings" />
-          <TabBtn tab="system" icon={Settings} label="System Settings" />
+      {/* Title + Search/Filters row */}
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <h2 className="text-xl font-semibold text-gray-900">
+          Synapse User List
+        </h2>
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="relative w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              placeholder="Search name or email..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="pl-10 bg-white border-gray-300 focus-visible:ring-black/10"
+            />
+          </div>
+
+          <Button
+            variant="outline"
+            className="border-gray-300 bg-transparent hover:bg-black hover:text-white"
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            Role
+          </Button>
+          <Button
+            variant="outline"
+            className="border-gray-300 bg-transparent hover:bg-black hover:text-white"
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            Status
+          </Button>
+          <Button className="bg-black hover:bg-black/80 text-white">Search</Button>
+
+          {/* Top actions */}
+          <div className="flex items-center justify-end">
+            <Button className="bg-black hover:bg-black/80 text-white">
+              <UserPlus className="w-4 h-4 mr-2 text-white" />
+              Add New User
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* Users tab content */}
-      {activeTab === "users" && (
-        <>
-          {/* Header */}
-          <div className="flex items-start justify-between">
-            <div>
-              <h2 className="text-2xl font-semibold mb-2">Users Settings</h2>
-              <p className="text-gray-600">Account management and user authorization</p>
-            </div>
-            <Button className="bg-black hover:bg-black/80 text-white">
-              <span className="mr-2">👤</span> Add New User
-            </Button>
-          </div>
+      {/* Table */}
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <table className="w-full">
+          <thead className="bg-gray-50/50 border-b border-gray-200">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wide">User</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wide">Role</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wide">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wide">Last Login</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wide">Created</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wide">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {displayedUsers.map((user) => (
+              <tr key={user.id} className="hover:bg-gray-50/50 transition-colors">
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full ${user.color} flex items-center justify-center text-white font-medium text-xs`}>
+                      {user.initials}
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900 text-sm">{user.name}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
+                    </div>
+                  </div>
+                </td>
 
-          {/* Search and Filters */}
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <Input
-                placeholder="Search users by name or email..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value)
-                  setCurrentPage(1)
-                }}
-                className="pl-10 bg-white border-gray-300 focus-visible:ring-black/10"
-              />
-            </div>
-            <Button
-              variant="outline"
-              className="border-gray-300 bg-transparent hover:bg-black hover:text-white"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filter by Role
-            </Button>
-            <Button
-              variant="outline"
-              className="border-gray-300 bg-transparent hover:bg-black hover:text-white"
-            >
-              <Filter className="w-4 h-4 mr-2" />
-              Filter by Status
-            </Button>
-            <Button className="bg-black hover:bg-black/80 text-white">Search</Button>
-          </div>
+                {/* Role badge: subtle + ring-inset */}
+                <td className="px-4 py-3">
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset
+                      ${user.role === "Admin"
+                        ? "bg-amber-50 text-amber-700 ring-amber-200"
+                        : "bg-indigo-50 text-indigo-700 ring-indigo-200"}`}
+                  >
+                    {user.role}
+                  </span>
+                </td>
 
-          {/* Users Table */}
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">User</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Last Login</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Created</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {displayedUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className={`w-10 h-10 rounded-full ${user.color} flex items-center justify-center text-white font-semibold text-sm`}
-                        >
-                          {user.initials}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">{user.name}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                          user.role === "Admin" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {user.role}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                          user.status === "Active" ? "bg-green-100 text-green-800" : "bg-purple-100 text-purple-800"
-                        }`}
-                      >
-                        {user.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{user.lastLogin}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{user.created}</td>
-                    <td className="px-6 py-4">
-                      <button className="text-gray-400 hover:text-black transition-colors">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                {/* Status badge: subtle + ring-inset */}
+                <td className="px-4 py-3">
+                  <span
+                    className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset
+                      ${user.status === "Active"
+                        ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                        : "bg-zinc-100 text-zinc-700 ring-zinc-200"}`}
+                  >
+                    {user.status}
+                  </span>
+                </td>
 
-          {/* Pagination */}
-          <div className="flex items-center justify-center gap-2">
-            <button
-              onClick={goPrev}
-              disabled={currentPage === 1}
-              className="p-2 rounded transition-colors disabled:opacity-40 hover:bg-gray-100"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-8 h-8 rounded transition-colors ${
-                  currentPage === page ? "bg-black text-white" : "hover:bg-gray-100 text-gray-700"
-                }`}
-              >
-                {page}
-              </button>
+                <td className="px-4 py-3 text-sm text-gray-600">{user.lastLogin}</td>
+                <td className="px-4 py-3 text-sm text-gray-600">{user.created}</td>
+                <td className="px-4 py-3">
+                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                </td>
+              </tr>
             ))}
-            <button
-              onClick={goNext}
-              disabled={currentPage === totalPages}
-              className="p-2 rounded transition-colors disabled:opacity-40 hover:bg-gray-100"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </>
-      )}
+          </tbody>
+        </table>
+      </div>
 
-      {/* System tab content (placeholder) */}
-      {activeTab === "system" && (
-        <div className="rounded-lg border border-gray-200 p-6 text-gray-700">
-          <h2 className="text-2xl font-semibold mb-2">System Settings</h2>
-          <p>Configure environment, authentication, notification channels…</p>
-        </div>
-      )}
+      {/* Pagination */}
+      <div className="flex items-center justify-center gap-2">
+        <button
+          onClick={goPrev}
+          disabled={currentPage === 1}
+          className="p-2 rounded transition-colors disabled:opacity-40 hover:bg-gray-100"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <button
+            key={page}
+            onClick={() => setCurrentPage(page)}
+            className={`w-8 h-8 rounded transition-colors ${currentPage === page ? "bg-black text-white" : "hover:bg-gray-100 text-gray-700"
+              }`}
+          >
+            {page}
+          </button>
+        ))}
+        <button
+          onClick={goNext}
+          disabled={currentPage === totalPages}
+          className="p-2 rounded transition-colors disabled:opacity-40 hover:bg-gray-100"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   )
 }
