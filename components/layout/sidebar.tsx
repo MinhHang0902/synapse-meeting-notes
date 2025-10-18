@@ -11,7 +11,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 
 type NavItem = {
-  key: "dashboard" | "projects" | "meetings" | "settings" | "rules";
+  key: "dashboard" | "projects" | "meetings" | "settings" | "guidance";
   href: string; // không prefix locale ở đây
   icon: React.ElementType;
   match?: "exact" | "startsWith";
@@ -25,7 +25,7 @@ const NAV_ITEMS: NavItem[] = [
 
 const NAV_FOOTER: NavItem[] = [
   { key: "settings", href: "/pages/settings", icon: Settings, match: "startsWith" },
-  { key: "rules",    href: "/pages/rules",    icon: Heart,    match: "startsWith" },
+  { key: "guidance",    href: "/pages/guidance",    icon: Heart,    match: "startsWith" },
 ];
 
 export function Sidebar({

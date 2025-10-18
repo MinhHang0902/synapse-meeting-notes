@@ -40,83 +40,102 @@ export default function ProjectOverview({ project, recentActivity }: Props) {
     return (
         <div className="grid grid-cols-3 gap-6">
             {/* Project Information */}
-            <div className="col-span-2 bg-white rounded-lg border border-gray-200 p-6">
-                <h2 className="text-lg font-bold text-foreground mb-6 flex items-center gap-2">
+            {/* Project Information */}
+            <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
+                <h2 className="text-lg font-bold text-foreground mb-4 flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-xs">ℹ</span>
                     Project Information
                 </h2>
 
-                <div className="space-y-6">
+                <dl className="divide-y divide-gray-100">
                     {/* Project Name */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-sm text-gray-600 font-medium">Project Name</label>
-                            <p className="text-foreground mt-1">{project.name}</p>
-                        </div>
+                    <div className="grid grid-cols-12 items-center py-4">
+                        <dt className="col-span-5 md:col-span-4 text-sm font-medium text-gray-600">Project Name</dt>
+                        <dd className="col-span-7 md:col-span-8 text-sm text-gray-900 flex justify-end">
+                            {project.name}
+                        </dd>
                     </div>
 
                     {/* Description */}
-                    <div>
-                        <label className="text-sm text-gray-600 font-medium">Description</label>
-                        <p className="text-foreground mt-1">{project.fullDescription}</p>
+                    <div className="grid grid-cols-12 items-center py-4">
+                        <dt className="col-span-5 md:col-span-4 text-sm font-medium text-gray-600">Description</dt>
+                        <dd className="col-span-7 md:col-span-8 text-sm text-gray-900 flex justify-end text-right">
+                            {project.fullDescription}
+                        </dd>
                     </div>
 
                     {/* Created Date */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-sm text-gray-600 font-medium">Created Date</label>
-                            <p className="text-foreground mt-1">{project.createdDate}</p>
-                        </div>
+                    <div className="grid grid-cols-12 items-center py-4">
+                        <dt className="col-span-5 md:col-span-4 text-sm font-medium text-gray-600">Created Date</dt>
+                        <dd className="col-span-7 md:col-span-8 text-sm text-gray-900 flex justify-end">
+                            {project.createdDate}
+                        </dd>
                     </div>
 
-                    {/* Status */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-sm text-gray-600 font-medium">Status</label>
-                            <div className="mt-1 flex items-center gap-2">
-                                <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                                <span className="text-foreground">{project.status}</span>
-                            </div>
-                        </div>
+                    {/* Status (nút dạng control trắng + chấm xanh) */}
+                    <div className="grid grid-cols-12 items-center py-4">
+                        <dt className="col-span-5 md:col-span-4 text-sm font-medium text-gray-600">Status</dt>
+                        <dd className="col-span-7 md:col-span-8 flex justify-end">
+                            <button
+                                type="button"
+                                className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-800 shadow-sm hover:bg-gray-50"
+                            >
+                                <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
+                                Active
+                                <svg className="h-4 w-4 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" />
+                                </svg>
+                            </button>
+                        </dd>
                     </div>
 
                     {/* Managers */}
-                    <div>
-                        <label className="text-sm text-gray-600 font-medium">Manager(s)</label>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {project.managers.map((manager) => (
-                                <Badge key={manager} className="bg-blue-100 text-blue-700 hover:bg-blue-200">
-                                    {manager}
-                                </Badge>
+                    <div className="grid grid-cols-12 items-center py-4">
+                        <dt className="col-span-5 md:col-span-4 text-sm font-medium text-gray-600">Manager(s)</dt>
+                        <dd className="col-span-7 md:col-span-8 flex flex-wrap justify-end gap-2">
+                            {project.managers.map((m) => (
+                                <span
+                                    key={m}
+                                    className="rounded-full bg-sky-100 px-3 py-1 text-xs font-medium text-sky-700"
+                                >
+                                    {m}
+                                </span>
                             ))}
-                        </div>
+                        </dd>
                     </div>
 
                     {/* Reviewers */}
-                    <div>
-                        <label className="text-sm text-gray-600 font-medium">Reviewer(s)</label>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {project.reviewers.map((reviewer) => (
-                                <Badge key={reviewer} className="bg-cyan-100 text-cyan-700 hover:bg-cyan-200">
-                                    {reviewer}
-                                </Badge>
+                    <div className="grid grid-cols-12 items-center py-4">
+                        <dt className="col-span-5 md:col-span-4 text-sm font-medium text-gray-600">Reviewer(s)</dt>
+                        <dd className="col-span-7 md:col-span-8 flex flex-wrap justify-end gap-2">
+                            {project.reviewers.map((r) => (
+                                <span
+                                    key={r}
+                                    className="rounded-full bg-sky-100 px-3 py-1 text-xs font-medium text-sky-700"
+                                >
+                                    {r}
+                                </span>
                             ))}
-                        </div>
+                        </dd>
                     </div>
 
                     {/* Viewers */}
-                    <div>
-                        <label className="text-sm text-gray-600 font-medium">Viewer(s)</label>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                            {project.viewers.map((viewer) => (
-                                <Badge key={viewer} className="bg-cyan-100 text-cyan-700 hover:bg-cyan-200">
-                                    {viewer}
-                                </Badge>
+                    <div className="grid grid-cols-12 items-center py-4">
+                        <dt className="col-span-5 md:col-span-4 text-sm font-medium text-gray-600">Viewer(s)</dt>
+                        <dd className="col-span-7 md:col-span-8 flex flex-wrap justify-end gap-2">
+                            {project.viewers.map((v) => (
+                                <span
+                                    key={v}
+                                    className="rounded-full bg-sky-100 px-3 py-1 text-xs font-medium text-sky-700"
+                                >
+                                    {v}
+                                </span>
                             ))}
-                        </div>
+                        </dd>
                     </div>
-                </div>
+                </dl>
             </div>
+
 
             {/* Recent Activity */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
