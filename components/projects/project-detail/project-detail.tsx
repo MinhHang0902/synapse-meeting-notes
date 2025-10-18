@@ -1,27 +1,65 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Edit2, Trash2, FileText, Calendar, Users, Upload, ChevronLeft, ChevronRight } from "lucide-react"
-import ProjectOverview from "./project-overview"
-import ProjectMinutes from "./project-minutes"
-import ProjectMembers from "./project-members"
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+    LayoutGrid,
+    NotebookText,
+    Users2,
+    Edit2,
+    Trash2,
+} from "lucide-react";
 
+import ProjectOverview from "./project-overview";
+import ProjectMinutes from "./project-minutes";
+import ProjectMembers from "./project-members";
+
+type TabKey = "overview" | "minutes" | "members";
 
 export function ProjectDetail() {
-    const [activeTab, setActiveTab] = useState("overview")
-    const [currentPage, setCurrentPage] = useState(1)
+    const [activeTab, setActiveTab] = useState<TabKey>("overview");
 
+    /** ---------------- Tabs config ---------------- */
+    const tabs = [
+        { key: "overview", label: "Overview", icon: LayoutGrid },
+        { key: "minutes", label: "Minutes", icon: NotebookText },
+        { key: "members", label: "Members", icon: Users2 },
+    ] as const;
+
+    /** ---------------- Animated underline ---------------- */
+    const containerRef = useRef<HTMLDivElement | null>(null);
+    const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+    const [indicator, setIndicator] = useState({ left: 0, width: 0 });
+
+    const recalc = () => {
+        const el = itemRefs.current[activeTab];
+        const wrap = containerRef.current;
+        if (!el || !wrap) return;
+        const { left: l1 } = wrap.getBoundingClientRect();
+        const { left: l2, width } = el.getBoundingClientRect();
+        setIndicator({ left: l2 - l1, width });
+    };
+
+    useEffect(() => {
+        recalc();
+        window.addEventListener("resize", recalc);
+        return () => window.removeEventListener("resize", recalc);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab]);
+
+    /** ---------------- Demo data (thay bằng data thật của bạn) ---------------- */
     const project = {
         name: "Digital Transformation Initiative",
-        description: "Comprehensive digital modernization project for enterprise systems",
-        fullDescription: "Modernizing legacy systems and implementing cloud-native solutions",
+        description:
+            "Comprehensive digital modernization project for enterprise systems",
+        fullDescription:
+            "Modernizing legacy systems and implementing cloud-native solutions",
         createdDate: "September 15, 2025",
         status: "Active",
         managers: ["Sarah Johnson", "Mike Chen"],
         reviewers: ["David Kim", "Lisa Wong", "Alex Rodriguez"],
         viewers: ["John Smith", "Emma Davis", "+5 more"],
-    }
+    };
 
     const recentActivity = [
         {
@@ -53,7 +91,7 @@ export function ProjectDetail() {
             item: "Strategy Review Meeting",
             time: "2 days ago",
         },
-    ]
+    ];
 
     const meetingMinutes = [
         {
@@ -91,7 +129,7 @@ export function ProjectDetail() {
             uploadDate: "Sept 17, 2025",
             fileType: "image",
         },
-    ]
+    ];
 
     const teamMembers = [
         {
@@ -150,72 +188,80 @@ export function ProjectDetail() {
             avatar: "ED",
             avatarColor: "bg-pink-400",
         },
-    ]
+    ];
 
     return (
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
-                    <h1 className="text-3xl font-bold text-foreground mb-2">{project.name}</h1>
+                    <h1 className="text-2xl font-bold text-foreground mb-2">
+                        {project.name}
+                    </h1>
                     <p className="text-gray-600">{project.description}</p>
                 </div>
                 <div className="flex gap-3">
-                    <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-                        <Edit2 size={18} />
+                    <Button className="bg-black text-white hover:bg-black/90 gap-2">
+                        <Edit2 size={16} />
                         Edit Project
                     </Button>
-                    <Button className="bg-red-500 hover:bg-red-600 text-white gap-2">
-                        <Trash2 size={18} />
+                    <Button className="bg-black text-white hover:bg-black/90 gap-2">
+                        <Trash2 size={16} />
                         Delete
                     </Button>
                 </div>
             </div>
 
-            {/* Tabs */}
+            {/* Tabs - style v0 (đen, icon nhỏ, underline mượt) */}
             <div className="border-b border-gray-200">
-                <div className="flex gap-8">
-                    <button
-                        onClick={() => setActiveTab("overview")}
-                        className={`pb-4 px-1 font-medium transition-colors ${activeTab === "overview"
-                            ? "text-blue-600 border-b-2 border-blue-600"
-                            : "text-gray-600 hover:text-gray-900"
-                            }`}
-                    >
-                        <span className="flex items-center gap-2">
-                            <FileText size={18} />
-                            Overview
-                        </span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("minutes")}
-                        className={`pb-4 px-1 font-medium transition-colors ${activeTab === "minutes" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-600 hover:text-gray-900"
-                            }`}
-                    >
-                        <span className="flex items-center gap-2">
-                            <Calendar size={18} />
-                            Minutes
-                        </span>
-                    </button>
-                    <button
-                        onClick={() => setActiveTab("members")}
-                        className={`pb-4 px-1 font-medium transition-colors ${activeTab === "members" ? "text-blue-600 border-b-2 border-blue-600" : "text-gray-600 hover:text-gray-900"
-                            }`}
-                    >
-                        <span className="flex items-center gap-2">
-                            <Users size={18} />
-                            Members & Roles
-                        </span>
-                    </button>
+                <div ref={containerRef} className="relative flex gap-8">
+                    {/* underline chạy mượt */}
+                    <span
+                        className="pointer-events-none absolute -bottom-px h-[2px] bg-black rounded-full"
+                        style={{
+                            width: indicator.width,
+                            transform: `translateX(${indicator.left}px)`,
+                            transition:
+                                "transform 260ms cubic-bezier(.22,.61,.36,1), width 260ms cubic-bezier(.22,.61,.36,1)",
+                        }}
+                    />
+                    {tabs.map(({ key, label, icon: Icon }) => {
+                        const active = activeTab === key;
+                        return (
+                            <button
+                                key={key}
+                                ref={(el) => {
+                                    itemRefs.current[key] = el
+                                }}
+                                onClick={() => setActiveTab(key as TabKey)}
+                                className={[
+                                    "relative pb-3 px-1 inline-flex items-center gap-1.5",
+                                    "text-sm",
+                                    active ? "text-black" : "text-gray-500 hover:text-gray-800",
+                                    "transition-colors",
+                                ].join(" ")}
+                                aria-current={active ? "page" : undefined}
+                            >
+                                <Icon size={14} className={active ? "text-black" : "text-gray-500"} />
+                                <span className="font-medium">{label}</span>
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
             {/* Content */}
-            {activeTab === "overview" && <ProjectOverview project={project} recentActivity={recentActivity} />}
-
-            {activeTab === "minutes" && <ProjectMinutes meetingMinutes={meetingMinutes} />}
-
-            {activeTab === "members" && <ProjectMembers teamMembers={teamMembers} />}
+            {activeTab === "overview" && (
+                <ProjectOverview project={project} recentActivity={recentActivity} />
+            )}
+            {activeTab === "minutes" && (
+                <ProjectMinutes meetingMinutes={meetingMinutes} />
+            )}
+            {activeTab === "members" && (
+                <ProjectMembers teamMembers={teamMembers} />
+            )}
         </div>
-    )
+    );
 }
+
+export default ProjectDetail;

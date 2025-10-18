@@ -1,115 +1,56 @@
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, FileText, Upload } from "lucide-react";
+"use client";
 
-type Props = {
-    meetingMinutes: {
-        id: number,
-        fileName: string,
-        uploader: string,
-        uploadDate: string,
-        fileType: string,
-    }[],
-}
+import { FileText, Sheet, Image as ImageIcon, Presentation, FileSpreadsheet } from "lucide-react";
 
-export default function ProjectMinutes({ meetingMinutes }: Props) {
-    const getFileIconColor = (fileType: string) => {
-        switch (fileType) {
+type Minute = {
+    id: number;
+    fileName: string;
+    uploader: string;
+    uploadDate: string;
+    fileType: string;
+};
+
+export default function ProjectMinutes({ meetingMinutes }: { meetingMinutes: Minute[] }) {
+    const iconByType = (t: Minute["fileType"]) => {
+        switch (t) {
             case "pdf":
-                return "bg-red-500"
-            case "excel":
-                return "bg-green-500"
             case "word":
-                return "bg-blue-500"
+                return <FileText className="w-4 h-4" />;
+            case "excel":
+                return <FileSpreadsheet className="w-4 h-4" />;
             case "powerpoint":
-                return "bg-orange-500"
+                return <Presentation className="w-4 h-4" />;
             case "image":
-                return "bg-purple-500"
+                return <ImageIcon className="w-4 h-4" />;
             default:
-                return "bg-gray-500"
+                return <Sheet className="w-4 h-4" />;
         }
-    }
+    };
 
-    const getFileIconLetter = (fileType: string) => {
-        switch (fileType) {
-            case "pdf":
-                return "P"
-            case "excel":
-                return "E"
-            case "word":
-                return "W"
-            case "powerpoint":
-                return "P"
-            case "image":
-                return "I"
-            default:
-                return "F"
-        }
-    }
-    
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                    <FileText size={20} />
-                    Project Meeting Minutes
-                </h2>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-                    <Upload size={18} />
-                    Upload Minutes
-                </Button>
-            </div>
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <h2 className="text-lg font-bold text-foreground mb-4">Meeting Minutes</h2>
 
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <table className="w-full">
-                    <thead className="bg-gray-50 border-b border-gray-200">
-                        <tr>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">File Name</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Uploader</th>
-                            <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Upload Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {meetingMinutes.map((file) => (
-                            <tr key={file.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <div
-                                            className={`w-8 h-8 rounded flex items-center justify-center text-white text-sm font-semibold ${getFileIconColor(file.fileType)}`}
-                                        >
-                                            {getFileIconLetter(file.fileType)}
-                                        </div>
-                                        <span className="text-sm text-foreground font-medium">{file.fileName}</span>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-sm text-gray-600">{file.uploader}</td>
-                                <td className="px-6 py-4 text-sm text-gray-600">{file.uploadDate}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            <div className="flex items-center justify-center gap-2">
-                <button className="p-2 hover:bg-gray-100 rounded transition-colors">
-                    <ChevronLeft size={18} className="text-gray-600" />
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded transition-colors">
-                    <ChevronRight size={18} className="text-gray-600" />
-                </button>
-                <button className="w-8 h-8 rounded bg-gray-800 text-white text-sm font-semibold">1</button>
-                <button className="w-8 h-8 rounded hover:bg-gray-100 text-sm font-semibold text-gray-700 transition-colors">
-                    2
-                </button>
-                <button className="w-8 h-8 rounded hover:bg-gray-100 text-sm font-semibold text-gray-700 transition-colors">
-                    3
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded transition-colors">
-                    <ChevronRight size={18} className="text-gray-600 rotate-180" />
-                </button>
-                <button className="p-2 hover:bg-gray-100 rounded transition-colors">
-                    <ChevronRight size={18} className="text-gray-600 rotate-180" />
-                </button>
+            <div className="divide-y divide-gray-100">
+                {meetingMinutes.map((f) => (
+                    <div key={f.id} className="py-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-gray-100 text-gray-800">
+                                {iconByType(f.fileType)}
+                            </span>
+                            <div className="min-w-0">
+                                <div className="text-sm font-medium text-gray-900 truncate">
+                                    {f.fileName}
+                                </div>
+                                <div className="text-xs text-gray-500">
+                                    Uploaded by {f.uploader} • {f.uploadDate}
+                                </div>
+                            </div>
+                        </div>
+                        <button className="text-sm text-gray-600 hover:text-gray-900">View</button>
+                    </div>
+                ))}
             </div>
         </div>
-    )
+    );
 }
