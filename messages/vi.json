@@ -1,0 +1,9 @@
+{
+    "nav": {
+        "dashboard": "Bảng điều khiển",
+        "projects": "Dự án",
+        "meetings": "Biên bản họp",
+        "settings": "Cài đặt",
+        "rules": "Quy tắc"
+    }
+}

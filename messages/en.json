@@ -1,0 +1,9 @@
+{
+    "nav": {
+        "dashboard": "Dashboard",
+        "projects": "Projects",
+        "meetings": "Meeting Minutes",
+        "settings": "Settings",
+        "rules": "Rules"
+    }
+}
