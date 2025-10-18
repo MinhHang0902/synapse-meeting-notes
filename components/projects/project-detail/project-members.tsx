@@ -12,7 +12,7 @@ type Member = {
 export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] }) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h2 className="text-lg font-bold text-foreground mb-4">Members & Roles</h2>
+      <h2 className="text-lg font-bold text-foreground mb-4">People with</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {teamMembers.map((m) => (
