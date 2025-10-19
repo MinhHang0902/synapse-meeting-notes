@@ -68,9 +68,9 @@ const MeetingTranscript: React.FC<MeetingTranscriptProps> = ({
 
   return (
     <div className={className}>
-      {/* Header khối nhẹ tách nền */}
-      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-5">
-        <h2 className="text-base font-semibold text-gray-900 mb-1">
+      {/* Header với background gray full width */}
+      <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-t-lg px-6 py-5 border-b border-gray-200 -mx-6 -mt-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">
           Original Transcript
         </h2>
         <p className="text-sm text-gray-600">
@@ -79,9 +79,9 @@ const MeetingTranscript: React.FC<MeetingTranscriptProps> = ({
       </div>
 
       {/* Nội dung transcript */}
-      <div className="space-y-4">
+      <div className="pt-5 space-y-3">
         {lines.map((line, idx) => (
-          <div key={idx} className="leading-7 text-gray-800">
+          <div key={idx} className="leading-6 text-sm text-gray-800">
             {/* Speaker pill + dấu : */}
             <span className={namePill}>{line.speaker}</span>
             <span className="mx-1 text-gray-500">:</span>
