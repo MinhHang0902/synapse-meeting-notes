@@ -1,59 +1,68 @@
-"use client";
+"use client"
 
-import { useEffect, useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useRef, useState } from "react"
+import { Button } from "@/components/ui/button"
 import {
     LayoutGrid,
     NotebookText,
     Users2,
     Edit2,
     Trash2,
-} from "lucide-react";
+    X,
+    FilePenLine,
+} from "lucide-react"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import ProjectOverview from "./project-overview"
+import ProjectMinutes from "./project-minutes"
+import ProjectMembers from "./project-members"
+import EditProjectModal from "./edit-project-modal"
 
-import ProjectOverview from "./project-overview";
-import ProjectMinutes from "./project-minutes";
-import ProjectMembers from "./project-members";
 
-type TabKey = "overview" | "minutes" | "members";
+
+/* ============ ProjectDetail ============ */
+type TabKey = "overview" | "minutes" | "members"
 
 export function ProjectDetail() {
-    const [activeTab, setActiveTab] = useState<TabKey>("overview");
+    const [activeTab, setActiveTab] = useState<TabKey>("overview")
+    const [openEdit, setOpenEdit] = useState(false)
 
-    /** ---------------- Tabs config ---------------- */
     const tabs = [
         { key: "overview", label: "Overview", icon: LayoutGrid },
         { key: "minutes", label: "Minutes", icon: NotebookText },
         { key: "members", label: "Members", icon: Users2 },
-    ] as const;
+    ] as const
 
-    /** ---------------- Animated underline ---------------- */
-    const containerRef = useRef<HTMLDivElement | null>(null);
-    const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
-    const [indicator, setIndicator] = useState({ left: 0, width: 0 });
+    const containerRef = useRef<HTMLDivElement | null>(null)
+    const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({})
+    const [indicator, setIndicator] = useState({ left: 0, width: 0 })
 
     const recalc = () => {
-        const el = itemRefs.current[activeTab];
-        const wrap = containerRef.current;
-        if (!el || !wrap) return;
-        const { left: l1 } = wrap.getBoundingClientRect();
-        const { left: l2, width } = el.getBoundingClientRect();
-        setIndicator({ left: l2 - l1, width });
-    };
+        const el = itemRefs.current[activeTab]
+        const wrap = containerRef.current
+        if (!el || !wrap) return
+        const { left: l1 } = wrap.getBoundingClientRect()
+        const { left: l2, width } = el.getBoundingClientRect()
+        setIndicator({ left: l2 - l1, width })
+    }
 
     useEffect(() => {
-        recalc();
-        window.addEventListener("resize", recalc);
-        return () => window.removeEventListener("resize", recalc);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab]);
+        recalc()
+        window.addEventListener("resize", recalc)
+        return () => window.removeEventListener("resize", recalc)
+    }, [activeTab])
 
-    /** ---------------- Demo data (thay bằng data thật của bạn) ---------------- */
     const project = {
         name: "Digital Transformation Initiative",
-        description:
-            "Comprehensive digital modernization project for enterprise systems",
-        fullDescription:
-            "Modernizing legacy systems and implementing cloud-native solutions",
+        description: "Comprehensive digital modernization project for enterprise systems",
+        fullDescription: "Modernizing legacy systems and implementing cloud-native solutions",
         createdDate: "September 15, 2025",
         status: "Active",
         managers: ["Sarah Johnson", "Mike Chen"],
@@ -92,7 +101,6 @@ export function ProjectDetail() {
             time: "2 days ago",
         },
     ];
-
     const meetingMinutes = [
         {
             id: 1,
@@ -112,96 +120,94 @@ export function ProjectDetail() {
             id: 3,
             fileName: "Project_Requirements.docx",
             uploader: "David Kim",
-            uploadDate: "Sept 19, 2025",
-            fileType: "word",
-        },
-        {
-            id: 4,
-            fileName: "Stakeholder_Presentation.pptx",
+            uploadDate: "Sept 19, 2025", 
+            fileType: "word", 
+        }, 
+        { 
+            id: 4, 
+            fileName: "Stakeholder_Presentation.pptx", 
             uploader: "Lisa Wong",
-            uploadDate: "Sept 18, 2025",
-            fileType: "powerpoint",
-        },
-        {
-            id: 5,
-            fileName: "Architecture_Diagram.png",
-            uploader: "Alex Rodriguez",
-            uploadDate: "Sept 17, 2025",
-            fileType: "image",
-        },
-    ];
-
-    const teamMembers = [
-        {
+            uploadDate: "Sept 18, 2025", 
+            fileType: "powerpoint", 
+        }, 
+        { 
+            id: 5, 
+            fileName: "Architecture_Diagram.png", 
+            uploader: "Alex Rodriguez", 
+            uploadDate: "Sept 17, 2025", 
+            fileType: "image", 
+        },]; 
+        
+        const teamMembers = 
+        [{ 
             id: 1,
-            name: "Sarah Johnson",
-            email: "sarah.johnson@company.com",
-            role: "Manager",
-            avatar: "SJ",
-            avatarColor: "bg-blue-500",
-        },
-        {
-            id: 2,
-            name: "Mike Chen",
-            email: "mike.chen@company.com",
-            role: "Manager",
-            avatar: "MC",
-            avatarColor: "bg-pink-500",
-        },
-        {
-            id: 3,
-            name: "David Kim",
-            email: "david.kim@company.com",
-            role: "Reviewer",
-            avatar: "DK",
-            avatarColor: "bg-cyan-500",
-        },
-        {
-            id: 4,
-            name: "Lisa Wong",
-            email: "lisa.wong@company.com",
-            role: "Reviewer",
-            avatar: "LW",
-            avatarColor: "bg-orange-500",
-        },
-        {
-            id: 5,
-            name: "Alex Rodriguez",
-            email: "alex.rodriguez@company.com",
-            role: "Reviewer",
-            avatar: "AR",
-            avatarColor: "bg-cyan-300",
-        },
-        {
-            id: 6,
-            name: "John Smith",
-            email: "john.smith@company.com",
-            role: "Viewer",
-            avatar: "JS",
-            avatarColor: "bg-orange-300",
-        },
-        {
-            id: 7,
-            name: "Emma Davis",
-            email: "emma.davis@company.com",
-            role: "Viewer",
-            avatar: "ED",
-            avatarColor: "bg-pink-400",
-        },
-    ];
+             name: "Sarah Johnson", 
+             email: "sarah.johnson@company.com", 
+             role: "Manager", 
+             avatar: "SJ", 
+             avatarColor: "bg-blue-500", 
+            },
+            { 
+                id: 2,
+                name: "Mike Chen", 
+                email: "mike.chen@company.com", 
+                role: "Manager", 
+                avatar: "MC", 
+                avatarColor: "bg-pink-500", 
+            }, 
+            { 
+                id: 3, 
+                name: "David Kim", 
+                email: "david.kim@company.com", 
+                role: "Reviewer", 
+                avatar: "DK", 
+                avatarColor: "bg-cyan-500", 
+            }, 
+            { 
+                id: 4, 
+                name: "Lisa Wong", 
+                email: "lisa.wong@company.com", 
+                role: "Reviewer", avatar: "LW", 
+                avatarColor: "bg-orange-500", 
+            }, 
+            { 
+                id: 5, 
+                name: "Alex Rodriguez", 
+                email: "alex.rodriguez@company.com", 
+                role: "Reviewer", avatar: "AR", 
+                avatarColor: "bg-cyan-300", 
+            }, 
+            { 
+                id: 6, 
+                name: "John Smith", 
+                email: "john.smith@company.com", 
+                role: "Viewer", 
+                avatar: "JS", 
+                avatarColor: "bg-orange-300", 
+            }, 
+            { 
+                id: 7, 
+                name: "Emma Davis", 
+                email: "emma.davis@company.com", 
+                role: "Viewer", 
+                avatar: "ED", 
+                avatarColor: "bg-pink-400", 
+            },];
+            
 
     return (
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-foreground mb-2">
-                        {project.name}
-                    </h1>
+                    <h1 className="text-2xl font-bold text-foreground mb-2">{project.name}</h1>
                     <p className="text-gray-600">{project.description}</p>
                 </div>
                 <div className="flex gap-3">
-                    <Button className="bg-black text-white hover:bg-black/90 gap-2">
+                    <Button
+                        className="bg-black text-white hover:bg-black/90 gap-2"
+                        onClick={() => setOpenEdit(true)}
+                    >
                         <Edit2 size={16} />
                         Edit Project
                     </Button>
@@ -225,7 +231,7 @@ export function ProjectDetail() {
                         }}
                     />
                     {tabs.map(({ key, label, icon: Icon }) => {
-                        const active = activeTab === key;
+                        const active = activeTab === key
                         return (
                             <button
                                 key={key}
@@ -234,33 +240,38 @@ export function ProjectDetail() {
                                 }}
                                 onClick={() => setActiveTab(key as TabKey)}
                                 className={[
-                                    "relative pb-3 px-1 inline-flex items-center gap-1.5",
-                                    "text-sm",
+                                    "relative pb-3 px-1 inline-flex items-center gap-1.5 text-sm transition-colors",
                                     active ? "text-black" : "text-gray-500 hover:text-gray-800",
-                                    "transition-colors",
                                 ].join(" ")}
-                                aria-current={active ? "page" : undefined}
                             >
                                 <Icon size={14} className={active ? "text-black" : "text-gray-500"} />
                                 <span className="font-medium">{label}</span>
                             </button>
-                        );
+                        )
                     })}
                 </div>
             </div>
 
             {/* Content */}
-            {activeTab === "overview" && (
-                <ProjectOverview project={project} recentActivity={recentActivity} />
-            )}
-            {activeTab === "minutes" && (
-                <ProjectMinutes meetingMinutes={meetingMinutes} />
-            )}
-            {activeTab === "members" && (
-                <ProjectMembers teamMembers={teamMembers} />
-            )}
+            {activeTab === "overview" && <ProjectOverview project={project} recentActivity={recentActivity} />}
+            {activeTab === "minutes" && <ProjectMinutes meetingMinutes={meetingMinutes} />}
+            {activeTab === "members" && <ProjectMembers teamMembers={teamMembers} />}
+
+            {/* Edit Project Popup */}
+            <EditProjectModal
+                open={openEdit}
+                onOpenChange={setOpenEdit}
+                defaultValues={{
+                    name: project.name,
+                    description: project.fullDescription,
+                }}
+                onSubmit={(data) => {
+                    console.log("Save project changes:", data)
+                }}
+            />
         </div>
-    );
+    )
+        
 }
 
-export default ProjectDetail;
+export default ProjectDetail
