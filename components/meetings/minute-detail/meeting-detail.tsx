@@ -124,7 +124,7 @@ export default function MinuteDetailPage() {
               }}
             />
             <button
-              ref={(el) => {(tabBtnRefs.current.transcript = el)}}
+              ref={(el) => { (tabBtnRefs.current.transcript = el) }}
               onClick={() => setActiveTab("transcript")}
               className={["relative pb-3 px-1 inline-flex items-center gap-1.5 text-sm transition-colors", activeTab === "transcript" ? "text-black" : "text-gray-500 hover:text-gray-800"].join(" ")}
             >
@@ -132,7 +132,7 @@ export default function MinuteDetailPage() {
               <span className="font-medium">Transcript</span>
             </button>
             <button
-              ref={(el) => {(tabBtnRefs.current.mom = el)}}
+              ref={(el) => { (tabBtnRefs.current.mom = el) }}
               onClick={() => setActiveTab("mom")}
               className={["relative pb-3 px-1 inline-flex items-center gap-1.5 text-sm transition-colors", activeTab === "mom" ? "text-black" : "text-gray-500 hover:text-gray-800"].join(" ")}
             >
@@ -168,47 +168,76 @@ export default function MinuteDetailPage() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
-            <h3 className="text-base font-semibold text-gray-900">File Information</h3>
-            <div className="space-y-3 text-sm">
-              <div>
-                <p className="text-gray-600">File Name</p>
-                <p className="font-medium text-gray-900">Q3_Financial_Report.pdf</p>
+          {/* File Information */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-4">File Information</h3>
+
+            <dl className="space-y-4 text-sm">
+              <div className="flex items-start justify-between">
+                <dt className="text-gray-600">File Name</dt>
+                <dd className="font-medium text-gray-900 text-right">Q3_Financial_Report.pdf</dd>
               </div>
-              <div>
-                <p className="text-gray-600">Project</p>
-                <p className="font-medium text-gray-900">Digital Transformation Initiative</p>
+
+              <div className="flex items-start justify-between">
+                <dt className="text-gray-600">Project</dt>
+                <dd className="font-medium text-gray-900 text-right">
+                  Digital Transformation Initiative
+                </dd>
               </div>
-              <div>
-                <p className="text-gray-600">Uploaded By</p>
-                <p className="font-medium text-gray-900">Sarah Johnson</p>
+
+              <div className="flex items-start justify-between">
+                <dt className="text-gray-600">Uploaded By</dt>
+                <dd className="font-medium text-gray-900 text-right">Sarah Johnson</dd>
               </div>
-              <div>
-                <p className="text-gray-600">Date Uploaded</p>
-                <p className="font-medium text-gray-900">Sept 21, 2025</p>
-                <p className="text-xs text-gray-500">2 hours ago</p>
+
+              <div className="flex items-start justify-between">
+                <dt className="text-gray-600">Date Uploaded</dt>
+                <dd className="text-right">
+                  <div className="font-medium text-gray-900">Sept 21, 2025</div>
+                  <div className="text-xs text-gray-500">2 hours ago</div>
+                </dd>
               </div>
-              <div>
-                <p className="text-gray-600">Language</p>
-                <span className="inline-block bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-medium">English</span>
+
+              <div className="flex items-center justify-between">
+                <dt className="text-gray-600">Language</dt>
+                <dd className="text-right">
+                  <span className="inline-block bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs font-medium">
+                    English
+                  </span>
+                </dd>
               </div>
-            </div>
+            </dl>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-3">
-            <h3 className="text-base font-semibold text-gray-900">Quick Actions</h3>
-            <Button className="w-full justify-start gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200">
-              <Download className="w-4 h-4" />
-              Download Original Transcript
-            </Button>
-            <Button className="w-full justify-start gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200">
-              <History className="w-4 h-4" />
-              View Version History
-            </Button>
-            <Button className="w-full justify-start gap-2 bg-red-50 text-red-600 hover:bg-red-100">
-              <Trash2 className="w-4 h-4" />
-              Delete File
-            </Button>
+          {/* Quick Actions */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <h3 className="text-base font-semibold text-gray-900 mb-4">Quick Actions</h3>
+
+            <div className="space-y-2.5">
+              <Button
+                className="w-full justify-start gap-2 h-10 bg-white text-gray-900 border border-gray-200 hover:bg-gray-50"
+                variant="outline"
+              >
+                <Download className="w-4 h-4" />
+                Download Original Transcript
+              </Button>
+
+              <Button
+                className="w-full justify-start gap-2 h-10 bg-white text-gray-900 border border-gray-200 hover:bg-gray-50"
+                variant="outline"
+              >
+                <History className="w-4 h-4" />
+                View Version History
+              </Button>
+
+              <Button
+                className="w-full justify-start gap-2 h-10 bg-red-50 text-red-600 border border-red-100 hover:bg-red-100"
+                variant="outline"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete File
+              </Button>
+            </div>
           </div>
         </div>
       </div>
