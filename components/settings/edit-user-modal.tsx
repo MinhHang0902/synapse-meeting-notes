@@ -1,11 +1,17 @@
 "use client";
-import React, { useMemo, useState, useEffect } from "react";
-import { Dialog, DialogContent } from "../ui/dialog";
+
+import { useState, useEffect, useMemo } from "react";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { Button } from "../ui/button";
-import { UserRoundPlus, X } from "lucide-react";
+import { X, UserRoundPlus } from "lucide-react";
 import { UserRow } from "./usersettings";
 
 export default function EditUserModal({
@@ -25,23 +31,32 @@ export default function EditUserModal({
     status: "Active" | "Inactive";
   }) => void;
 }) {
-  const [fullName, setFullName] = useState(user?.name ?? "");
-  const [email, setEmail] = useState(user?.email ?? "");
-  const [role, setRole] = useState<"Admin" | "User" | "">(user?.role ?? "");
-  const [status, setStatus] = useState<"Active" | "Inactive" | "">(user?.status ?? "");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<"Admin" | "User" | "">("");
+  const [status, setStatus] = useState<"Active" | "Inactive" | "">("");
 
-  // Sync when a different row is selected
   useEffect(() => {
-    setFullName(user?.name ?? "");
-    setEmail(user?.email ?? "");
-    setRole(user?.role ?? "");
-    setStatus(user?.status ?? "");
+    if (user) {
+      setFullName(user.name || "");
+      setEmail(user.email || "");
+      setRole(user.role || "");
+      setStatus(user.status || "");
+    }
   }, [user]);
 
   const emailValid = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), [email]);
   const canSubmit = !!fullName.trim() && emailValid && !!role && !!status && !!user;
 
-  const handleClose = (v: boolean) => onOpenChange(v);
+  const handleClose = (v: boolean) => {
+    if (!v) {
+      setFullName("");
+      setEmail("");
+      setRole("");
+      setStatus("");
+    }
+    onOpenChange(v);
+  };
 
   const submit = () => {
     if (!canSubmit || !user) return;
@@ -55,10 +70,13 @@ export default function EditUserModal({
     onOpenChange(false);
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="p-0 overflow-hidden border-0 shadow-2xl max-w-lg rounded-2xl">
-        {/* Header – đồng bộ với SendMinuteModal/CreateProjectModal */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal role="dialog">
+      <div className="absolute inset-0 bg-black/50" onClick={() => handleClose(false)} />
+      <div className="relative bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
+        {/* Header */}
         <div className="bg-black text-white p-6 flex items-start justify-between sticky top-0 z-20 rounded-t-2xl border-b border-white/10">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -113,7 +131,9 @@ export default function EditUserModal({
               </Label>
               <Select value={role} onValueChange={(v: "Admin" | "User") => setRole(v)}>
                 <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Select role" />
+                  <SelectValue placeholder="Select role">
+                    {role ? role : "Select role"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Admin">Admin</SelectItem>
@@ -128,7 +148,9 @@ export default function EditUserModal({
               </Label>
               <Select value={status} onValueChange={(v: "Active" | "Inactive") => setStatus(v)}>
                 <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="Select status" />
+                  <SelectValue placeholder="Select status">
+                    {status ? status : "Select status"}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Active">Active</SelectItem>
@@ -139,7 +161,7 @@ export default function EditUserModal({
           </div>
         </div>
 
-        {/* Footer – đồng bộ */}
+        {/* Footer */}
         <div className="border-t border-gray-200 p-6 flex gap-3 justify-end sticky bottom-0 bg-white rounded-b-2xl">
           <Button
             variant="outline"
@@ -152,13 +174,15 @@ export default function EditUserModal({
           <Button
             disabled={!canSubmit}
             onClick={submit}
-            className="bg-black hover:bg-black/90 px-6 text-white disabled:opacity-50"
+            className={`px-6 text-white ${
+              canSubmit ? "bg-black hover:bg-black/90" : "bg-gray-400 cursor-not-allowed"
+            }`}
           >
             <UserRoundPlus className="w-4 h-4 mr-2" />
-            Save changes
+            Save Changes
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
