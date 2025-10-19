@@ -1,19 +1,24 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { UserCog, X } from "lucide-react";
-import React, { useState } from "react";
 import { Member } from "./project-members";
 
 export default function EditMemberModal({
   open,
   onOpenChange,
   member,
-  onSave, 
+  onSave,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -22,7 +27,7 @@ export default function EditMemberModal({
 }) {
   const [role, setRole] = useState<"Manager" | "Reviewer" | "Viewer" | "">("");
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (member) {
       const current =
         (["Manager", "Reviewer", "Viewer"] as const).find(
@@ -46,95 +51,109 @@ export default function EditMemberModal({
     onOpenChange(false);
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="p-0 overflow-hidden border-0 shadow-2xl max-w-md">
-        {/* Header gradient tím */}
-        <div className="relative bg-gradient-to-r from-[#7b4397] to-[#9f5be8] px-5 py-4">
-          <div className="flex items-center gap-3 text-white">
-            <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
-              <UserCog className="w-4 h-4" />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      aria-modal
+      role="dialog"
+    >
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={() => handleClose(false)}
+      />
+      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
+        {/* Header */}
+        <div className="bg-black text-white p-6 flex items-start justify-between sticky top-0 z-20 rounded-t-2xl border-b border-white/10">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <UserCog className="w-5 h-5" />
+              <h2 className="text-xl font-semibold">Edit Member</h2>
             </div>
-            <DialogHeader className="p-0">
-              <DialogTitle className="text-white text-lg">Edit Member</DialogTitle>
-              <DialogDescription className="text-white/70 text-xs">
-                Update member role
-              </DialogDescription>
-            </DialogHeader>
+            <p className="text-white/70 text-sm">Update member role information</p>
           </div>
           <button
             aria-label="Close"
             onClick={() => handleClose(false)}
-            className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-md bg-white/15 text-white hover:bg-white/25"
+            className="text-white/90 hover:bg-white/10 rounded-full p-2 transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="bg-white px-5 pt-5 pb-4">
-          <div className="space-y-4">
-            <div>
-              <Label className="text-sm text-gray-800">
-                Full Name <span className="text-rose-500">*</span>
-              </Label>
-              <Input
-                value={member?.name ?? ""}
-                readOnly
-                className="mt-1 bg-gray-50 text-gray-700 cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-gray-800">
-                Email Address <span className="text-rose-500">*</span>
-              </Label>
-              <Input
-                value={member?.email ?? ""}
-                readOnly
-                className="mt-1 bg-gray-50 text-gray-700 cursor-not-allowed"
-              />
-            </div>
-
-            <div>
-              <Label className="text-sm text-gray-800">
-                Role <span className="text-rose-500">*</span>
-              </Label>
-              <Select
-                value={role}
-                onValueChange={(v: "Manager" | "Reviewer" | "Viewer") => setRole(v)}
-              >
-                <SelectTrigger className="mt-1 bg-white">
-                  <SelectValue placeholder="Select Role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Manager">Manager</SelectItem>
-                  <SelectItem value="Reviewer">Reviewer</SelectItem>
-                  <SelectItem value="Viewer">Viewer</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+        <div className="p-6 space-y-6 bg-white">
+          {/* Full Name (read-only) */}
+          <div>
+            <Label className="text-sm font-medium text-gray-900 mb-2 block">
+              Full Name <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              value={member?.name ?? ""}
+              readOnly
+              className="bg-gray-50 text-gray-700 cursor-not-allowed"
+            />
           </div>
 
-          {/* Footer */}
-          <div className="mt-6 flex items-center justify-end gap-3">
-            <Button
-              variant="outline"
-              className="border-gray-300 bg-gray-50 text-gray-700 hover:bg-gray-100"
-              onClick={() => handleClose(false)}
+          {/* Email (read-only) */}
+          <div>
+            <Label className="text-sm font-medium text-gray-900 mb-2 block">
+              Email Address <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              value={member?.email ?? ""}
+              readOnly
+              className="bg-gray-50 text-gray-700 cursor-not-allowed"
+            />
+          </div>
+
+          {/* Role (editable) */}
+          <div>
+            <Label className="text-sm font-medium text-gray-900 mb-2 block">
+              Role <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={role}
+              onValueChange={(v: "Manager" | "Reviewer" | "Viewer") => setRole(v)}
             >
-              Cancel
-            </Button>
-            <Button
-              disabled={!canSave}
-              onClick={handleSave}
-              className="inline-flex items-center rounded-md bg-gradient-to-r from-[#2F6EEB] to-[#2A44A9] text-white shadow-md hover:opacity-95 disabled:opacity-50"
-            >
-              Save Change
-            </Button>
+              <SelectTrigger className="bg-white">
+                <SelectValue placeholder="Select role">
+                  {role ? role : "Select role"}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Manager">Manager</SelectItem>
+                <SelectItem value="Reviewer">Reviewer</SelectItem>
+                <SelectItem value="Viewer">Viewer</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Footer */}
+        <div className="border-t border-gray-200 p-6 flex gap-3 justify-end sticky bottom-0 bg-white rounded-b-2xl">
+          <Button
+            variant="outline"
+            className="px-6 bg-transparent text-gray-700 border-gray-300 hover:bg-gray-100"
+            onClick={() => handleClose(false)}
+          >
+            <X className="w-4 h-4 mr-2" />
+            Cancel
+          </Button>
+          <Button
+            disabled={!canSave}
+            onClick={handleSave}
+            className={`px-6 text-white ${
+              canSave
+                ? "bg-black hover:bg-black/90"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
+          >
+            Save Change
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
