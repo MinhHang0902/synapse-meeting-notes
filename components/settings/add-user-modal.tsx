@@ -1,13 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "../ui/dialog";
 import { UserPlus, X } from "lucide-react";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
@@ -20,9 +13,6 @@ import {
 } from "../ui/select";
 import { Button } from "../ui/button";
 
-/* =========================
-   Popup Add User (send-minute style)
-   ========================= */
 export default function AddUserModal({
   open,
   onOpenChange,
@@ -52,26 +42,23 @@ export default function AddUserModal({
 
   const submit = () => {
     if (!canSubmit) return;
-    onSubmit?.({
+    const newUser = {
       fullName: fullName.trim(),
       email: email.trim(),
       role: role as "Admin" | "User",
-    });
+    };
+    onSubmit?.(newUser);
     reset();
     onOpenChange(false);
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="p-0 overflow-hidden border-0 shadow-2xl max-w-lg rounded-2xl">
-
-        {/* Hidden title for accessibility only */}
-        <DialogHeader className="sr-only">
-          <DialogTitle>Add New User</DialogTitle>
-          <DialogDescription>Create a new account for your workspace.</DialogDescription>
-        </DialogHeader>
-
-        {/* Header – visible custom UI */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal role="dialog">
+      <div className="absolute inset-0 bg-black/50" onClick={() => handleClose(false)} />
+      <div className="relative bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
+        {/* Header */}
         <div className="bg-black text-white p-6 flex items-start justify-between sticky top-0 z-20 rounded-t-2xl border-b border-white/10">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -125,7 +112,9 @@ export default function AddUserModal({
             </Label>
             <Select value={role} onValueChange={(v: "Admin" | "User") => setRole(v)}>
               <SelectTrigger className="bg-white">
-                <SelectValue placeholder="Select role" />
+                <SelectValue placeholder="Select role">
+                  {role ? role : "Select role"}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="Admin">Admin</SelectItem>
@@ -148,13 +137,15 @@ export default function AddUserModal({
           <Button
             disabled={!canSubmit}
             onClick={submit}
-            className="bg-black hover:bg-black/90 px-6 text-white disabled:opacity-50"
+            className={`px-6 text-white ${
+              canSubmit ? "bg-black hover:bg-black/90" : "bg-gray-400 cursor-not-allowed"
+            }`}
           >
             <UserPlus className="w-4 h-4 mr-2" />
             Add User
           </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }
