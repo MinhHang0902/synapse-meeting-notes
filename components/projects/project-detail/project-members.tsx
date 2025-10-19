@@ -18,15 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { MoreHorizontal, X, UserCog } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import EditMemberModal from "./edit-member-modal";
 
 export type Member = {
@@ -34,10 +26,9 @@ export type Member = {
   name: string;
   email: string;
   role: string;
-  avatar: string; // initials
-  avatarColor: string; // tailwind color class
+  avatar: string;
+  avatarColor: string;
 };
-
 
 export default function ProjectMembers({
   teamMembers,
@@ -47,6 +38,10 @@ export default function ProjectMembers({
   const [members, setMembers] = useState<Member[]>(teamMembers);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<string | undefined>(undefined);
+
+  // Email validation
+  const [emailTouched, setEmailTouched] = useState(false);
+  const emailValid = /^\S+@\S+\.\S+$/.test(email);
 
   // Edit modal state
   const [editing, setEditing] = useState<Member | null>(null);
@@ -58,7 +53,7 @@ export default function ProjectMembers({
   );
 
   const invite = () => {
-    if (!email.trim()) return;
+    if (!emailValid || !role) return;
 
     const nameFromEmail =
       email.split("@")[0]?.replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) ||
@@ -86,6 +81,7 @@ export default function ProjectMembers({
     setMembers((prev) => [newMem, ...prev]);
     setEmail("");
     setRole(undefined);
+    setEmailTouched(false);
   };
 
   const deleteMember = (id: number) => {
@@ -114,16 +110,27 @@ export default function ProjectMembers({
         </p>
 
         <div className="mt-4 flex flex-col sm:flex-row gap-3">
-          <Input
-            placeholder="Email Address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="sm:flex-1"
-          />
+          {/* Email Input */}
+          <div className="sm:flex-1">
+            <Input
+              placeholder="Email Address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => setEmailTouched(true)}
+              className={`sm:flex-1 ${!emailValid && emailTouched ? "border-red-500" : ""}`}
+            />
+            {!email && emailTouched && (
+              <p className="text-xs text-red-500 mt-1">Email is required</p>
+            )}
+            {email && !emailValid && emailTouched && (
+              <p className="text-xs text-red-500 mt-1">Invalid email address</p>
+            )}
+          </div>
 
+          {/* Role Select */}
           <Select value={role} onValueChange={(v) => setRole(v)}>
             <SelectTrigger className="h-9 w-[160px]">
-              <SelectValue placeholder="Role" />
+              <SelectValue>{role ? role : "Select Role"}</SelectValue>
             </SelectTrigger>
             <SelectContent align="end">
               <SelectItem value="Viewer">Viewer</SelectItem>
@@ -132,9 +139,11 @@ export default function ProjectMembers({
             </SelectContent>
           </Select>
 
+          {/* Invite Button */}
           <Button
-            className="h-9 bg-black hover:bg-black/90 text-white px-4"
+            className="h-9 bg-black hover:bg-black/90 text-white px-4 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={invite}
+            disabled={!emailValid || !role}
           >
             Invite People
           </Button>
@@ -167,7 +176,7 @@ export default function ProjectMembers({
               </div>
             </div>
 
-            {/* Right: role pill + kebab */}
+            {/* Right: role pill + menu */}
             <div className="flex items-center gap-3 flex-shrink-0">
               <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-700 px-2.5 py-1 text-xs font-medium">
                 {m.role}
