@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge, Crown, Eye, FileText, Folder, FolderPlus, Mail, Plus, UserCheck, Users, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { TeamMember } from "../project-list";
@@ -82,11 +81,12 @@ export default function CreateProjectModal({
                             <Folder className="w-4 h-4" />
                             Project Name <span className="text-red-500">*</span>
                         </label>
-                        <Input
+                        <input
+                            type="text"
                             placeholder="Enter project name..."
                             value={projectName}
                             onChange={(e) => setProjectName(e.target.value)}
-                            className="mb-1"
+                            className="w-full h-9 px-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors mb-1"
                         />
                         <p className="text-sm text-gray-500">Choose a descriptive name that your team will recognize</p>
                     </div>
@@ -101,7 +101,7 @@ export default function CreateProjectModal({
                             placeholder="Describe the project goals, scope, and key objectives..."
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
-                            className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black mb-1 min-h-24"
+                            className="w-full p-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors mb-1 min-h-24"
                         />
                         <p className="text-sm text-gray-500">Provide context to help team members understand the project</p>
                     </div>
@@ -129,12 +129,13 @@ export default function CreateProjectModal({
 
                             <div className="flex gap-2 mb-4">
                                 <div className="relative flex-1">
-                                    <Input
+                                    <input
+                                        type="text"
                                         placeholder="Enter manager email address..."
                                         value={managerInput}
                                         onChange={(e) => setManagerInput(e.target.value)}
                                         onKeyDown={(e) => e.key === "Enter" && addFromInput(managerInput, setManagers, managers)}
-                                        className="pl-9"
+                                        className="w-full h-9 pl-9 pr-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
                                     />
                                     <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                 </div>
@@ -145,8 +146,8 @@ export default function CreateProjectModal({
                             </div>
 
                             {managers.length > 0 && (
-                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6"> {/* p-6 thoáng hơn */}
-                                    <div className="flex flex-wrap gap-3"> {/* gap-3 thoáng hơn */}
+                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+                                    <div className="flex flex-wrap gap-3">
                                         {managers.map((m) => (
                                             <div key={m.email} className="bg-white border border-gray-300 rounded-full px-3.5 py-2.5 flex items-center gap-3">
                                                 <div className="w-7 h-7 bg-gray-900 text-white rounded-full flex items-center justify-center text-[11px] font-semibold">
@@ -178,12 +179,13 @@ export default function CreateProjectModal({
 
                             <div className="flex gap-2 mb-4">
                                 <div className="relative flex-1">
-                                    <Input
+                                    <input
+                                        type="text"
                                         placeholder="Enter reviewer email address..."
                                         value={reviewerInput}
                                         onChange={(e) => setReviewerInput(e.target.value)}
                                         onKeyDown={(e) => e.key === "Enter" && addFromInput(reviewerInput, setReviewers, reviewers)}
-                                        className="pl-9"
+                                        className="w-full h-9 pl-9 pr-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
                                     />
                                     <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                 </div>
@@ -227,12 +229,13 @@ export default function CreateProjectModal({
 
                             <div className="flex gap-2 mb-4">
                                 <div className="relative flex-1">
-                                    <Input
+                                    <input
+                                        type="text"
                                         placeholder="Enter viewer email address..."
                                         value={viewerInput}
                                         onChange={(e) => setViewerInput(e.target.value)}
                                         onKeyDown={(e) => e.key === "Enter" && addFromInput(viewerInput, setViewers, viewers)}
-                                        className="pl-9"
+                                        className="w-full h-9 pl-9 pr-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
                                     />
                                     <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                 </div>

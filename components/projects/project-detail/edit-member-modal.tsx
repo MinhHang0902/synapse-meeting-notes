@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -89,10 +88,11 @@ export default function EditMemberModal({
             <Label className="text-sm font-medium text-gray-900 mb-2 block">
               Full Name <span className="text-red-500">*</span>
             </Label>
-            <Input
+            <input
+              type="text"
               value={member?.name ?? ""}
               readOnly
-              className="bg-gray-50 text-gray-700 cursor-not-allowed"
+              className="w-full h-9 px-3 text-sm bg-gray-50 text-gray-700 border border-gray-200 rounded-lg cursor-not-allowed focus:outline-none"
             />
           </div>
 
@@ -101,10 +101,11 @@ export default function EditMemberModal({
             <Label className="text-sm font-medium text-gray-900 mb-2 block">
               Email Address <span className="text-red-500">*</span>
             </Label>
-            <Input
+            <input
+              type="text"
               value={member?.email ?? ""}
               readOnly
-              className="bg-gray-50 text-gray-700 cursor-not-allowed"
+              className="w-full h-9 px-3 text-sm bg-gray-50 text-gray-700 border border-gray-200 rounded-lg cursor-not-allowed focus:outline-none"
             />
           </div>
 

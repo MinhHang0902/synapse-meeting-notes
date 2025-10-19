@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { FilePenLine, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function EditProjectModal({
@@ -71,11 +70,12 @@ export default function EditProjectModal({
             <Label className="text-sm font-medium text-gray-900 mb-2 block">
               Project Name <span className="text-red-500">*</span>
             </Label>
-            <Input
+            <input
+              type="text"
               placeholder="Enter project name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="bg-white"
+              className="w-full h-9 px-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
             />
           </div>
 
@@ -88,7 +88,7 @@ export default function EditProjectModal({
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
               placeholder="Enter project description..."
-              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 focus-visible:ring-2 focus-visible:ring-black/10 focus:outline-none"
+              className="w-full p-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
             />
           </div>
         </div>
