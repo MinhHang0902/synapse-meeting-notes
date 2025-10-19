@@ -212,10 +212,9 @@ export function ProjectDetail() {
                 </div>
             </div>
 
-            {/* Tabs - style v0 (đen, icon nhỏ, underline mượt) */}
+            {/* Tabs */}
             <div className="border-b border-gray-200">
                 <div ref={containerRef} className="relative flex gap-8">
-                    {/* underline chạy mượt */}
                     <span
                         className="pointer-events-none absolute -bottom-px h-[2px] bg-black rounded-full"
                         style={{

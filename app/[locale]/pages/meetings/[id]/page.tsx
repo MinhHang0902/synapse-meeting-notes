@@ -1,7 +1,8 @@
 "use client"
 
 import ProtectedLayout from "@/components/layouts/ProtectedLayout"
-import { MinuteDetailPage } from "@/components/meetings/meeting-detail"
+import MinuteDetailPage from "@/components/meetings/minute-detail/meeting-detail"
+
 
 export default function MinuteDetail() {
   return (
