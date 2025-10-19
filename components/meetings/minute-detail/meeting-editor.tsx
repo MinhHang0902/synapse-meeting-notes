@@ -10,20 +10,16 @@ import {
   ListTodo,
   StickyNote,
   Gavel,
-  Type as TitleIcon,
+  Type,
   CalendarClock,
   Users2,
   CheckSquare,
-  UserCircle2,
-  CalendarDays,
   Mail,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActionItem, Attendee } from "@/types/interfaces/meeting";
 import SendMinuteModal from "./send-minute-modal";
-
-
-
 
 /* =========================
    Meeting Editor (main)
@@ -66,7 +62,8 @@ export default function MeetingEditor({
   className,
 }: Props) {
   const [attendeeInput, setAttendeeInput] = React.useState("");
-  const [sendOpen, setSendOpen] = React.useState(false); // <-- state mở modal
+  const [sendOpen, setSendOpen] = React.useState(false);
+  const dateInputRef = React.useRef<HTMLInputElement>(null);
 
   // Editable contents
   const [agenda, setAgenda] = React.useState(
@@ -100,27 +97,32 @@ export default function MeetingEditor({
     setAttendeeInput("");
   };
 
+  const handleCalendarClick = () => {
+    if (dateInputRef.current) {
+      dateInputRef.current.showPicker();
+    }
+  };
+
   return (
     <div className={["space-y-6", className || ""].join(" ")}>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-3 pb-4 border-b border-gray-200">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Template:</span>
-          <select className="px-3 py-2 border border-gray-300 rounded text-sm bg-white">
+      <div className="flex items-center gap-3 pb-4 border-b border-gray-200 -mx-6 px-6">
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <span className="text-sm text-gray-600 whitespace-nowrap">Template:</span>
+          <select className="px-3 py-2 pr-8 border border-gray-300 rounded text-sm bg-white w-[140px] truncate appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg%20width%3d%2712%27%20height%3d%278%27%20viewBox%3d%270%200%2012%208%27%20fill%3d%27none%27%20xmlns%3d%27http%3a%2f%2fwww.w3.org%2f2000%2fsvg%27%3e%3cpath%20d%3d%27M1%201.5L6%206.5L11%201.5%27%20stroke%3d%27%23666%27%20stroke-width%3d%271.5%27%20stroke-linecap%3d%27round%27%20stroke-linejoin%3d%27round%27%2f%3e%3c%2fsvg%3e')] bg-[length:12px] bg-[right_0.75rem_center] bg-no-repeat">
             <option>Default Meeting Template</option>
           </select>
         </div>
-        <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200">
+        <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200 flex-shrink-0">
           <FileText className="w-4 h-4" />
           Export PDF
         </Button>
-        <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200">
+        <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200 flex-shrink-0">
           <NotebookPen className="w-4 h-4" />
           Export Word
         </Button>
-        {/* mở modal gửi email */}
         <Button
-          className="gap-2 bg-black text-white hover:bg-black/90"
+          className="gap-2 bg-black text-white hover:bg-black/90 flex-shrink-0"
           onClick={() => setSendOpen(true)}
         >
           <Mail className="w-4 h-4" />
@@ -131,7 +133,7 @@ export default function MeetingEditor({
       {/* Meeting Title */}
       <div className="space-y-1.5">
         <label className="font-semibold text-gray-900 text-sm inline-flex items-center gap-2">
-          <TitleIcon className="w-4 h-4" />
+          <Type className="w-4 h-4" />
           Meeting Title
         </label>
         <input
@@ -142,18 +144,28 @@ export default function MeetingEditor({
         />
       </div>
 
-      {/* Date & Time */}
+      {/* Date & Time with Calendar Icon */}
       <div className="space-y-1.5">
         <label className="font-semibold text-gray-900 text-sm inline-flex items-center gap-2">
           <CalendarClock className="w-4 h-4" />
           Date & Time
         </label>
-        <input
-          type="text"
-          value={meetingDate}
-          onChange={(e) => onChangeDate(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-        />
+        <div className="relative">
+          <input
+            ref={dateInputRef}
+            type="datetime-local"
+            value={meetingDate}
+            onChange={(e) => onChangeDate(e.target.value)}
+            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+          />
+          <button
+            type="button"
+            onClick={handleCalendarClick}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 pointer-events-none"
+          >
+            <Calendar className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Attendees */}
@@ -190,8 +202,11 @@ export default function MeetingEditor({
         />
       </div>
 
+      {/* Divider full width */}
+      <div className="-mx-6 border-t border-gray-200"></div>
+
       {/* Agenda */}
-      <div className="pt-4 border-t border-gray-200">
+      <div>
         <div className="flex items-center gap-2 mb-2">
           <ListTodo className="w-4 h-4" />
           <h3 className="text-sm font-semibold text-gray-900">Agenda</h3>
@@ -203,8 +218,11 @@ export default function MeetingEditor({
         />
       </div>
 
+      {/* Divider full width */}
+      <div className="-mx-6 border-t border-gray-200"></div>
+
       {/* Meeting Summary */}
-      <div className="pt-4 border-t border-gray-200">
+      <div>
         <div className="flex items-center gap-2 mb-2">
           <StickyNote className="w-4 h-4" />
           <h3 className="text-sm font-semibold text-gray-900">Meeting Summary</h3>
@@ -216,8 +234,11 @@ export default function MeetingEditor({
         />
       </div>
 
+      {/* Divider full width */}
+      <div className="-mx-6 border-t border-gray-200"></div>
+
       {/* Key Decisions */}
-      <div className="pt-4 border-t border-gray-200">
+      <div>
         <div className="flex items-center gap-2 mb-2">
           <Gavel className="w-4 h-4" />
           <h3 className="text-sm font-semibold text-gray-900">Key Decisions</h3>
@@ -229,77 +250,24 @@ export default function MeetingEditor({
         />
       </div>
 
+      {/* Divider full width */}
+      <div className="-mx-6 border-t border-gray-200"></div>
+
       {/* Action Items */}
-      <div className="pt-4 border-t border-gray-200 space-y-3">
+      <div className="space-y-3">
         <div className="flex items-center gap-2">
           <CheckSquare className="w-4 h-4" />
           <label className="font-semibold text-gray-900 text-sm">Action Items</label>
         </div>
 
-        {/* Header row */}
-        <div className="hidden md:grid grid-cols-12 text-xs text-gray-500 px-2">
-          <div className="col-span-7 inline-flex items-center gap-2">
-            <CheckSquare className="w-3 h-3" /> Description
-          </div>
-          <div className="col-span-3 inline-flex items-center gap-2">
-            <UserCircle2 className="w-3 h-3" /> Assignee
-          </div>
-          <div className="col-span-2 inline-flex items-center gap-2">
-            <CalendarDays className="w-3 h-3" /> Due Date
-          </div>
-        </div>
-
         <div className="space-y-2">
-          {actionItems.map((item, idx) => (
-            <div
+          {actionItems.map((item) => (
+            <ActionItemRow
               key={item.id}
-              className={[
-                "grid grid-cols-12 gap-2 items-center p-3 border border-gray-200 rounded",
-                idx % 2 === 0 ? "bg-gray-50" : "bg-white",
-              ].join(" ")}
-            >
-              <div className="col-span-12 md:col-span-7">
-                <input
-                  type="text"
-                  value={item.description}
-                  onChange={(e) =>
-                    onUpdateActionItem(item.id, "description", e.target.value)
-                  }
-                  className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
-              <div className="col-span-6 md:col-span-3">
-                <input
-                  type="text"
-                  value={item.assignee}
-                  onChange={(e) =>
-                    onUpdateActionItem(item.id, "assignee", e.target.value)
-                  }
-                  placeholder="Assignee"
-                  className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
-              <div className="col-span-5 md:col-span-2">
-                <input
-                  type="text"
-                  value={item.dueDate}
-                  onChange={(e) =>
-                    onUpdateActionItem(item.id, "dueDate", e.target.value)
-                  }
-                  placeholder="dd/mm/yyyy"
-                  className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                />
-              </div>
-              <div className="col-span-1 flex justify-end">
-                <button
-                  onClick={() => onRemoveActionItem(item.id)}
-                  className="text-red-500 hover:text-red-700"
-                  aria-label="Remove action item"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+              item={item}
+              onUpdateActionItem={onUpdateActionItem}
+              onRemoveActionItem={onRemoveActionItem}
+            />
           ))}
         </div>
 
@@ -321,6 +289,88 @@ export default function MeetingEditor({
         onClose={() => setSendOpen(false)}
         meetingTitle={meetingTitle}
       />
+    </div>
+  );
+}
+
+/* Action Item Row Component */
+function ActionItemRow({
+  item,
+  onUpdateActionItem,
+  onRemoveActionItem,
+}: {
+  item: ActionItem;
+  onUpdateActionItem: (id: string, field: keyof ActionItem, value: string) => void;
+  onRemoveActionItem: (id: string) => void;
+}) {
+  const dueDateInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleDueDateCalendarClick = () => {
+    if (dueDateInputRef.current) {
+      dueDateInputRef.current.showPicker();
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-12 gap-3 items-center p-3 border border-gray-200 rounded bg-white">
+      {/* Description */}
+      <div className="col-span-12 md:col-span-6">
+        <input
+          type="text"
+          value={item.description}
+          onChange={(e) =>
+            onUpdateActionItem(item.id, "description", e.target.value)
+          }
+          placeholder="Enter action item description..."
+          className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+        />
+      </div>
+
+      {/* Assignee */}
+      <div className="col-span-6 md:col-span-3">
+        <input
+          type="text"
+          value={item.assignee}
+          onChange={(e) =>
+            onUpdateActionItem(item.id, "assignee", e.target.value)
+          }
+          placeholder="Assignee"
+          className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+        />
+      </div>
+
+      {/* Due Date with Calendar Icon */}
+      <div className="col-span-5 md:col-span-2">
+        <div className="relative">
+          <input
+            ref={dueDateInputRef}
+            type="date"
+            value={item.dueDate}
+            onChange={(e) =>
+              onUpdateActionItem(item.id, "dueDate", e.target.value)
+            }
+            className="w-full text-sm px-2 py-1 pr-7 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-7 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+          />
+          <button
+            type="button"
+            onClick={handleDueDateCalendarClick}
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 pointer-events-none"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Delete Button */}
+      <div className="col-span-1 flex items-center justify-center">
+        <button
+          onClick={() => onRemoveActionItem(item.id)}
+          className="text-red-500 hover:text-red-700"
+          aria-label="Remove action item"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 }
