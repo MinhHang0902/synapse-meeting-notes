@@ -21,7 +21,7 @@ export default function SignInPage() {
   const handleSignIn = () => {
     if (email === "example@gmail.com" && password === "123456") {
       alert("Login success");
-    } else setError("Check Your Email And Password, Then Try Again.");
+    } else setError("Check your email address and password, then try again.");
   };
 
   const handleForgotSubmit = () => {
