@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -10,27 +10,47 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { MoreHorizontal, X, UserCog } from "lucide-react";
+import EditMemberModal from "./edit-member-modal";
 
-type Member = {
+export type Member = {
   id: number;
   name: string;
   email: string;
   role: string;
-  avatar: string;      // initials
+  avatar: string; // initials
   avatarColor: string; // tailwind color class
 };
+
 
 export default function ProjectMembers({
   teamMembers,
 }: {
   teamMembers: Member[];
 }) {
-  // local state để invite nhanh
   const [members, setMembers] = useState<Member[]>(teamMembers);
   const [email, setEmail] = useState("");
-  // Cách 1: để undefined để SelectValue hiển thị placeholder "Role"
   const [role, setRole] = useState<string | undefined>(undefined);
+
+  // Edit modal state
+  const [editing, setEditing] = useState<Member | null>(null);
+  const [openEdit, setOpenEdit] = useState(false);
 
   const nextId = useMemo(
     () => (members.length ? Math.max(...members.map((m) => m.id)) + 1 : 1),
@@ -58,14 +78,29 @@ export default function ProjectMembers({
       id: nextId,
       name: nameFromEmail,
       email,
-      role: role ?? "Member", // nếu chưa chọn, mặc định Member
+      role: role ?? "Viewer",
       avatar: initials || "NM",
       avatarColor,
     };
 
     setMembers((prev) => [newMem, ...prev]);
     setEmail("");
-    setRole(undefined); // reset về placeholder "Role"
+    setRole(undefined);
+  };
+
+  const deleteMember = (id: number) => {
+    setMembers((prev) => prev.filter((m) => m.id !== id));
+  };
+
+  const openEditFor = (m: Member) => {
+    setEditing(m);
+    setOpenEdit(true);
+  };
+
+  const handleSaveEdit = (payload: { id: number; role: "Manager" | "Reviewer" | "Viewer" }) => {
+    setMembers((prev) =>
+      prev.map((m) => (m.id === payload.id ? { ...m, role: payload.role } : m))
+    );
   };
 
   return (
@@ -88,17 +123,17 @@ export default function ProjectMembers({
 
           <Select value={role} onValueChange={(v) => setRole(v)}>
             <SelectTrigger className="h-9 w-[160px]">
-              {/* placeholder hiển thị "Role" khi role === undefined */}
               <SelectValue placeholder="Role" />
             </SelectTrigger>
             <SelectContent align="end">
-              <SelectItem value="Member">Member</SelectItem>
-              <SelectItem value="Admin">Admin</SelectItem>
+              <SelectItem value="Viewer">Viewer</SelectItem>
+              <SelectItem value="Reviewer">Reviewer</SelectItem>
+              <SelectItem value="Manager">Manager</SelectItem>
             </SelectContent>
           </Select>
 
           <Button
-            className="h-9 bg-black hover:bg.black/90 text-white px-4"
+            className="h-9 bg-black hover:bg-black/90 text-white px-4"
             onClick={invite}
           >
             Invite People
@@ -116,10 +151,7 @@ export default function ProjectMembers({
 
       <div className="divide-y divide-gray-100">
         {members.map((m) => (
-          <div
-            key={m.id}
-            className="py-3 flex items-center gap-3 justify-between"
-          >
+          <div key={m.id} className="py-3 flex items-center gap-3 justify-between">
             {/* Left: avatar + name + email */}
             <div className="flex items-center gap-3 min-w-0">
               <div
@@ -140,16 +172,42 @@ export default function ProjectMembers({
               <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-700 px-2.5 py-1 text-xs font-medium">
                 {m.role}
               </span>
-              <button
-                className="p-1.5 rounded-md hover:bg-gray-100 text-gray-600"
-                aria-label={`More actions for ${m.name}`}
-              >
-                <MoreHorizontal className="w-4 h-4" />
-              </button>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    className="p-1.5 rounded-md hover:bg-gray-100 text-gray-600"
+                    aria-label={`More actions for ${m.name}`}
+                  >
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" sideOffset={6} className="w-44">
+                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => openEditFor(m)}>
+                    Edit Member
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-red-600 focus:text-red-700"
+                    onClick={() => deleteMember(m.id)}
+                  >
+                    Delete Member
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Edit Member Modal */}
+      <EditMemberModal
+        open={openEdit}
+        onOpenChange={setOpenEdit}
+        member={editing}
+        onSave={handleSaveEdit}
+      />
     </div>
   );
 }
