@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import React, { useMemo, useState } from "react"
 import {
   Search,
   Filter,
@@ -28,9 +28,18 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select"
-import AddUserModal from "./user-add"
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu"
+import AddUserModal from "./add-user-modal"
+import EditUserModal from "./edit-user-modal"
 
-interface UserRow {
+export interface UserRow {
   id: string
   name: string
   email: string
@@ -52,12 +61,16 @@ const USERS: UserRow[] = [
 ]
 
 /* =========================
-   UsersSettings (with popup)
+   UsersSettings (with add & edit)
    ========================= */
 export function UsersSettings() {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
   const [openAdd, setOpenAdd] = useState(false)
+
+  // Edit
+  const [openEdit, setOpenEdit] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<UserRow | null>(null)
 
   const filteredUsers = USERS.filter(
     (u) =>
@@ -77,9 +90,7 @@ export function UsersSettings() {
     <div className="space-y-6">
       {/* Title + Search/Filters row */}
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h2 className="text-xl font-semibold text-gray-900">
-          Synapse User List
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-900">Synapse User List</h2>
 
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-72">
@@ -95,17 +106,11 @@ export function UsersSettings() {
             />
           </div>
 
-          <Button
-            variant="outline"
-            className="border-gray-300 bg-transparent hover:bg-black hover:text-white"
-          >
+          <Button variant="outline" className="border-gray-300 bg-transparent hover:bg-black hover:text-white">
             <Filter className="w-4 h-4 mr-2" />
             Role
           </Button>
-          <Button
-            variant="outline"
-            className="border-gray-300 bg-transparent hover:bg-black hover:text-white"
-          >
+          <Button variant="outline" className="border-gray-300 bg-transparent hover:bg-black hover:text-white">
             <Filter className="w-4 h-4 mr-2" />
             Status
           </Button>
@@ -113,10 +118,7 @@ export function UsersSettings() {
 
           {/* Top actions */}
           <div className="flex items-center justify-end">
-            <Button
-              className="bg-black hover:bg-black/80 text-white"
-              onClick={() => setOpenAdd(true)}
-            >
+            <Button className="bg-black hover:bg-black/80 text-white" onClick={() => setOpenAdd(true)}>
               <UserPlus className="w-4 h-4 mr-2 text-white" />
               Add New User
             </Button>
@@ -152,7 +154,7 @@ export function UsersSettings() {
                   </div>
                 </td>
 
-                {/* Role badge */}
+                {/* Role */}
                 <td className="px-4 py-3">
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset
@@ -164,7 +166,7 @@ export function UsersSettings() {
                   </span>
                 </td>
 
-                {/* Status badge */}
+                {/* Status */}
                 <td className="px-4 py-3">
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset
@@ -179,9 +181,29 @@ export function UsersSettings() {
                 <td className="px-4 py-3 text-sm text-gray-600">{user.lastLogin}</td>
                 <td className="px-4 py-3 text-sm text-gray-600">{user.created}</td>
                 <td className="px-4 py-3">
-                  <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                    <MoreVertical className="w-4 h-4" />
-                  </button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button className="text-gray-400 hover:text-gray-600 transition-colors rounded p-2">
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" sideOffset={6} className="w-40">
+                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedUser(user)
+                          setOpenEdit(true)
+                        }}
+                      >
+                        Edit user
+                      </DropdownMenuItem>
+                      <DropdownMenuItem disabled>Deactivate</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-red-600" disabled>
+                        Remove user
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </td>
               </tr>
             ))}
@@ -223,6 +245,17 @@ export function UsersSettings() {
         onSubmit={(payload) => {
           // TODO: call API create user tại đây
           console.log("Create user payload:", payload)
+        }}
+      />
+
+      {/* Edit User Popup */}
+      <EditUserModal
+        open={openEdit}
+        onOpenChange={setOpenEdit}
+        user={selectedUser}
+        onSubmit={(payload) => {
+          // TODO: call API update user tại đây
+          console.log("Update user payload:", payload)
         }}
       />
     </div>

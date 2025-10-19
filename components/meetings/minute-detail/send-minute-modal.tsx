@@ -1,6 +1,4 @@
-/* =========================
-   Modal: SendMinuteModal
-   ========================= */
+"use client"
 
 import { Button } from "@/components/ui/button";
 import { FileText, Mail, X } from "lucide-react";
