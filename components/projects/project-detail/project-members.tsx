@@ -106,18 +106,30 @@ export default function ProjectMembers({
         <h3 className="text-base font-semibold text-gray-900">Invite members</h3>
         <p className="text-sm text-gray-500 mt-1">
           Easily add new members to your team by entering their email addresses below. Once invited,
-          they’ll receive an email with a link to join.
+          they'll receive an email with a link to join.
         </p>
 
         <div className="mt-4 flex flex-col sm:flex-row gap-3">
           {/* Email Input */}
           <div className="sm:flex-1">
-            <Input
+            <input
+              type="text"
               placeholder="Email Address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               onBlur={() => setEmailTouched(true)}
-              className={`sm:flex-1 ${!emailValid && emailTouched ? "border-red-500" : ""}`}
+              className={`
+                w-full h-9 px-3 text-sm
+                bg-white text-gray-900 placeholder:text-gray-400
+                rounded-lg
+                focus:outline-none
+                transition-colors
+                ${
+                  !emailValid && emailTouched 
+                    ? "border border-red-500 focus:border-red-500" 
+                    : "border border-gray-200 focus:border-gray-400"
+                }
+              `}
             />
             {!email && emailTouched && (
               <p className="text-xs text-red-500 mt-1">Email is required</p>
