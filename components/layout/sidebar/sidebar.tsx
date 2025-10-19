@@ -7,7 +7,7 @@ import { useLocale, useTranslations } from "next-intl";
 import {
   Eye, FolderKanban, FileText, Settings, Heart,
   MoreHorizontal, ChevronLeft, ChevronRight,
-  UserRound, KeyRound, LogOut, X, PencilLine
+  UserRound, KeyRound, LogOut, X, PencilLine, EyeOff
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
@@ -22,6 +22,13 @@ import {
   DialogTitle, DialogDescription
 } from "@/components/ui/dialog";
 import MyAccountModal from "./sidebar-account-modal";
+import ChangePasswordModal from "./sidebar-changepassword-modal";
+
+
+
+/* =========================
+   Sidebar
+   ========================= */
 
 type NavItem = {
   key: "dashboard" | "projects" | "meetings" | "settings" | "guidance";
@@ -31,14 +38,14 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { key: "dashboard", href: "/pages/dashboard", icon: Eye,          match: "startsWith" },
-  { key: "projects",  href: "/pages/projects",  icon: FolderKanban, match: "startsWith" },
-  { key: "meetings",  href: "/pages/meetings",  icon: FileText,     match: "startsWith" },
+  { key: "dashboard", href: "/pages/dashboard", icon: Eye, match: "startsWith" },
+  { key: "projects", href: "/pages/projects", icon: FolderKanban, match: "startsWith" },
+  { key: "meetings", href: "/pages/meetings", icon: FileText, match: "startsWith" },
 ];
 
 const NAV_FOOTER: NavItem[] = [
   { key: "settings", href: "/pages/settings", icon: Settings, match: "startsWith" },
-  { key: "guidance", href: "/pages/guidance", icon: Heart,    match: "startsWith" },
+  { key: "guidance", href: "/pages/guidance", icon: Heart, match: "startsWith" },
 ];
 
 export function Sidebar({
@@ -57,18 +64,18 @@ export function Sidebar({
     p?.startsWith(`/${locale}`) ? p.slice(locale.length + 1) || "/" : p;
   const lhref = (path: string) => `/${locale}${path.startsWith("/") ? path : `/${path}`}`;
 
-  // demo user
   const [user, setUser] = React.useState({
     name: "Michael Robinson",
     email: "michael.robin@gmail.com",
     avatarUrl: "/placeholder.svg",
   });
 
-  // modal state
   const [openAccount, setOpenAccount] = React.useState(false);
+  const [openChangePwd, setOpenChangePwd] = React.useState(false);
 
   return (
     <div className={cn("h-full flex flex-col bg-white transition-all duration-300", collapsed ? "w-[72px]" : "w-[280px]")}>
+      {/* Brand */}
       <div className={cn("mx-3 mt-3 mb-4", !collapsed && "p-3 bg-white border border-gray-200 rounded-2xl")}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -156,7 +163,7 @@ export function Sidebar({
               <DropdownMenuItem onClick={() => setOpenAccount(true)}>
                 <UserRound className="w-4 h-4 mr-2" /> My Account
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => alert("Change Password")}>
+              <DropdownMenuItem onClick={() => setOpenChangePwd(true)}>
                 <KeyRound className="w-4 h-4 mr-2" /> Change Password
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -179,6 +186,16 @@ export function Sidebar({
         onSave={(newName) => {
           // TODO: call API update profile
           setUser((u) => ({ ...u, name: newName }));
+        }}
+      />
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        open={openChangePwd}
+        onOpenChange={setOpenChangePwd}
+        onSubmit={(data) => {
+          // TODO: integrate API change password here
+          console.log("Change password:", data);
         }}
       />
     </div>
