@@ -1,18 +1,31 @@
 "use client";
 
-import type React from "react";
+import React from "react";
 import Link from "next/link";
 import { usePathname, useParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
-  Eye, FolderKanban, FileText, Settings, Heart, MoreHorizontal, ChevronLeft, ChevronRight,
+  Eye, FolderKanban, FileText, Settings, Heart,
+  MoreHorizontal, ChevronLeft, ChevronRight,
+  UserRound, KeyRound, LogOut, X, PencilLine
 } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
+  DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogHeader,
+  DialogTitle, DialogDescription
+} from "@/components/ui/dialog";
+import MyAccountModal from "./sidebar-account-modal";
 
 type NavItem = {
   key: "dashboard" | "projects" | "meetings" | "settings" | "guidance";
-  href: string; // không prefix locale ở đây
+  href: string;
   icon: React.ElementType;
   match?: "exact" | "startsWith";
 };
@@ -25,7 +38,7 @@ const NAV_ITEMS: NavItem[] = [
 
 const NAV_FOOTER: NavItem[] = [
   { key: "settings", href: "/pages/settings", icon: Settings, match: "startsWith" },
-  { key: "guidance",    href: "/pages/guidance",    icon: Heart,    match: "startsWith" },
+  { key: "guidance", href: "/pages/guidance", icon: Heart,    match: "startsWith" },
 ];
 
 export function Sidebar({
@@ -36,19 +49,26 @@ export function Sidebar({
   toggleCollapsed?: () => void;
 }) {
   const pathname = usePathname();
-  // Lấy locale hiện tại (ưu tiên next-intl; fallback từ params)
   const intlLocale = safeUseLocale();
   const locale = intlLocale ?? (useParams() as any)?.locale ?? "en";
   const t = safeUseTranslations("nav");
 
   const trimLocale = (p: string) =>
     p?.startsWith(`/${locale}`) ? p.slice(locale.length + 1) || "/" : p;
-
   const lhref = (path: string) => `/${locale}${path.startsWith("/") ? path : `/${path}`}`;
+
+  // demo user
+  const [user, setUser] = React.useState({
+    name: "Michael Robinson",
+    email: "michael.robin@gmail.com",
+    avatarUrl: "/placeholder.svg",
+  });
+
+  // modal state
+  const [openAccount, setOpenAccount] = React.useState(false);
 
   return (
     <div className={cn("h-full flex flex-col bg-white transition-all duration-300", collapsed ? "w-[72px]" : "w-[280px]")}>
-      {/* Brand */}
       <div className={cn("mx-3 mt-3 mb-4", !collapsed && "p-3 bg-white border border-gray-200 rounded-2xl")}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -106,28 +126,61 @@ export function Sidebar({
         ))}
       </nav>
 
-      {/* User card */}
+      {/* User card + Dropdown */}
       <div className={cn("border-t border-gray-200", collapsed && "border-0")}>
         <div className={cn("p-3 flex items-center gap-3", collapsed ? "justify-center" : "justify-between")}>
           <div className={cn("flex items-center gap-3", collapsed && "hidden")}>
             <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200">
-              <Image alt="avatar" src="/placeholder.svg" fill sizes="40px" />
+              <Image alt="avatar" src={user.avatarUrl} fill sizes="40px" />
             </div>
             <div className="leading-tight">
-              <div className="font-medium text-sm">Michael Robinson</div>
-              <div className="text-xs text-gray-500">michael.robin@gmail.com</div>
+              <div className="font-medium text-sm">{user.name}</div>
+              <div className="text-xs text-gray-500">{user.email}</div>
             </div>
           </div>
+
           {collapsed && (
             <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gray-200">
-              <Image alt="avatar" src="/placeholder.svg" fill sizes="36px" />
+              <Image alt="avatar" src={user.avatarUrl} fill sizes="36px" />
             </div>
           )}
-          <button className={cn("p-2 rounded-lg hover:bg-gray-100 text-gray-600", collapsed && "hidden")} aria-label="More" title="More">
-            <MoreHorizontal className="w-4 h-4" />
-          </button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className={cn("p-2 rounded-lg hover:bg-gray-100 text-gray-600", collapsed && "hidden")} aria-label="More" title="More">
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={6} className="w-52">
+              <DropdownMenuLabel>Account</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => setOpenAccount(true)}>
+                <UserRound className="w-4 h-4 mr-2" /> My Account
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => alert("Change Password")}>
+                <KeyRound className="w-4 h-4 mr-2" /> Change Password
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="text-red-600 focus:text-red-700"
+                onClick={() => alert("Sign Out")}
+              >
+                <LogOut className="w-4 h-4 mr-2" /> Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
+
+      {/* My Account Modal */}
+      <MyAccountModal
+        open={openAccount}
+        onOpenChange={setOpenAccount}
+        user={user}
+        onSave={(newName) => {
+          // TODO: call API update profile
+          setUser((u) => ({ ...u, name: newName }));
+        }}
+      />
     </div>
   );
 }
@@ -178,6 +231,6 @@ function safeUseTranslations(ns?: string) {
   try {
     return useTranslations(ns);
   } catch {
-    return (k: string) => k; // fallback: trả key
+    return (k: string) => k;
   }
 }

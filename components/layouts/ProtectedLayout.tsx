@@ -1,7 +1,7 @@
 "use client";
 
 import React, { ReactNode, useCallback, useMemo, useState } from "react";
-import { Sidebar } from "../layout/sidebar";
+import { Sidebar } from "../layout/sidebar/sidebar";
 import { TopBar } from "../layout/topbar";
 
 interface ProtectedLayoutProps { children: ReactNode; }
