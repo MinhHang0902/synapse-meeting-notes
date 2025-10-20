@@ -32,34 +32,70 @@ interface MeetingMinute {
 
 const mockMinutes: MeetingMinute[] = [
   {
-    id: "1", fileName: "Q3_Financial_Report.pdf", fileSize: "2.4 MB", fileType: "pdf",
-    project: "Digital Transformation Initiative", dateUploaded: "Sept 21, 2025",
-    dateUploadedRelative: "2 hours ago", lastUpdated: "Sept 21, 2025", lastUpdatedRelative: "1 hour ago"
+    id: "1",
+    fileName: "Q3_Financial_Report.pdf",
+    fileSize: "2.4 MB",
+    fileType: "pdf",
+    project: "Digital Transformation Initiative",
+    dateUploaded: "Sept 21, 2025",
+    dateUploadedRelative: "2 hours ago",
+    lastUpdated: "Sept 21, 2025",
+    lastUpdatedRelative: "1 hour ago",
   },
   {
-    id: "2", fileName: "Budget_Analysis_2025.xlsx", fileSize: "1.8 MB", fileType: "excel",
-    project: "Budget Analysis 2025", dateUploaded: "Sept 20, 2025",
-    dateUploadedRelative: "1 day ago", lastUpdated: "-", lastUpdatedRelative: "-"
+    id: "2",
+    fileName: "Budget_Analysis_2025.xlsx",
+    fileSize: "1.8 MB",
+    fileType: "excel",
+    project: "Budget Analysis 2025",
+    dateUploaded: "Sept 20, 2025",
+    dateUploadedRelative: "1 day ago",
+    lastUpdated: "-",
+    lastUpdatedRelative: "-",
   },
   {
-    id: "3", fileName: "Project_Requirements.docx", fileSize: "856 KB", fileType: "word",
-    project: "Digital Transformation Initiative", dateUploaded: "Sept 19, 2025",
-    dateUploadedRelative: "2 days ago", lastUpdated: "-", lastUpdatedRelative: "-"
+    id: "3",
+    fileName: "Project_Requirements.docx",
+    fileSize: "856 KB",
+    fileType: "word",
+    project: "Digital Transformation Initiative",
+    dateUploaded: "Sept 19, 2025",
+    dateUploadedRelative: "2 days ago",
+    lastUpdated: "-",
+    lastUpdatedRelative: "-",
   },
   {
-    id: "4", fileName: "Stakeholder_Presentation.pptx", fileSize: "5.2 MB", fileType: "powerpoint",
-    project: "System Upgrade Project", dateUploaded: "Sept 18, 2025",
-    dateUploadedRelative: "3 days ago", lastUpdated: "Sept 19, 2025", lastUpdatedRelative: "2 days ago"
+    id: "4",
+    fileName: "Stakeholder_Presentation.pptx",
+    fileSize: "5.2 MB",
+    fileType: "powerpoint",
+    project: "System Upgrade Project",
+    dateUploaded: "Sept 18, 2025",
+    dateUploadedRelative: "3 days ago",
+    lastUpdated: "Sept 19, 2025",
+    lastUpdatedRelative: "2 days ago",
   },
   {
-    id: "5", fileName: "Security_Assessment.pdf", fileSize: "3.7 MB", fileType: "pdf",
-    project: "Security Audit Review", dateUploaded: "Sept 17, 2025",
-    dateUploadedRelative: "4 days ago", lastUpdated: "-", lastUpdatedRelative: "-"
+    id: "5",
+    fileName: "Security_Assessment.pdf",
+    fileSize: "3.7 MB",
+    fileType: "pdf",
+    project: "Security Audit Review",
+    dateUploaded: "Sept 17, 2025",
+    dateUploadedRelative: "4 days ago",
+    lastUpdated: "-",
+    lastUpdatedRelative: "-",
   },
   {
-    id: "6", fileName: "Architecture_Diagram.png", fileSize: "3.1 MB", fileType: "image",
-    project: "Digital Transformation Initiative", dateUploaded: "Sept 16, 2025",
-    dateUploadedRelative: "5 days ago", lastUpdated: "Sept 17, 2025", lastUpdatedRelative: "4 days ago"
+    id: "6",
+    fileName: "Architecture_Diagram.png",
+    fileSize: "3.1 MB",
+    fileType: "image",
+    project: "Digital Transformation Initiative",
+    dateUploaded: "Sept 16, 2025",
+    dateUploadedRelative: "5 days ago",
+    lastUpdated: "Sept 17, 2025",
+    lastUpdatedRelative: "4 days ago",
   },
 ];
 
@@ -73,7 +109,7 @@ function fileAvatarBg(type: string) {
 export function MeetingMinutesList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedProject, setSelectedProject] = useState<string | undefined>(undefined);
+  const [selectedProject, setSelectedProject] = useState("All Projects");
 
   const itemsPerPage = 6;
 
@@ -108,7 +144,7 @@ export function MeetingMinutesList() {
 
   return (
     <div className="space-y-6">
-      {/* Search & Filter 8/3/1 – đồng bộ khoảng cách + chiều cao */}
+      {/* Search & Filter */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch">
         {/* Search */}
         <div className="relative md:col-span-8">
@@ -125,7 +161,7 @@ export function MeetingMinutesList() {
           />
         </div>
 
-        {/* Project filter – Select, popup = bằng trigger */}
+        {/* Project filter */}
         <div className="md:col-span-3">
           <Select
             value={selectedProject}
@@ -135,7 +171,7 @@ export function MeetingMinutesList() {
             }}
           >
             <SelectTrigger className="h-9 w-full">
-              <SelectValue placeholder="Project" />
+              <SelectValue>{selectedProject}</SelectValue>
             </SelectTrigger>
             <SelectContent
               align="end"
@@ -158,7 +194,7 @@ export function MeetingMinutesList() {
         </div>
       </div>
 
-      {/* Table – đã bỏ badge + actions, giữ style đồng bộ project pages */}
+      {/* Table */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         <table className="w-full">
           <thead className="bg-gray-50/50 border-b border-gray-200">
@@ -181,7 +217,6 @@ export function MeetingMinutesList() {
           <tbody className="divide-y divide-gray-100">
             {displayedMinutes.map((m) => (
               <tr key={m.id} className="hover:bg-gray-50/50 transition-colors">
-                {/* File (avatar màu theo loại) */}
                 <td className="px-4 md:px-5 py-3">
                   <div className="flex items-center gap-3">
                     <div
@@ -201,14 +236,12 @@ export function MeetingMinutesList() {
                   </div>
                 </td>
 
-                {/* Project */}
                 <td className="px-4 md:px-5 py-3">
                   <span className="text-sm font-medium text-gray-900 hover:underline">
                     {m.project}
                   </span>
                 </td>
 
-                {/* Uploaded */}
                 <td className="px-4 md:px-5 py-3">
                   <div className="text-sm">
                     <p className="text-gray-900">{m.dateUploaded}</p>
@@ -216,7 +249,6 @@ export function MeetingMinutesList() {
                   </div>
                 </td>
 
-                {/* Last Updated */}
                 <td className="px-4 md:px-5 py-3">
                   <div className="text-sm">
                     <p className="text-gray-900">{m.lastUpdated}</p>
@@ -228,7 +260,10 @@ export function MeetingMinutesList() {
 
             {displayedMinutes.length === 0 && (
               <tr>
-                <td colSpan={4} className="px-6 py-12 text-center text-sm text-gray-500">
+                <td
+                  colSpan={4}
+                  className="px-6 py-12 text-center text-sm text-gray-500"
+                >
                   No files match your filters.
                 </td>
               </tr>
@@ -260,8 +295,11 @@ export function MeetingMinutesList() {
           <button
             key={page}
             onClick={() => setCurrentPage(page)}
-            className={`w-8 h-8 rounded text-sm font-medium flex items-center justify-center transition-colors ${safePage === page ? "bg-black text-white" : "text-gray-900 hover:bg-gray-200/70"
-              }`}
+            className={`w-8 h-8 rounded text-sm font-medium flex items-center justify-center transition-colors ${
+              safePage === page
+                ? "bg-black text-white"
+                : "text-gray-900 hover:bg-gray-200/70"
+            }`}
           >
             {page}
           </button>
