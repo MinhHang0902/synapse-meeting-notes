@@ -1,10 +1,8 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Eye, EyeOff } from "lucide-react";
 import React from "react";
+import { Eye, EyeOff, X, Lock } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function ChangePasswordModal({
   open,
@@ -38,135 +36,161 @@ export default function ChangePasswordModal({
     setShowCon(false);
   };
 
-  const close = () => {
-    reset();
-    onOpenChange(false);
+  const handleClose = (v: boolean) => {
+    if (!v) reset();
+    onOpenChange(v);
   };
 
   const apply = () => {
     if (!canApply) return;
     onSubmit?.({ currentPassword, newPassword });
-    close();
+    handleClose(false);
   };
 
+  if (!open) return null;
+
   return (
-    <Dialog open={open} onOpenChange={(v) => (v ? onOpenChange(v) : close())}>
-      <DialogContent className="p-0 overflow-hidden border-0 shadow-2xl max-w-md">
-        <div className="bg-gradient-to-r from-[#7b4397] to-[#9f5be8] px-5 py-4">
-          <div className="flex items-center gap-3 text-white">
-            <div className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" className="text-white">
-                <path d="M7 10V7a5 5 0 0 1 10 0v3" stroke="currentColor" strokeWidth="1.5" />
-                <rect x="5" y="10" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5" />
-              </svg>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      aria-modal
+      role="dialog"
+    >
+      {/* Overlay */}
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={() => handleClose(false)}
+      />
+
+      {/* Modal */}
+      <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
+        {/* Header */}
+        <div className="bg-black text-white p-6 flex items-start justify-between sticky top-0 z-20 rounded-t-2xl border-b border-white/10">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Lock className="w-5 h-5" />
+              <h2 className="text-xl font-semibold">Change Password</h2>
             </div>
-            <DialogHeader className="p-0">
-              <DialogTitle className="text-white text-lg">Change Password</DialogTitle>
-              <DialogDescription className="text-white/70 text-xs">
-                Update password for enhanced account security.
-              </DialogDescription>
-            </DialogHeader>
+            <p className="text-white/70 text-sm">
+              Update your password to enhance account security
+            </p>
           </div>
+          <button
+            aria-label="Close"
+            onClick={() => handleClose(false)}
+            className="text-white/90 hover:bg-white/10 rounded-full p-2 transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* Body */}
-        <div className="bg-white px-5 pt-5 pb-4">
-          <div className="space-y-4">
-            {/* Current password */}
-            <div>
-              <label className="text-sm text-gray-800">
-                Current Password <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative mt-1">
-                <Input
-                  type={showCur ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCur((s) => !s)}
-                  className="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-gray-700"
-                  aria-label={showCur ? "Hide password" : "Show password"}
-                >
-                  {showCur ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            {/* New password */}
-            <div>
-              <label className="text-sm text-gray-800">
-                New Password <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative mt-1">
-                <Input
-                  type={showNew ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNew((s) => !s)}
-                  className="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-gray-700"
-                  aria-label={showNew ? "Hide password" : "Show password"}
-                >
-                  {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-            </div>
-
-            {/* Confirm password */}
-            <div>
-              <label className="text-sm text-gray-800">
-                Confirm New Password <span className="text-rose-500">*</span>
-              </label>
-              <div className="relative mt-1">
-                <Input
-                  type={showCon ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCon((s) => !s)}
-                  className="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-gray-700"
-                  aria-label={showCon ? "Hide password" : "Show password"}
-                >
-                  {showCon ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-              </div>
-              {confirmPassword.length > 0 && confirmPassword !== newPassword && (
-                <p className="mt-1 text-xs text-rose-600">Passwords do not match.</p>
-              )}
-              {newPassword.length > 0 && currentPassword === newPassword && (
-                <p className="mt-1 text-xs text-rose-600">New password must be different from current.</p>
-              )}
+        <div className="p-6 space-y-5 bg-white">
+          {/* Current Password */}
+          <div>
+            <label className="text-sm font-medium text-gray-900 mb-1 block">
+              Current Password <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type={showCur ? "text" : "password"}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Enter current password"
+                className="w-full rounded-md px-3 py-2 text-sm border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:border-gray-400 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCur((s) => !s)}
+                className="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-gray-700"
+              >
+                {showCur ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="mt-6 flex items-center justify-end gap-3">
-            <Button
-              variant="outline"
-              onClick={close}
-              className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
-            >
-              Discard
-            </Button>
-            <Button
-              disabled={!canApply}
-              onClick={apply}
-              className="bg-[#4b2b5d] hover:opacity-95 text-white disabled:opacity-50"
-            >
-              Apply Change
-            </Button>
+          {/* New Password */}
+          <div>
+            <label className="text-sm font-medium text-gray-900 mb-1 block">
+              New Password <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type={showNew ? "text" : "password"}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="w-full rounded-md px-3 py-2 text-sm border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:border-gray-400 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowNew((s) => !s)}
+                className="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-gray-700"
+              >
+                {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
+          {/* Confirm Password */}
+          <div>
+            <label className="text-sm font-medium text-gray-900 mb-1 block">
+              Confirm New Password <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type={showCon ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter new password"
+                className="w-full rounded-md px-3 py-2 text-sm border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:border-gray-400 pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowCon((s) => !s)}
+                className="absolute inset-y-0 right-0 px-3 text-gray-500 hover:text-gray-700"
+              >
+                {showCon ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+
+            {/* Validation messages */}
+            {confirmPassword.length > 0 && confirmPassword !== newPassword && (
+              <p className="mt-1 text-xs text-red-600">
+                Passwords do not match.
+              </p>
+            )}
+            {newPassword.length > 0 && currentPassword === newPassword && (
+              <p className="mt-1 text-xs text-red-600">
+                New password must be different from current.
+              </p>
+            )}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {/* Footer */}
+        <div className="border-t border-gray-200 p-6 flex justify-end gap-3 bg-white rounded-b-2xl">
+          <Button
+            variant="outline"
+            onClick={() => handleClose(false)}
+            className="px-6 bg-transparent text-gray-700 border-gray-300 hover:bg-gray-100"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Discard
+          </Button>
+          <Button
+            disabled={!canApply}
+            onClick={apply}
+            className={`px-6 text-white ${
+              canApply
+                ? "bg-black hover:bg-black/90"
+                : "bg-gray-400 cursor-not-allowed"
+            }`}
+          >
+            <Lock className="w-4 h-4 mr-2" />
+            Apply Change
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }
