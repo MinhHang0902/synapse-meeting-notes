@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { UserPlus, X } from "lucide-react";
 import { Label } from "../ui/label";
-import { Input } from "../ui/input";
 import {
   Select,
   SelectContent,
@@ -82,11 +81,12 @@ export default function AddUserModal({
             <Label className="text-sm font-medium text-gray-900 mb-2 block">
               Full Name <span className="text-red-500">*</span>
             </Label>
-            <Input
+            <input
+              type="text"
               placeholder="Enter full name (e.g., John Doe)"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              className="bg-white"
+              className="w-full h-9 px-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
             />
           </div>
 
@@ -94,12 +94,12 @@ export default function AddUserModal({
             <Label className="text-sm font-medium text-gray-900 mb-2 block">
               Email Address <span className="text-red-500">*</span>
             </Label>
-            <Input
+            <input
               type="email"
               placeholder="user@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="bg-white"
+              className="w-full h-9 px-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
             />
             {!emailValid && email.length > 0 && (
               <p className="mt-2 text-xs text-red-600">Please enter a valid email.</p>

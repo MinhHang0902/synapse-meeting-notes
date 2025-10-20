@@ -46,7 +46,7 @@ Key highlights from the meeting:
 
       {/* modal */}
       <div className="relative bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header – match CreateProjectModal */}
+        {/* Header */}
         <div className="bg-black text-white p-6 flex items-start justify-between sticky top-0 z-20 rounded-t-2xl border-b border-white/10">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -96,9 +96,10 @@ Key highlights from the meeting:
               Subject
             </label>
             <input
+              type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full px-3 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
             />
           </div>
 
@@ -110,7 +111,7 @@ Key highlights from the meeting:
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black min-h-32 text-sm"
+              className="w-full p-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors min-h-32"
             />
             <p className="text-sm text-gray-500 mt-2">
               The current MoM content will be exported and attached automatically.
@@ -143,7 +144,7 @@ Key highlights from the meeting:
           </div>
         </div>
 
-        {/* Footer – match CreateProjectModal */}
+        {/* Footer */}
         <div className="border-t border-gray-200 p-6 flex gap-3 justify-end sticky bottom-0 bg-white rounded-b-2xl">
           <Button onClick={onClose} variant="outline" className="px-6 bg-transparent">
             <X className="w-4 h-4 mr-2" />

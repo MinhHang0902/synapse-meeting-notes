@@ -140,7 +140,7 @@ export default function MeetingEditor({
           type="text"
           value={meetingTitle}
           onChange={(e) => onChangeTitle(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+          className="w-full px-4 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
         />
       </div>
 
@@ -156,7 +156,7 @@ export default function MeetingEditor({
             type="datetime-local"
             value={meetingDate}
             onChange={(e) => onChangeDate(e.target.value)}
-            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+            className="w-full px-4 py-2 pr-10 text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
           />
           <button
             type="button"
@@ -198,7 +198,7 @@ export default function MeetingEditor({
           value={attendeeInput}
           onChange={(e) => setAttendeeInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAddAttendee()}
-          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+          className="w-full px-4 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
         />
       </div>
 
@@ -214,7 +214,7 @@ export default function MeetingEditor({
         <textarea
           value={agenda}
           onChange={(e) => setAgenda(e.target.value)}
-          className="w-full min-h-28 resize-y px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+          className="w-full min-h-28 resize-y px-3 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
         />
       </div>
 
@@ -230,7 +230,7 @@ export default function MeetingEditor({
         <textarea
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
-          className="w-full min-h-28 resize-y px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+          className="w-full min-h-28 resize-y px-3 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
         />
       </div>
 
@@ -246,7 +246,7 @@ export default function MeetingEditor({
         <textarea
           value={decisions}
           onChange={(e) => setDecisions(e.target.value)}
-          className="w-full min-h-28 resize-y px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+          className="w-full min-h-28 resize-y px-3 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
         />
       </div>
 
@@ -322,7 +322,7 @@ function ActionItemRow({
             onUpdateActionItem(item.id, "description", e.target.value)
           }
           placeholder="Enter action item description..."
-          className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+          className="w-full text-sm px-2 py-1 bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded focus:outline-none focus:border-gray-400 transition-colors"
         />
       </div>
 
@@ -335,7 +335,7 @@ function ActionItemRow({
             onUpdateActionItem(item.id, "assignee", e.target.value)
           }
           placeholder="Assignee"
-          className="w-full text-sm px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+          className="w-full text-sm px-2 py-1 bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded focus:outline-none focus:border-gray-400 transition-colors"
         />
       </div>
 
@@ -349,7 +349,7 @@ function ActionItemRow({
             onChange={(e) =>
               onUpdateActionItem(item.id, "dueDate", e.target.value)
             }
-            className="w-full text-sm px-2 py-1 pr-7 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-7 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+            className="w-full text-sm px-2 py-1 pr-7 bg-white text-gray-900 border border-gray-200 rounded focus:outline-none focus:border-gray-400 transition-colors [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-7 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
           />
           <button
             type="button"

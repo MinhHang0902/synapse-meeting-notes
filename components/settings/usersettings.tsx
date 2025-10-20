@@ -11,7 +11,6 @@ import {
   UserRoundPlus,
   X,
 } from "lucide-react"
-import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -95,14 +94,15 @@ export function UsersSettings() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <Input
+            <input
+              type="text"
               placeholder="Search name or email..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value)
                 setCurrentPage(1)
               }}
-              className="pl-10 bg-white border-gray-300 focus-visible:ring-black/10"
+              className="w-full h-9 pl-10 pr-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
             />
           </div>
 

@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import CreateProjectModal from "./project-detail/create-project-modal";
 
@@ -88,14 +87,15 @@ export function ProjectsList() {
     <div className="space-y-6">
       {/* Controls */}
       <div className="flex gap-3 mb-6">
-        <Input
+        <input
+          type="text"
           placeholder="Search projects..."
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);
             setCurrentPage(1);
           }}
-          className="flex-1 max-w-sm"
+          className="flex-1 max-w-sm h-9 px-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
         />
         <Button variant="outline">Filter by Status</Button>
         <Button className="bg-black text-white hover:bg-black/90">Search</Button>
