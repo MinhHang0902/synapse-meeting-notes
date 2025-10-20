@@ -61,7 +61,7 @@ export default function SignInPage() {
       <div
         className="
           w-full max-w-lg
-          rounded-3xl border border-white/10
+          rounded-2xl border border-white/10
           bg-white/5 backdrop-blur-xl
           shadow-[0_10px_50px_-10px_rgba(0,0,0,.6)]
           px-8 py-10
@@ -71,7 +71,7 @@ export default function SignInPage() {
         {(screen === "forgotEmail" || screen === "otp" || screen === "newPassword" || screen === "success") && (
           <button
             onClick={() => setScreen("signIn")}
-            className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-sm text-gray-300 hover:bg-white/10"
+            className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 px-3 py-1 text-sm text-gray-300 hover:bg-white/10 transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Back
@@ -97,7 +97,7 @@ export default function SignInPage() {
                   placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20"
+                  className="mt-1 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20 rounded-lg"
                 />
               </div>
 
@@ -109,12 +109,12 @@ export default function SignInPage() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20 ${error ? "border-red-400" : ""}`}
+                    className={`border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20 rounded-lg ${error ? "border-red-400" : ""}`}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((s) => !s)}
-                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-200"
+                    className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-200 transition-colors"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -125,7 +125,7 @@ export default function SignInPage() {
 
               <Button
                 onClick={handleSignIn}
-                className="w-full rounded-xl bg-white text-gray-900 hover:bg-white/90"
+                className="w-full h-10 rounded-lg bg-white text-gray-900 font-medium hover:bg-white/90 transition-colors shadow-sm"
               >
                 Sign in
               </Button>
@@ -135,27 +135,19 @@ export default function SignInPage() {
                   setError("");
                   setScreen("forgotEmail");
                 }}
-                className="w-full text-center text-sm text-gray-300 hover:underline"
+                className="w-full text-center text-sm text-gray-300 hover:text-white hover:underline transition-colors"
               >
                 Forgot Password?
               </button>
 
               <div className="flex items-center gap-4">
                 <div className="h-px flex-1 bg-white/10" />
-                {/* <span className="text-xs text-gray-400">Forgot Password?</span>
-                <div className="h-px flex-1 bg-white/10" /> */}
               </div>
 
-              {/* <Button
-                variant="outline"
-                className="w-full rounded-xl border-white/15 bg-white/5 text-gray-100 hover:bg-white/10"
-              >
-                Single sign-on (SSO)
-              </Button> */}
               <p className="text-center text-xs text-gray-500">
                 You acknowledge that you read, and agree, to our{" "}
-                <span className="underline">Terms of Service</span> and our{" "}
-                <span className="underline">Privacy Policy</span>.
+                <span className="underline cursor-pointer hover:text-gray-400 transition-colors">Terms of Service</span> and our{" "}
+                <span className="underline cursor-pointer hover:text-gray-400 transition-colors">Privacy Policy</span>.
               </p>
             </div>
           </div>
@@ -170,14 +162,17 @@ export default function SignInPage() {
             <div className="relative">
               <Mail className="absolute left-3 top-2.5 text-gray-400" size={18} />
               <Input
-                className="pl-9 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20"
+                className="pl-9 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20 rounded-lg"
                 placeholder="example@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
             {error && <p className="text-red-400 text-sm">{error}</p>}
-            <Button className="mt-4 w-full rounded-xl bg-white text-gray-900 hover:bg-white/90" onClick={handleForgotSubmit}>
+            <Button 
+              className="mt-4 w-full h-10 rounded-lg bg-white text-gray-900 font-medium hover:bg-white/90 transition-colors shadow-sm" 
+              onClick={handleForgotSubmit}
+            >
               Submit
             </Button>
           </FormLayout>
@@ -192,7 +187,7 @@ export default function SignInPage() {
             <div className="relative">
               <Mail className="absolute left-3 top-2.5 text-gray-400" size={18} />
               <Input
-                className={`pl-9 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20 ${error ? "border-red-400" : ""}`}
+                className={`pl-9 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20 rounded-lg ${error ? "border-red-400" : ""}`}
                 placeholder="794920"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
@@ -200,11 +195,14 @@ export default function SignInPage() {
             </div>
             {error && <p className="text-red-400 text-sm">{error}</p>}
             <p className="mt-1 text-center text-sm font-medium text-red-300">00:{timer < 10 ? `0${timer}` : timer}</p>
-            <Button className="mt-4 w-full rounded-xl bg-white text-gray-900 hover:bg-white/90" onClick={handleOtpSubmit}>
+            <Button 
+              className="mt-4 w-full h-10 rounded-lg bg-white text-gray-900 font-medium hover:bg-white/90 transition-colors shadow-sm" 
+              onClick={handleOtpSubmit}
+            >
               Submit
             </Button>
             <p className="mt-3 text-center text-sm text-gray-400">
-              If you didn’t receive a code! <span className="cursor-pointer text-gray-200 underline">Resend</span>
+              If you didn't receive a code! <span className="cursor-pointer text-gray-200 underline hover:text-white transition-colors">Resend</span>
             </p>
           </FormLayout>
         )}
@@ -221,7 +219,8 @@ export default function SignInPage() {
                 <Lock className="absolute left-3 top-2.5 text-gray-400" size={18} />
                 <Input
                   type={showPassword ? "text" : "password"}
-                  className="pl-9 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20"
+                  className="pl-9 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20 rounded-lg"
+                  placeholder="••••••••"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                 />
@@ -234,7 +233,8 @@ export default function SignInPage() {
                 <Lock className="absolute left-3 top-2.5 text-gray-400" size={18} />
                 <Input
                   type={showPassword ? "text" : "password"}
-                  className="pl-9 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20"
+                  className="pl-9 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20 rounded-lg"
+                  placeholder="••••••••"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                 />
@@ -242,7 +242,10 @@ export default function SignInPage() {
             </div>
 
             {error && <p className="text-red-400 text-sm">{error}</p>}
-            <Button className="mt-5 w-full rounded-xl bg-white text-gray-900 hover:bg-white/90" onClick={handleNewPassword}>
+            <Button 
+              className="mt-5 w-full h-10 rounded-lg bg-white text-gray-900 font-medium hover:bg-white/90 transition-colors shadow-sm" 
+              onClick={handleNewPassword}
+            >
               Save New Password
             </Button>
           </FormLayout>
@@ -258,7 +261,10 @@ export default function SignInPage() {
               <h2 className="text-xl font-semibold text-white">Your Password Successfully Changed</h2>
               <p className="mt-1 text-sm text-gray-400">Sign in to your account with your new password</p>
             </div>
-            <Button className="w-full rounded-xl bg-white text-gray-900 hover:bg-white/90" onClick={() => setScreen("signIn")}>
+            <Button 
+              className="w-full h-10 rounded-lg bg-white text-gray-900 font-medium hover:bg-white/90 transition-colors shadow-sm" 
+              onClick={() => setScreen("signIn")}
+            >
               Sign In
             </Button>
           </div>
