@@ -215,26 +215,26 @@ export default function MinuteDetailPage() {
 
             <div className="space-y-2.5">
               <Button
-                className="w-full justify-start gap-2 h-10 bg-white text-gray-900 border border-gray-200 hover:bg-gray-50"
+                className="w-full justify-start gap-3 h-10 bg-white text-gray-700 border border-gray-200 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-200 font-medium group"
                 variant="outline"
               >
-                <Download className="w-4 h-4" />
+                <Download className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                 Download Original Transcript
               </Button>
 
               <Button
-                className="w-full justify-start gap-2 h-10 bg-white text-gray-900 border border-gray-200 hover:bg-gray-50"
+                className="w-full justify-start gap-3 h-10 bg-white text-gray-700 border border-gray-200 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-200 font-medium group"
                 variant="outline"
               >
-                <History className="w-4 h-4" />
+                <History className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                 View Version History
               </Button>
 
               <Button
-                className="w-full justify-start gap-2 h-10 bg-red-50 text-red-600 border border-red-100 hover:bg-red-100"
+                className="w-full justify-start gap-3 h-10 bg-white text-red-600 border border-red-200 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-200 font-medium group"
                 variant="outline"
               >
-                <Trash2 className="w-4 h-4" />
+                <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform duration-200" />
                 Delete File
               </Button>
             </div>
