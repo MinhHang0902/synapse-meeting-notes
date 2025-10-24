@@ -1,71 +1,39 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import {
+    UploadCloud,
+    FileAudio2,
+    Mic,
+    ShieldCheck,
+} from "lucide-react";
 
 export default function UploadMinute() {
-    const { id, locale } = useParams(); // lấy id & locale từ route
+    const { id, locale } = useParams();
+
+    const formats = ["MP3", "WAV", "M4A", "OGG", "TXT", "MD"];
 
     return (
-        <div className="min-h-screen bg-gray-50 py-12 px-4">
-            <div className="max-w-3xl mx-auto">
-                {/* Header Section */}
-                <div className="text-center mb-16">
-                    <h1 className="text-4xl font-bold text-foreground mb-4">
-                        Start Your Meeting Minutes
-                    </h1>
-                    <p className="text-lg text-muted-foreground">
-                        Upload audio files, import transcripts, or record meetings directly.
-                        Our AI will automatically generate comprehensive meeting minutes with
-                        action items and key decisions.
-                    </p>
-                </div>
+        <div className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <div className="w-5 h-5 flex items-center justify-center text-gray-700">
+                            <UploadCloud className="w-4 h-4" />
+                        </div>
+                        Upload Audio & Transcript
+                    </h2>
 
-                {/* Upload Audio & Transcript Section */}
-                <div className="mb-12">
-                    <div className="flex items-center gap-2 mb-6">
-                        <svg
-                            className="w-5 h-5 text-foreground"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-                            />
-                        </svg>
-                        <h2 className="text-xl font-bold text-foreground">
-                            Upload Audio & Transcript
-                        </h2>
-                    </div>
-
-                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-12 text-center bg-white hover:border-gray-400 transition-colors">
-                        <svg
-                            className="w-16 h-16 text-gray-400 mx-auto mb-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-                            />
-                        </svg>
-                        <p className="text-lg font-semibold text-foreground mb-2">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-10 text-center bg-white hover:border-gray-400 transition-colors">
+                        <FileAudio2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-sm text-gray-800 font-medium mb-1">
                             Drag and drop your files here
                         </p>
-                        <p className="text-sm text-muted-foreground mb-4">or</p>
-
+                        <p className="text-xs text-gray-500 mb-4">or</p>
                         <Button
-                            variant="default"
-                            size="lg"
-                            className="font-medium"
+                            className="bg-black text-white hover:bg-black/90"
                             onClick={() => console.log("Browse Files clicked")}
                         >
                             Browse Files
@@ -73,82 +41,56 @@ export default function UploadMinute() {
                     </div>
 
                     <div className="mt-6">
-                        <p className="text-sm font-medium text-foreground mb-2">Supports:</p>
+                        <p className="text-sm font-medium text-gray-900 mb-2">Supports</p>
                         <div className="flex flex-wrap gap-2 mb-2">
-                            {["MP3", "WAV", "M4A", "OGG", "TXT", "MD"].map((format) => (
+                            {formats.map((f) => (
                                 <span
-                                    key={format}
-                                    className="px-3 py-1 bg-gray-200 text-gray-700 text-sm rounded-full"
+                                    key={f}
+                                    className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium"
                                 >
-                                    {format}
+                                    {f}
                                 </span>
                             ))}
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs text-gray-500">
                             Audio files or text transcripts
                         </p>
                     </div>
                 </div>
 
-                <div>
-                    <div className="flex items-center gap-2 mb-6">
-                        <svg
-                            className="w-5 h-5 text-foreground"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4"
-                            />
-                        </svg>
-                        <h2 className="text-xl font-bold text-foreground">
-                            Record Meeting Realtime
-                        </h2>
-                    </div>
+                <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <div className="w-5 h-5 flex items-center justify-center text-gray-700">
+                            <Mic className="w-4 h-4" />
+                        </div>
+                        Record Meeting Realtime
+                    </h2>
 
-                    <div className="bg-gray-100 rounded-lg p-12 text-center">
-                        <svg
-                            className="w-16 h-16 text-gray-400 mx-auto mb-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={1.5}
-                                d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-12a7 7 0 00-7 7m7-7a7 7 0 017 7"
-                            />
-                        </svg>
-                        <p className="text-lg font-semibold text-foreground mb-6">
+                    <div className="rounded-lg border border-gray-200 p-8 text-center bg-gray-50">
+                        <Mic className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-sm font-medium text-gray-800 mb-4">
                             Ready to record
                         </p>
-
-                        <Button
-                            variant="default"
-                            size="lg"
-                            className="font-medium"
-                        >
+                        <Button className="bg-black text-white hover:bg-black/90">
                             <Link href={`/${locale}/pages/projects/${id}/upload-minute/real-time`}>
                                 Start Recording
                             </Link>
                         </Button>
+                        <p className="text-xs text-gray-500 mt-4">
+                            Real-time transcription and AI-powered minute generation
+                        </p>
                     </div>
-
-                    <p className="text-sm text-muted-foreground mt-4">
-                        Real-time transcription and AI-powered minute generation
-                    </p>
                 </div>
+            </div>
 
-                <div className="text-center mt-16">
-                    <p className="text-sm text-muted-foreground">
-                        Your files are processed securely. We respect your privacy and data
-                        security.
-                    </p>
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-start gap-3">
+                    <div className="w-6 h-6 flex items-center justify-center bg-gray-100 rounded-md">
+                        <ShieldCheck className="w-4 h-4 text-gray-700" />
+                    </div>
+                    <div className="text-sm text-gray-600">
+                        Your files are processed securely. We respect your privacy and data security.
+                    </div>
                 </div>
             </div>
         </div>
