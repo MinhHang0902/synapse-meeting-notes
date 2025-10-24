@@ -8,18 +8,7 @@ import {
     Users2,
     Edit2,
     Trash2,
-    X,
-    FilePenLine,
 } from "lucide-react"
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import ProjectOverview from "./project-overview"
 import ProjectMinutes from "./project-minutes"
 import ProjectMembers from "./project-members"
@@ -30,7 +19,7 @@ import EditProjectModal from "./edit-project-modal"
 /* ============ ProjectDetail ============ */
 type TabKey = "overview" | "minutes" | "members"
 
-export function ProjectDetail() {
+export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
     const [activeTab, setActiveTab] = useState<TabKey>("overview")
     const [openEdit, setOpenEdit] = useState(false)
 

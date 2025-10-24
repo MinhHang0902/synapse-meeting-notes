@@ -9,6 +9,8 @@ import {
   Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useParams } from "next/navigation";
 
 type Minute = {
   id: number;
@@ -20,9 +22,13 @@ type Minute = {
 
 export default function ProjectMinutes({
   meetingMinutes,
+  // projectId
 }: {
   meetingMinutes: Minute[];
+  // projectId: string;
 }) {
+  const { id, locale } = useParams();
+
   const iconByType = (t: Minute["fileType"]) => {
     switch (t) {
       case "pdf":
@@ -47,12 +53,13 @@ export default function ProjectMinutes({
           Meeting Minutes
         </h2>
 
-        <Button
+        <Button asChild
           className="bg-black hover:bg-black/90 text-white gap-2 text-sm px-3 py-2"
-          onClick={() => alert("Upload Minutes clicked")}
         >
-          <Upload size={14} />
-          Upload Minutes
+          <Link href={`/${locale}/pages/projects/${id}/upload-minute`}>
+            <Upload size={14} />
+            Upload Minutes
+          </Link>
         </Button>
       </div>
 
