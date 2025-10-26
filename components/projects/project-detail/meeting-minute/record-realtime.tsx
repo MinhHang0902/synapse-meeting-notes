@@ -27,8 +27,7 @@ export default function RealtimeMeeting() {
   const handleShareScreen = () => console.log("Start screen share…");
 
   return (
-    <div className="space-y-8">
-      {/* Header card (đồng bộ ProjectOverview) */}
+    <div className="p-8 space-y-8">
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <div className="flex items-start justify-between">
           <div>
@@ -53,16 +52,15 @@ export default function RealtimeMeeting() {
         </div>
       </div>
 
-      {/* Main grid: trái rộng (2 cột) + phải (1 cột) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left column: Transcript + History */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Controls (gọn, đồng bộ nút) */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Mic className="w-4 h-4 text-gray-700" />
-              <h2 className="text-lg font-semibold text-gray-900">Controls</h2>
-            </div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <div className="w-5 h-5 flex items-center justify-center text-gray-700">
+                <Mic className="w-4 h-4" />
+              </div>
+              Controls
+            </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
               <button
@@ -108,30 +106,28 @@ export default function RealtimeMeeting() {
             </div>
           </div>
 
-          {/* Transcript */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Mic className="w-4 h-4 text-gray-700" />
-              <h2 className="text-lg font-semibold text-gray-900">
-                Transcript (Realtime)
-              </h2>
-            </div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <div className="w-5 h-5 flex items-center justify-center text-gray-700">
+                <Mic className="w-4 h-4" />
+              </div>
+              Transcript (Realtime)
+            </h2>
             <textarea
               value={transcript}
               onChange={(e) => setTranscript(e.target.value)}
               placeholder='Click "Start" to begin recording the meeting'
-              className="w-full h-44 p-4 border border-gray-200 rounded-lg bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-black"
+              className="w-full h-44 p-4 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
             />
           </div>
 
-          {/* Transcript History */}
           <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Clock className="w-4 h-4 text-gray-700" />
-              <h2 className="text-lg font-semibold text-gray-900">
-                Transcript History — {transcriptHistory.length} entries
-              </h2>
-            </div>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <div className="w-5 h-5 flex items-center justify-center text-gray-700">
+                <Clock className="w-4 h-4" />
+              </div>
+              Transcript History – {transcriptHistory.length} entries
+            </h2>
 
             <div className="space-y-3">
               {transcriptHistory.map((entry, idx) => (
@@ -149,31 +145,30 @@ export default function RealtimeMeeting() {
           </div>
         </div>
 
-        {/* Right column: Screen Share */}
-        <div className="space-y-6">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Share2 className="w-4 h-4 text-gray-700" />
-              <h2 className="text-lg font-semibold text-gray-900">Screen Share</h2>
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <div className="w-5 h-5 flex items-center justify-center text-gray-700">
+              <Share2 className="w-4 h-4" />
             </div>
+            Screen Share
+          </h2>
 
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-10 flex flex-col items-center justify-center bg-gray-50">
-              <Share2 className="w-10 h-10 text-gray-400 mb-3" />
-              <p className="text-sm text-gray-600 mb-4">No screen sharing yet</p>
+          <div className="border-2 border-dashed border-gray-300 rounded-lg p-10 flex flex-col items-center justify-center bg-gray-50">
+            <Share2 className="w-10 h-10 text-gray-400 mb-3" />
+            <p className="text-sm text-gray-600 mb-4">No screen sharing yet</p>
 
-              <button
-                onClick={handleShareScreen}
-                className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50"
-              >
-                <Share2 className="w-4 h-4" />
-                Start Sharing
-              </button>
-            </div>
-
-            <p className="text-xs text-gray-500 mt-4">
-              Real-time transcription and AI-powered minute generation during sharing.
-            </p>
+            <button
+              onClick={handleShareScreen}
+              className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50"
+            >
+              <Share2 className="w-4 h-4" />
+              Start Sharing
+            </button>
           </div>
+
+          <p className="text-xs text-gray-500 mt-4">
+            Real-time transcription and AI-powered minute generation during sharing.
+          </p>
         </div>
       </div>
     </div>
