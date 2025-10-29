@@ -1,7 +1,7 @@
 const configs = {
-  APP_ENV: `${process.env.REACT_APP_ENV}`,
-  API_DOMAIN: `${process.env.REACT_APP_API_DOMAIN}`,
-  AWS_DOMAIN: `${process.env.REACT_APP_AWS_DOMAIN}`,
+  APP_ENV: `${process.env.NEXT_PUBLIC_API_BASE_URL}`,
+  API_DOMAIN: `${process.env.NEXT_PUBLIC_API_BASE_URL}`,
+  AWS_DOMAIN: `${process.env.NEXT_PUBLIC_AWS_DOMAIN}`,
 };
 
 export default configs;
