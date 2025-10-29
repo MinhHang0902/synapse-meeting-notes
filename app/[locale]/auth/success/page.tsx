@@ -2,10 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
+import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 
 export default function SuccessPage() {
     const router = useRouter();
+    const locale = useLocale();
 
     return (
         <Wrapper>
@@ -19,7 +21,7 @@ export default function SuccessPage() {
                 </div>
                 <Button
                     className="w-full h-10 rounded-lg bg-white text-gray-900 font-medium hover:bg-white/90 transition-colors shadow-sm"
-                    onClick={() => router.push('/auth/sign-in')}
+                    onClick={() => router.push(`/${locale}/auth/sign-in`)}
                 >
                     Sign In
                 </Button>

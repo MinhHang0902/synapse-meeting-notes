@@ -7,9 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useLocale } from "next-intl";
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
+    const locale = useLocale();
     const [email, setEmail] = useState("");
     const [error, setError] = useState("");
 
@@ -17,7 +19,7 @@ export default function ForgotPasswordPage() {
         if (!email) setError("Please enter your email address.");
         else {
             setError("");
-            router.push("/auth/otp");
+            router.push(`/${locale}/auth/otp`);
         }
     }
 

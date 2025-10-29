@@ -5,12 +5,14 @@ import FormLayout from "@/components/auth/FormLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Mail } from "lucide-react";
+import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { set } from "zod";
 
 export default function OtpPage() {
     const router = useRouter();
+    const locale = useLocale();
     const [otp, setOtp] = useState("");
     const [error, setError] = useState("");
     const [timer, setTimer] = useState(30);
@@ -24,7 +26,7 @@ export default function OtpPage() {
         if (otp !== "123456") setError("Invalid OTP. Please try again.");
         else {
             setError("");
-            router.push("/auth/new-password");
+            router.push(`/${locale}/auth/new-password`);
         }
     }
 

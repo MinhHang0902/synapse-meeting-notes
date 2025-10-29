@@ -6,12 +6,14 @@ import { PasswordField } from "@/components/auth/PasswordField";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Lock } from "lucide-react";
+import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { set } from "zod";
 
 export default function NewPasswordPage() {
     const router = useRouter();
+    const locale = useLocale();
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
@@ -20,7 +22,7 @@ export default function NewPasswordPage() {
         if (newPassword !== confirmPassword) setError("Passwords do not match.");
         else {
             setError("");
-            router.push("/auth/success");
+            router.push(`/${locale}/auth/success`);
         }
     }
 
