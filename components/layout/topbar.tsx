@@ -1,13 +1,28 @@
-import { Search, Globe } from "lucide-react";
+import { Search, Globe, ChevronDown } from "lucide-react";
+import { useState } from "react";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function TopBar() {
+  const [selectedLanguage, setSelectedLanguage] = useState("English");
+
+  const languages = [
+    { code: "en", label: "English" },
+    { code: "vi", label: "Vietnamese" }
+  ];
+
   return (
     <div className="h-[100px] px-8 lg:px-12">
       <div className="h-full flex items-center justify-between gap-8">
         <div className="flex min-w-0 flex-col gap-1.5">
-          <h2 className="text-2xl font-semibold leading-tight">Bảng điều khiển</h2>
+          <h2 className="text-2xl font-semibold leading-tight">Dashboard</h2>
           <span className="text-sm text-gray-500">
-            Hiển thị KPI quan trọng và nhật ký hoạt động mới nhất
+            Display key KPIs and latest activity logs
           </span>
         </div>
 
@@ -16,7 +31,7 @@ export function TopBar() {
             <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Tìm kiếm bài, lịch hẹn, người dùng…"
+              placeholder="Search posts, appointments, users…"
               className="
                 w-full h-9 pl-9 pr-4 text-sm
                 bg-white text-gray-900 placeholder:text-gray-400
@@ -27,10 +42,31 @@ export function TopBar() {
             />
           </div>
 
-          <button className="flex items-center gap-2 text-sm px-3 h-9 rounded-lg hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-colors">
-            <Globe className="w-4 h-4 text-gray-600" />
-            <span className="hidden sm:inline text-gray-700">English</span>
-          </button>
+          <div className="min-w-[140px]">
+            <Select
+              value={selectedLanguage}
+              onValueChange={setSelectedLanguage}
+            >
+              <SelectTrigger className="h-9 w-full border-transparent hover:border-gray-200 hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-gray-600" />
+                  <SelectValue className="text-gray-700">
+                    {selectedLanguage}
+                  </SelectValue>
+                </div>
+              </SelectTrigger>
+              <SelectContent
+                align="end"
+                className="min-w-0 w-[var(--radix-select-trigger-width)] max-w-none"
+              >
+                {languages.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.label}>
+                    {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
     </div>

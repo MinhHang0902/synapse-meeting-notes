@@ -8,8 +8,6 @@ import {
   ChevronRight,
   MoreVertical,
   UserPlus,
-  UserRoundPlus,
-  X,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -195,12 +193,16 @@ export function UsersSettings() {
                           setOpenEdit(true)
                         }}
                       >
-                        Edit user
+                        Edit User
                       </DropdownMenuItem>
-                      <DropdownMenuItem disabled>Deactivate</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-red-600" disabled>
-                        Remove user
+                    
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={() => {
+                          console.log("Remove user:", user)
+                        }}
+                      >
+                        Remove User
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -243,7 +245,6 @@ export function UsersSettings() {
         open={openAdd}
         onOpenChange={setOpenAdd}
         onSubmit={(payload) => {
-          // TODO: call API create user tại đây
           console.log("Create user payload:", payload)
         }}
       />
@@ -254,7 +255,6 @@ export function UsersSettings() {
         onOpenChange={setOpenEdit}
         user={selectedUser}
         onSubmit={(payload) => {
-          // TODO: call API update user tại đây
           console.log("Update user payload:", payload)
         }}
       />

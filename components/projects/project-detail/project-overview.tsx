@@ -8,6 +8,14 @@ import {
   User,
   PencilRuler,
 } from "lucide-react";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import { useState } from "react";
 
 type Props = {
   project: {
@@ -31,6 +39,10 @@ type Props = {
 };
 
 export default function ProjectOverview({ project, recentActivity }: Props) {
+  const [currentStatus, setCurrentStatus] = useState(project.status);
+
+  const statusOptions = ["Active", "Completed"];
+
   const getActivityIcon = (type: string) => {
     switch (type) {
       case "file":
@@ -94,20 +106,38 @@ export default function ProjectOverview({ project, recentActivity }: Props) {
               Status
             </dt>
             <dd className="col-span-7 md:col-span-8 flex justify-end">
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-800 shadow-sm hover:bg-gray-50"
+              <Select
+                value={currentStatus}
+                onValueChange={setCurrentStatus}
               >
-                <span className="inline-block h-2 w-2 rounded-full bg-green-500" />
-                {project.status}
-                <svg
-                  className="h-4 w-4 text-gray-500"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
+                <SelectTrigger className="h-9 w-auto min-w-[140px]">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`inline-block h-2 w-2 rounded-full ${
+                        currentStatus === "Active" ? "bg-green-500" : "bg-gray-400"
+                      }`}
+                    />
+                    <SelectValue>{currentStatus}</SelectValue>
+                  </div>
+                </SelectTrigger>
+                <SelectContent
+                  align="end"
+                  className="min-w-0 w-[var(--radix-select-trigger-width)] max-w-none"
                 >
-                  <path d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.25 8.29a.75.75 0 01-.02-1.08z" />
-                </svg>
-              </button>
+                  {statusOptions.map((status) => (
+                    <SelectItem key={status} value={status}>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-block h-2 w-2 rounded-full ${
+                            status === "Active" ? "bg-green-500" : "bg-gray-400"
+                          }`}
+                        />
+                        {status}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </dd>
           </div>
 

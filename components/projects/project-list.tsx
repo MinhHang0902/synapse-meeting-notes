@@ -142,8 +142,8 @@ export function ProjectsList() {
               <Badge
                 className={
                   project.status === "Active"
-                    ? "bg-green-100 text-green-700 hover:bg-green-100"
-                    : "bg-blue-100 text-blue-700 hover:bg-blue-100"
+                    ? "!bg-black !text-white"
+                    : "!bg-gray-400 !text-white"
                 }
               >
                 {project.status}
@@ -151,8 +151,14 @@ export function ProjectsList() {
             </div>
 
             <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-              <span>👥 {project.members} Members</span>
-              <span>📄 {project.files} Files</span>
+              <span className="flex items-center gap-1.5">
+                <Users className="w-4 h-4" />
+                {project.members} Members
+              </span>
+              <span className="flex items-center gap-1.5">
+                <FileText className="w-4 h-4" />
+                {project.files} Files
+              </span>
             </div>
 
             <div className="border-t border-gray-200 pt-4">
