@@ -8,6 +8,7 @@ import { Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useLocale } from "next-intl";
+import { AuthApi } from "@/lib/api/auth";
 
 export default function ForgotPasswordPage() {
     const router = useRouter();
@@ -16,10 +17,23 @@ export default function ForgotPasswordPage() {
     const [error, setError] = useState("");
 
     const handleForgotPassword = async () => {
-        if (!email) setError("Please enter your email address.");
-        else {
-            setError("");
-            router.push(`/${locale}/auth/otp`);
+        if (!email) {
+            setError("Please enter your email address.");
+            return;
+        }
+        try {
+            const data = { email };
+            const response = await AuthApi.requestOtp(data);
+            // response sẽ trả về ok: boolean và message: string
+            // sau này có thể sử dụng message để làm tbao ra ngoài giao diện
+            if (response.ok) {
+                sessionStorage.setItem("fp_email", email);
+                router.push(`/${locale}/auth/otp?email=${encodeURIComponent(email)}`);
+            } else {
+                setError(response.message || "Failed to request password reset. Please try again.");
+            }
+        } catch (error) {
+            setError("An unexpected error occurred. Please try again later.");
         }
     }
 
@@ -37,7 +51,10 @@ export default function ForgotPasswordPage() {
                     />
                 </div>
                 {error && <p className="text-red-400 text-sm">{error}</p>}
-                <Button className="mt-4 w-full h-10 rounded-lg bg-white text-gray-900 font-medium hover:bg-white/90 transition-colors shadow-sm" onClick={handleForgotPassword}>
+                <Button
+                    className="mt-4 w-full h-10 rounded-lg bg-white text-gray-900 font-medium hover:bg-white/90 transition-colors shadow-sm"
+                    onClick={handleForgotPassword}
+                >
                     Submit
                 </Button>
             </FormLayout>

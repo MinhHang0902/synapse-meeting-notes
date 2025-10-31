@@ -10,7 +10,7 @@ const axiosInstance = Axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     // eslint-disable-next-line no-param-reassign
-    const token = Cookies.get("token");
+    const token = Cookies.get("access_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -36,7 +36,7 @@ axiosInstance.interceptors.response.use(
       logout();
       return Promise.reject(error);
     }
-    return Axios.post(`${configs.API_DOMAIN}/idol/auth/request-access-token`, {
+    return Axios.post(`${configs.API_DOMAIN}/api/core/v1/auth/refresh`, {
       refreshToken,
     })
       .then((res) => {

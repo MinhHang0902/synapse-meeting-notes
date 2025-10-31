@@ -4,31 +4,85 @@ import BackButton from "@/components/auth/BackButton";
 import FormLayout from "@/components/auth/FormLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AuthApi } from "@/lib/api/auth";
+import { setSessionItemWithExpiry } from "@/lib/utils/storage";
 import { Mail } from "lucide-react";
 import { useLocale } from "next-intl";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { set } from "zod";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 export default function OtpPage() {
     const router = useRouter();
     const locale = useLocale();
+    const searchParams = useSearchParams();
+
     const [otp, setOtp] = useState("");
+    const [email, setEmail] = useState("");
     const [error, setError] = useState("");
     const [timer, setTimer] = useState(30);
+
+    useEffect(() => {
+        const fromQuery = searchParams.get("email") || "";
+        const fromSession = sessionStorage.getItem("fp_email") || "";
+        const finalEmail = fromQuery || fromSession;
+        setEmail(finalEmail);
+
+        // nếu có email từ query thì đồng bộ lại vào session để chống mất khi F5
+        if (fromQuery) sessionStorage.setItem("fp_email", fromQuery);
+    }, [searchParams]);
 
     useEffect(() => {
         const id = setInterval(() => setTimer((t) => t > 0 ? t - 1 : 0), 1000);
         return () => clearInterval(id);
     }, []);
 
-    const handleOtpSubmit = () => {
-        if (otp !== "123456") setError("Invalid OTP. Please try again.");
-        else {
-            setError("");
-            router.push(`/${locale}/auth/new-password`);
+    const isOtpValid = useMemo(() => /^\d{6}$/.test(otp), [otp]);
+
+    const handleOtpSubmit = async () => {
+        setError("");
+        if (!email) {
+            setError("Missing email. Please start from Forgot Password.");
+            router.replace(`/${locale}/auth/forgot-password`);
+            return;
+        }
+        if (!isOtpValid) {
+            setError("OTP code must be 6 digits.");
+            return;
+        }
+
+        try {
+            const data = { email, otp };
+            const response = await AuthApi.verifyOtp(data);
+            if (response.ok) {
+                sessionStorage.removeItem("fp_email");
+                setSessionItemWithExpiry("reset_password_token", response.resetToken, 300); // 5 phút
+                router.push(`/${locale}/auth/new-password`);
+            } else {
+                setError("Failed to verify OTP. Please try again.");
+            }
+        } catch (error) {
+            setError("An unexpected error occurred. Please try again later.");
         }
     }
+
+    const handleResend = async () => {
+        setError("");
+        if (!email) {
+            setError("Missing email. Please start from Forgot Password.");
+            router.replace(`/${locale}/auth/forgot-password`);
+            return;
+        }
+        try {
+            const res = await AuthApi.requestOtp({ email });
+            if (res.ok) {
+                setTimer(30);
+            } else {
+                setError(res.message || "Failed to resend OTP.");
+            }
+        } catch {
+            setError("An unexpected error occurred. Please try again later.");
+        }
+    };
 
     return (
         <Wrapper>
@@ -41,6 +95,7 @@ export default function OtpPage() {
                         placeholder="794920"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
+                        type="number"
                     />
                 </div>
                 {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -49,7 +104,13 @@ export default function OtpPage() {
                     Submit
                 </Button>
                 <p className="mt-3 text-center text-sm text-gray-400">
-                    If you didn't receive a code! <span className="cursor-pointer text-gray-200 underline hover:text-white transition-colors">Resend</span>
+                    If you didn't receive a code!
+                    <span
+                        className="cursor-pointer text-gray-200 underline hover:text-white transition-colors"
+                        onClick={handleResend}
+                    >
+                        Resend
+                    </span>
                 </p>
             </FormLayout>
         </Wrapper>

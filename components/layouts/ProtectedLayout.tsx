@@ -1,16 +1,102 @@
 "use client";
 
-import React, { ReactNode, useCallback, useMemo, useState } from "react";
+import React, { ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { Sidebar } from "../layout/sidebar/sidebar";
 import { TopBar } from "../layout/topbar";
+import { useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
+import Cookies from "js-cookie";
+import { AuthApi } from "@/lib/api/auth";
+import { isTokenExpired } from "@/lib/utils/jwt";
 
 interface ProtectedLayoutProps { children: ReactNode; }
 
 export default function ProtectedLayout({ children }: ProtectedLayoutProps) {
+  const router = useRouter();
+  const locale = useLocale();
+
+  const [checking, setChecking] = useState(true);
+  const [authed, setAuthed] = useState(false);
+
   const [collapsed, setCollapsed] = useState(false);
   const toggleCollapsed = useCallback(() => setCollapsed(v => !v), []);
   const sidebarWidth = useMemo(() => (collapsed ? 72 : 280), [collapsed]);
   const topbarHeight = 100;
+
+  const loginPath = useMemo(() => `/${locale}/auth/sign-in`, [locale]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const ensureAuth = async () => {
+      try {
+        const accessToken = Cookies.get("access_token");
+        const refreshToken = Cookies.get("refresh_token");
+
+        if (!accessToken) {
+          router.replace(loginPath);
+          return;
+        }
+
+        if (!isTokenExpired(accessToken)) {
+          if (!cancelled) {
+            setAuthed(true);
+          }
+          return;
+        }
+
+        if (refreshToken) {
+          try {
+            const res = await AuthApi.refreshToken({ refreshToken });
+            const newAccessToken = res.accessToken;
+            const newRefreshToken = res.refreshToken;
+
+            if (!newAccessToken) {
+              router.replace(loginPath);
+              return;
+            }
+
+            Cookies.set("access_token", newAccessToken, {
+              expires: 7,
+              secure: process.env.NODE_ENV === "production",
+              sameSite: "lax",
+            });
+
+            if (newRefreshToken) {
+              Cookies.set("refresh_token", newRefreshToken, {
+                expires: 30,
+                secure: process.env.NODE_ENV === "production",
+                sameSite: "lax",
+              });
+            }
+
+            if (!cancelled) setAuthed(true);
+            return;
+          } catch {
+            router.replace(loginPath);
+            return;
+          }
+        }
+
+        router.replace(loginPath);
+      } finally {
+        if (!cancelled) setChecking(false);
+      }
+    };
+
+    ensureAuth();
+    return () => {
+      cancelled = true;
+    };
+  }, [router, loginPath]);
+
+  if (checking || !authed) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-300 border-t-gray-900" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex bg-[#F5F6F8] text-gray-900">
