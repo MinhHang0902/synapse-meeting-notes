@@ -2,20 +2,12 @@
 
 import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectTrigger,
-  SelectContent,
-  SelectItem,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal } from "lucide-react";
@@ -30,34 +22,24 @@ export type Member = {
   avatarColor: string;
 };
 
-export default function ProjectMembers({
-  teamMembers,
-}: {
-  teamMembers: Member[];
-}) {
+export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] }) {
   const [members, setMembers] = useState<Member[]>(teamMembers);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<string | undefined>(undefined);
 
-  // Email validation
   const [emailTouched, setEmailTouched] = useState(false);
   const emailValid = /^\S+@\S+\.\S+$/.test(email);
 
-  // Edit modal state
   const [editing, setEditing] = useState<Member | null>(null);
   const [openEdit, setOpenEdit] = useState(false);
 
-  const nextId = useMemo(
-    () => (members.length ? Math.max(...members.map((m) => m.id)) + 1 : 1),
-    [members]
-  );
+  const nextId = useMemo(() => (members.length ? Math.max(...members.map((m) => m.id)) + 1 : 1), [members]);
 
   const invite = () => {
     if (!emailValid || !role) return;
 
     const nameFromEmail =
-      email.split("@")[0]?.replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) ||
-      "New Member";
+      email.split("@")[0]?.replace(/[._-]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) || "New Member";
     const initials = nameFromEmail
       .split(" ")
       .filter(Boolean)
@@ -110,7 +92,6 @@ export default function ProjectMembers({
         </p>
 
         <div className="mt-4 flex flex-col sm:flex-row gap-3">
-          {/* Email Input */}
           <div className="sm:flex-1">
             <input
               type="text"
@@ -139,7 +120,6 @@ export default function ProjectMembers({
             )}
           </div>
 
-          {/* Role Select */}
           <Select value={role} onValueChange={(v) => setRole(v)}>
             <SelectTrigger className="h-9 w-[160px]">
               <SelectValue>{role ? role : "Select Role"}</SelectValue>
@@ -151,7 +131,6 @@ export default function ProjectMembers({
             </SelectContent>
           </Select>
 
-          {/* Invite Button */}
           <Button
             className="h-9 bg-black hover:bg-black/90 text-white px-4 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={invite}
@@ -162,18 +141,14 @@ export default function ProjectMembers({
         </div>
       </div>
 
-      {/* Divider */}
       <div className="mt-6 mb-4 h-px bg-gray-200" />
 
-      {/* People list */}
-      <h3 className="text-base font-semibold text-gray-900 mb-3">
-        People with access
-      </h3>
+      <h3 className="text-base font-semibold text-gray-900 mb-3">People with access</h3>
 
       <div className="divide-y divide-gray-100">
         {members.map((m) => (
           <div key={m.id} className="py-3 flex items-center gap-3 justify-between">
-            {/* Left: avatar + name + email */}
+            {/* Left */}
             <div className="flex items-center gap-3 min-w-0">
               <div
                 className={`w-9 h-9 rounded-full text-white flex items-center justify-center text-xs font-semibold ${m.avatarColor}`}
@@ -181,14 +156,12 @@ export default function ProjectMembers({
                 {m.avatar}
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-medium text-gray-900 truncate">
-                  {m.name}
-                </div>
+                <div className="text-sm font-medium text-gray-900 truncate">{m.name}</div>
                 <div className="text-xs text-gray-500 truncate">{m.email}</div>
               </div>
             </div>
 
-            {/* Right: role pill + menu */}
+            {/* Right */}
             <div className="flex items-center gap-3 flex-shrink-0">
               <span className="inline-flex items-center rounded-full bg-gray-100 text-gray-700 px-2.5 py-1 text-xs font-medium">
                 {m.role}
@@ -197,21 +170,43 @@ export default function ProjectMembers({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
-                    className="p-1.5 rounded-md hover:bg-gray-100 text-gray-600"
+                    className="p-1.5 rounded-md hover:bg-gray-100 text-gray-600 transition-colors"
                     aria-label={`More actions for ${m.name}`}
                   >
                     <MoreHorizontal className="w-4 h-4" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" sideOffset={6} className="w-44">
-                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => openEditFor(m)}>
+
+                <DropdownMenuContent
+                  align="end"
+                  sideOffset={6}
+                  className="
+                    w-44 min-w-0 bg-white border border-gray-200
+                    rounded-xl shadow-lg p-1.5
+                    transition-colors
+                    focus:outline-none
+                  "
+                >
+                  <DropdownMenuLabel className="px-3 py-1.5 text-sm font-semibold text-black-500">
+                    Actions
+                  </DropdownMenuLabel>
+
+                  <DropdownMenuItem
+                    onClick={() => openEditFor(m)}
+                    className="
+                      h-9 flex items-center px-3 rounded-md text-sm text-gray-700 
+                      hover:bg-gray-50 hover:text-gray-900 cursor-pointer transition-colors
+                    "
+                  >
                     Edit Member
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
+
                   <DropdownMenuItem
-                    className="text-red-600 focus:text-red-700"
                     onClick={() => deleteMember(m.id)}
+                    className="
+                      h-9 flex items-center px-3 rounded-md text-sm text-red-600 
+                      hover:bg-red-50 hover:text-red-700 cursor-pointer transition-colors
+                    "
                   >
                     Delete Member
                   </DropdownMenuItem>
@@ -222,7 +217,6 @@ export default function ProjectMembers({
         ))}
       </div>
 
-      {/* Edit Member Modal */}
       <EditMemberModal
         open={openEdit}
         onOpenChange={setOpenEdit}

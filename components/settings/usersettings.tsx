@@ -6,6 +6,8 @@ import {
   Filter,
   ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   MoreVertical,
   UserPlus,
 } from "lucide-react"
@@ -30,7 +32,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu"
 import AddUserModal from "./add-user-modal"
@@ -57,15 +58,10 @@ const USERS: UserRow[] = [
   { id: "6", name: "John Smith", email: "john.smith@company.com", role: "User", status: "Inactive", lastLogin: "2024-02-09 08:30", created: "2024-01-05", initials: "JS", color: "bg-orange-200" },
 ]
 
-/* =========================
-   UsersSettings (with add & edit)
-   ========================= */
 export function UsersSettings() {
   const [currentPage, setCurrentPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
   const [openAdd, setOpenAdd] = useState(false)
-
-  // Edit
   const [openEdit, setOpenEdit] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null)
 
@@ -77,7 +73,8 @@ export function UsersSettings() {
 
   const itemsPerPage = 6
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
+  const safePage = Math.min(currentPage, totalPages)
+  const startIndex = (safePage - 1) * itemsPerPage
   const displayedUsers = filteredUsers.slice(startIndex, startIndex + itemsPerPage)
 
   const goPrev = () => setCurrentPage((p) => Math.max(1, p - 1))
@@ -85,7 +82,7 @@ export function UsersSettings() {
 
   return (
     <div className="space-y-6">
-      {/* Title + Search/Filters row */}
+      {/* Title + Search/Filters */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <h2 className="text-xl font-semibold text-gray-900">Synapse User List</h2>
 
@@ -114,7 +111,6 @@ export function UsersSettings() {
           </Button>
           <Button className="bg-black hover:bg-black/80 text-white">Search</Button>
 
-          {/* Top actions */}
           <div className="flex items-center justify-end">
             <Button className="bg-black hover:bg-black/80 text-white" onClick={() => setOpenAdd(true)}>
               <UserPlus className="w-4 h-4 mr-2 text-white" />
@@ -152,7 +148,6 @@ export function UsersSettings() {
                   </div>
                 </td>
 
-                {/* Role */}
                 <td className="px-4 py-3">
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset
@@ -164,7 +159,6 @@ export function UsersSettings() {
                   </span>
                 </td>
 
-                {/* Status */}
                 <td className="px-4 py-3">
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset
@@ -185,22 +179,27 @@ export function UsersSettings() {
                         <MoreVertical className="w-4 h-4" />
                       </button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" sideOffset={6} className="w-40">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+                    <DropdownMenuContent
+                      align="end"
+                      sideOffset={6}
+                      className="w-44 min-w-0 bg-white border border-gray-200 rounded-xl shadow-lg p-1.5 transition-colors focus:outline-none"
+                    >
+                      <DropdownMenuLabel className="px-3 py-1.5 text-sm font-semibold text-black-500">
+                        Actions
+                      </DropdownMenuLabel>
                       <DropdownMenuItem
                         onClick={() => {
                           setSelectedUser(user)
                           setOpenEdit(true)
                         }}
+                        className="h-9 flex items-center px-3 rounded-md text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 cursor-pointer transition-colors"
                       >
                         Edit User
                       </DropdownMenuItem>
-                    
                       <DropdownMenuItem
-                        className="text-red-600"
-                        onClick={() => {
-                          console.log("Remove user:", user)
-                        }}
+                        className="h-9 flex items-center px-3 rounded-md text-sm text-red-600 hover:bg-red-50 hover:text-red-700 cursor-pointer transition-colors"
+                        onClick={() => console.log('Remove user:', user)}
                       >
                         Remove User
                       </DropdownMenuItem>
@@ -216,47 +215,65 @@ export function UsersSettings() {
       {/* Pagination */}
       <div className="flex items-center justify-center gap-2">
         <button
+          onClick={() => setCurrentPage(1)}
+          disabled={safePage === 1}
+          className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
+          aria-label="First page"
+        >
+          <ChevronsLeft className="w-4 h-4" />
+        </button>
+        <button
           onClick={goPrev}
-          disabled={currentPage === 1}
-          className="p-2 rounded transition-colors disabled:opacity-40 hover:bg-gray-100"
+          disabled={safePage === 1}
+          className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
+          aria-label="Previous page"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
+
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
           <button
             key={page}
             onClick={() => setCurrentPage(page)}
-            className={`w-8 h-8 rounded transition-colors ${currentPage === page ? "bg-black text-white" : "hover:bg-gray-100 text-gray-700"}`}
+            className={`w-8 h-8 rounded text-sm font-medium flex items-center justify-center transition-colors ${
+              safePage === page
+                ? "bg-black text-white"
+                : "text-gray-900 hover:bg-gray-200/70"
+            }`}
           >
             {page}
           </button>
         ))}
+
         <button
           onClick={goNext}
-          disabled={currentPage === totalPages}
-          className="p-2 rounded transition-colors disabled:opacity-40 hover:bg-gray-100"
+          disabled={safePage === totalPages}
+          className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
+          aria-label="Next page"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
+        <button
+          onClick={() => setCurrentPage(totalPages)}
+          disabled={safePage === totalPages}
+          className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
+          aria-label="Last page"
+        >
+          <ChevronsRight className="w-4 h-4" />
+        </button>
       </div>
 
-      {/* Add User Popup */}
       <AddUserModal
         open={openAdd}
         onOpenChange={setOpenAdd}
-        onSubmit={(payload) => {
-          console.log("Create user payload:", payload)
-        }}
+        onSubmit={(payload) => console.log("Create user payload:", payload)}
       />
 
-      {/* Edit User Popup */}
       <EditUserModal
         open={openEdit}
         onOpenChange={setOpenEdit}
         user={selectedUser}
-        onSubmit={(payload) => {
-          console.log("Update user payload:", payload)
-        }}
+        onSubmit={(payload) => console.log("Update user payload:", payload)}
       />
     </div>
   )

@@ -97,7 +97,7 @@ export default function EditProjectModal({
         <div className="border-t border-gray-200 p-6 flex gap-3 justify-end sticky bottom-0 bg-white rounded-b-2xl">
           <Button
             variant="outline"
-            className="px-6 bg-transparent text-gray-700 border-gray-300 hover:bg-gray-100"
+            className="px-6 bg-transparent"
             onClick={() => handleClose(false)}
           >
             <X className="w-4 h-4 mr-2" />
@@ -106,12 +106,13 @@ export default function EditProjectModal({
           <Button
             disabled={!canSave}
             onClick={handleSubmit}
-            className={`px-6 text-white ${
+            className={`px-6 text-white flex items-center ${
               canSave
                 ? "bg-black hover:bg-black/90"
                 : "bg-gray-400 cursor-not-allowed"
             }`}
           >
+            <FilePenLine className="w-4 h-4 mr-2" />
             Save Change
           </Button>
         </div>

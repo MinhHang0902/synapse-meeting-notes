@@ -44,7 +44,6 @@ const SEED: Project[] = [
   { id: "4", name: "Legal Contracts", description: "Translation of contracts and legal documents", status: "Completed", members: 2, files: 15, owner: "Michael Brown", lastUpdated: "Jan 15, 2024" },
 ];
 
-
 export function ProjectsList() {
   const [projects, setProjects] = useState<Project[]>(SEED);
   const [modalOpen, setModalOpen] = useState(false);
@@ -58,7 +57,8 @@ export function ProjectsList() {
 
   const itemsPerPage = 5;
   const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
+  const safePage = Math.min(currentPage, totalPages);
+  const startIndex = (safePage - 1) * itemsPerPage;
   const displayed = filtered.slice(startIndex, startIndex + itemsPerPage);
 
   const handleCreateProject = (data: {
@@ -171,46 +171,53 @@ export function ProjectsList() {
 
       {/* Pagination */}
       <div className="flex items-center justify-center gap-2 mt-8">
-        <Button variant="outline" size="sm" onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
+        <button
+          onClick={() => setCurrentPage(1)}
+          disabled={safePage === 1}
+          className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
+          aria-label="First page"
+        >
           <ChevronsLeft className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-          disabled={currentPage === 1}
+        </button>
+        <button
+          onClick={() => setCurrentPage(Math.max(1, safePage - 1))}
+          disabled={safePage === 1}
+          className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
+          aria-label="Previous page"
         >
           <ChevronLeft className="w-4 h-4" />
-        </Button>
+        </button>
 
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-          <Button
+          <button
             key={page}
-            variant={currentPage === page ? "default" : "outline"}
-            size="sm"
             onClick={() => setCurrentPage(page)}
-            className={currentPage === page ? "bg-black text-white hover:bg-black/90" : ""}
+            className={`w-8 h-8 rounded text-sm font-medium flex items-center justify-center transition-colors ${
+              safePage === page
+                ? "bg-black text-white"
+                : "text-gray-900 hover:bg-gray-200/70"
+            }`}
           >
             {page}
-          </Button>
+          </button>
         ))}
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-          disabled={currentPage === totalPages}
+        <button
+          onClick={() => setCurrentPage(Math.min(totalPages, safePage + 1))}
+          disabled={safePage === totalPages}
+          className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
+          aria-label="Next page"
         >
           <ChevronRight className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
+        </button>
+        <button
           onClick={() => setCurrentPage(totalPages)}
-          disabled={currentPage === totalPages}
+          disabled={safePage === totalPages}
+          className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
+          aria-label="Last page"
         >
           <ChevronsRight className="w-4 h-4" />
-        </Button>
+        </button>
       </div>
 
       {/* Modal */}

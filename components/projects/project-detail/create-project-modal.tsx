@@ -123,7 +123,7 @@ export default function CreateProjectModal({
                             <div className="flex items-center gap-2 mb-3">
                                 <Crown className="w-4 h-4 text-gray-900" />
                                 <span className="font-semibold text-gray-900">Managers</span>
-                                <Badge className="bg-yellow-100 text-yellow-800">FULL ACCESS</Badge>
+                            
                                 <span className="text-red-500">*</span>
                             </div>
 
@@ -174,7 +174,7 @@ export default function CreateProjectModal({
                             <div className="flex items-center gap-2 mb-3">
                                 <UserCheck className="w-4 h-4 text-gray-900" />
                                 <span className="font-semibold text-gray-900">Reviewers</span>
-                                <Badge className="bg-gray-100 text-gray-800">REVIEW & EDIT</Badge>
+                        
                             </div>
 
                             <div className="flex gap-2 mb-4">
@@ -224,7 +224,6 @@ export default function CreateProjectModal({
                             <div className="flex items-center gap-2 mb-3">
                                 <Eye className="w-4 h-4 text-gray-900" />
                                 <span className="font-semibold text-gray-900">Viewers</span>
-                                <Badge className="bg-gray-200 text-gray-800">READ ONLY</Badge>
                             </div>
 
                             <div className="flex gap-2 mb-4">
