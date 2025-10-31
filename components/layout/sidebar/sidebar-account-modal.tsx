@@ -2,8 +2,9 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import { PencilLine, X } from "lucide-react";
+import { UpdateProfileRequest, UserInfoResponse } from "@/types/interfaces/user";
+import { UsersApi } from "@/lib/api/user";
 
 export default function MyAccountModal({
   open,
@@ -13,8 +14,8 @@ export default function MyAccountModal({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  user: { name: string; email: string; avatarUrl?: string };
-  onSave?: (name: string) => void;
+  user: UserInfoResponse;
+  onSave: (data: UpdateProfileRequest) => void;
 }) {
   const [editing, setEditing] = React.useState(false);
   const [name, setName] = React.useState(user.name);
@@ -31,9 +32,9 @@ export default function MyAccountModal({
     onOpenChange(false);
   };
 
-  const submit = () => {
+  const submit = async () => {
     if (!canSave) return;
-    onSave?.(name.trim());
+    onSave({ name: name.trim() });
     setEditing(false);
     onOpenChange(false);
   };
@@ -57,13 +58,8 @@ export default function MyAccountModal({
         {/* Header */}
         <div className="bg-black text-white p-6 flex items-start justify-between rounded-t-2xl border-b border-white/10 relative">
           <div className="flex items-center gap-4">
-            <div className="relative w-16 h-16 rounded-full overflow-hidden ring-2 ring-white/30">
-              <Image
-                alt="avatar"
-                src={user.avatarUrl || "/placeholder.svg"}
-                fill
-                sizes="64px"
-              />
+            <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center shrink-0 font-semibold">
+              {(user.name?.trim()?.[0] || user.email?.trim()?.[0] || "U").toUpperCase()}
             </div>
             <div>
               <h2 className="text-xl font-semibold">My Account</h2>
@@ -97,9 +93,8 @@ export default function MyAccountModal({
                   readOnly={!editing}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
-                  className={`w-full rounded-md px-3 py-2 text-sm border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:border-gray-400 ${
-                    !editing ? "bg-gray-100 cursor-not-allowed opacity-80" : ""
-                  }`}
+                  className={`w-full rounded-md px-3 py-2 text-sm border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:border-gray-400 ${!editing ? "bg-gray-100 cursor-not-allowed opacity-80" : ""
+                    }`}
                 />
               </div>
 
@@ -132,11 +127,10 @@ export default function MyAccountModal({
                     size="sm"
                     disabled={!canSave}
                     onClick={submit}
-                    className={`text-white px-4 ${
-                      canSave
-                        ? "bg-black hover:bg-black/90"
-                        : "bg-gray-400 cursor-not-allowed"
-                    }`}
+                    className={`text-white px-4 ${canSave
+                      ? "bg-black hover:bg-black/90"
+                      : "bg-gray-400 cursor-not-allowed"
+                      }`}
                   >
                     Save Change
                   </Button>
@@ -161,7 +155,7 @@ export default function MyAccountModal({
             <h4 className="text-gray-900 font-semibold text-base mb-1">
               System Role
             </h4>
-            <p className="text-sm text-gray-600">Admin (read-only)</p>
+            <p className="text-sm text-gray-600">{user.systemRole?.role_name} (read-only)</p>
           </div>
 
           {/* Project List */}
@@ -170,21 +164,17 @@ export default function MyAccountModal({
               Projects
             </h4>
             <div className="space-y-3">
-              {["Project Alpha", "Project Beta", "Project Gamma"].map(
-                (p, i) => (
+              {user.projectMembers.map(
+                (p) => (
                   <div
-                    key={p}
+                    key={p.project.project_id}
                     className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-2"
                   >
                     <span className="text-sm text-gray-800 font-medium">
-                      {p}
+                      {p.project.project_name}
                     </span>
                     <span className="text-[11px] px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 font-semibold">
-                      {i === 0
-                        ? "Manager"
-                        : i === 1
-                        ? "Reviewer"
-                        : "Viewer"}
+                      {p.projectRole.role_type}
                     </span>
                   </div>
                 )

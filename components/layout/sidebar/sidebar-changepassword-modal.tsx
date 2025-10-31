@@ -3,6 +3,7 @@
 import React from "react";
 import { Eye, EyeOff, X, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ChangePasswordRequest } from "@/types/interfaces/user";
 
 export default function ChangePasswordModal({
   open,
@@ -11,7 +12,7 @@ export default function ChangePasswordModal({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onSubmit?: (payload: { currentPassword: string; newPassword: string }) => void;
+  onSubmit?: (payload: ChangePasswordRequest) => void;
 }) {
   const [currentPassword, setCurrentPassword] = React.useState("");
   const [newPassword, setNewPassword] = React.useState("");
@@ -43,6 +44,8 @@ export default function ChangePasswordModal({
 
   const apply = () => {
     if (!canApply) return;
+    console.log("currentPassword:", currentPassword);
+    console.log("newPassword:", newPassword);
     onSubmit?.({ currentPassword, newPassword });
     handleClose(false);
   };
@@ -180,11 +183,10 @@ export default function ChangePasswordModal({
           <Button
             disabled={!canApply}
             onClick={apply}
-            className={`px-6 text-white ${
-              canApply
+            className={`px-6 text-white ${canApply
                 ? "bg-black hover:bg-black/90"
                 : "bg-gray-400 cursor-not-allowed"
-            }`}
+              }`}
           >
             <Lock className="w-4 h-4 mr-2" />
             Apply Change

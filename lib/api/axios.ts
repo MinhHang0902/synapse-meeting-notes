@@ -5,6 +5,9 @@ import configs from "@/constants/config";
 const axiosInstance = Axios.create({
   timeout: 3 * 60 * 1000,
   baseURL: configs.API_DOMAIN,
+  headers: {
+    'ngrok-skip-browser-warning': 'true',
+  },
 });
 
 axiosInstance.interceptors.request.use(
@@ -20,8 +23,8 @@ axiosInstance.interceptors.request.use(
 );
 
 const logout = () => {
-  Cookies.remove("token");
-  Cookies.remove("refreshToken");
+  Cookies.remove("access_token");
+  Cookies.remove("refresh_token");
   window.location.href = "/";
 };
 axiosInstance.interceptors.response.use(

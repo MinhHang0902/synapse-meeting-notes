@@ -1,29 +1,24 @@
 "use client";
 
-import React from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname, useParams } from "next/navigation";
+import { usePathname, useParams, useRouter } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import {
   Eye, FolderKanban, FileText, Settings, Heart,
   MoreHorizontal, ChevronLeft, ChevronRight,
-  UserRound, KeyRound, LogOut, X, PencilLine, EyeOff
+  UserRound, KeyRound, LogOut,
 } from "lucide-react";
-import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent,
   DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog, DialogContent, DialogHeader,
-  DialogTitle, DialogDescription
-} from "@/components/ui/dialog";
 import MyAccountModal from "./sidebar-account-modal";
 import ChangePasswordModal from "./sidebar-changepassword-modal";
-
+import { UsersApi } from "@/lib/api/user";
+import { ChangePasswordRequest, UpdateProfileRequest, UserInfoResponse } from "@/types/interfaces/user";
+import { clearTokens } from "@/lib/utils/cookies";
 
 
 /* =========================
@@ -55,23 +50,76 @@ export function Sidebar({
   collapsed?: boolean;
   toggleCollapsed?: () => void;
 }) {
+  const router = useRouter();
   const pathname = usePathname();
   const intlLocale = safeUseLocale();
   const locale = intlLocale ?? (useParams() as any)?.locale ?? "en";
   const t = safeUseTranslations("nav");
 
+  const [user, setUser] = useState<UserInfoResponse | null>(null);
+
+  const [openAccount, setOpenAccount] = useState(false);
+  const [openChangePwd, setOpenChangePwd] = useState(false);
+
   const trimLocale = (p: string) =>
     p?.startsWith(`/${locale}`) ? p.slice(locale.length + 1) || "/" : p;
   const lhref = (path: string) => `/${locale}${path.startsWith("/") ? path : `/${path}`}`;
 
-  const [user, setUser] = React.useState({
-    name: "Michael Robinson",
-    email: "michael.robin@gmail.com",
-    avatarUrl: "/placeholder.svg",
-  });
+  const handleSaveChangeProfile = (updatedData: UpdateProfileRequest) => {
+    UsersApi.updatedProfile(updatedData)
+      .then((response) => {
+        if (response) {
+          // Update successful, you might want to update the user state in parent component
+          setUser((prev) => (prev ? { ...prev, ...response } : null));
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to update profile:", error);
+      });
+  };
 
-  const [openAccount, setOpenAccount] = React.useState(false);
-  const [openChangePwd, setOpenChangePwd] = React.useState(false);
+  const handleChangePassword = (payload: ChangePasswordRequest) => {
+    UsersApi.changePassword(payload)
+      .then((response) => {
+        if (response) {
+          console.log("Password changed successfully");
+          // Show success message to the user
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to change password:", error);
+      });
+  }
+
+  const handleSignOut = () => {
+    clearTokens();
+    router.push(lhref("/auth/sign-in"));
+  }
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await UsersApi.me();
+        if (response) setUser(response);
+        else setUser(null);
+      } catch (error) {
+        console.error("Failed to fetch user:", error);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  if (!user) {
+    return (
+      <div className={cn("h-full flex flex-col bg-white transition-all duration-300", collapsed ? "w-[72px]" : "w-[280px]")}>
+        {/* Loading state */}
+        <div className="flex-1 flex items-center justify-center">
+          <span className="text-gray-500">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("h-full flex flex-col bg-white transition-all duration-300", collapsed ? "w-[72px]" : "w-[280px]")}>
@@ -137,8 +185,8 @@ export function Sidebar({
       <div className={cn("border-t border-gray-200", collapsed && "border-0")}>
         <div className={cn("p-3 flex items-center gap-3", collapsed ? "justify-center" : "justify-between")}>
           <div className={cn("flex items-center gap-3", collapsed && "hidden")}>
-            <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200">
-              <Image alt="avatar" src={user.avatarUrl} fill sizes="40px" />
+            <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center shrink-0 font-semibold">
+              {(user.name?.trim()?.[0] || user.email?.trim()?.[0] || "U").toUpperCase()}
             </div>
             <div className="leading-tight">
               <div className="font-medium text-sm">{user.name}</div>
@@ -147,8 +195,8 @@ export function Sidebar({
           </div>
 
           {collapsed && (
-            <div className="relative w-9 h-9 rounded-full overflow-hidden bg-gray-200">
-              <Image alt="avatar" src={user.avatarUrl} fill sizes="36px" />
+            <div className="w-9 h-9 rounded-full bg-gray-900 text-white flex items-center justify-center font-semibold">
+              {(user.name?.trim()?.[0] || user.email?.trim()?.[0] || "U").toUpperCase()}
             </div>
           )}
 
@@ -169,7 +217,7 @@ export function Sidebar({
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 className="text-red-600 focus:text-red-700"
-                onClick={() => alert("Sign Out")}
+                onClick={handleSignOut}
               >
                 <LogOut className="w-4 h-4 mr-2" /> Sign Out
               </DropdownMenuItem>
@@ -183,20 +231,14 @@ export function Sidebar({
         open={openAccount}
         onOpenChange={setOpenAccount}
         user={user}
-        onSave={(newName) => {
-          // TODO: call API update profile
-          setUser((u) => ({ ...u, name: newName }));
-        }}
+        onSave={handleSaveChangeProfile}
       />
 
       {/* Change Password Modal */}
       <ChangePasswordModal
         open={openChangePwd}
         onOpenChange={setOpenChangePwd}
-        onSubmit={(data) => {
-          // TODO: integrate API change password here
-          console.log("Change password:", data);
-        }}
+        onSubmit={handleChangePassword}
       />
     </div>
   );
