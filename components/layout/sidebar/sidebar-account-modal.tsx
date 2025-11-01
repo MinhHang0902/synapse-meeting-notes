@@ -1,24 +1,26 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PencilLine, X } from "lucide-react";
 import { UpdateProfileRequest, UserInfoResponse } from "@/types/interfaces/user";
 import { UsersApi } from "@/lib/api/user";
+
+interface AccountModalProps {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  user: UserInfoResponse;
+  onSave: (data: UpdateProfileRequest) => void;
+}
 
 export default function MyAccountModal({
   open,
   onOpenChange,
   user,
   onSave,
-}: {
-  open: boolean;
-  onOpenChange: (v: boolean) => void;
-  user: UserInfoResponse;
-  onSave: (data: UpdateProfileRequest) => void;
-}) {
-  const [editing, setEditing] = React.useState(false);
-  const [name, setName] = React.useState(user.name);
+}: AccountModalProps) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(user.name);
 
   React.useEffect(() => {
     setName(user.name);

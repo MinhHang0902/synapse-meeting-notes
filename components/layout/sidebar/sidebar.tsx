@@ -65,30 +65,51 @@ export function Sidebar({
     p?.startsWith(`/${locale}`) ? p.slice(locale.length + 1) || "/" : p;
   const lhref = (path: string) => `/${locale}${path.startsWith("/") ? path : `/${path}`}`;
 
-  const handleSaveChangeProfile = (updatedData: UpdateProfileRequest) => {
-    UsersApi.updatedProfile(updatedData)
-      .then((response) => {
-        if (response) {
-          // Update successful, you might want to update the user state in parent component
-          setUser((prev) => (prev ? { ...prev, ...response } : null));
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to update profile:", error);
-      });
+  const handleSaveChangeProfile = async (updatedData: UpdateProfileRequest) => {
+    // UsersApi.updatedProfile(updatedData)
+    //   .then((response) => {
+    //     if (response) {
+    //       // Update successful, you might want to update the user state in parent component
+    //       setUser((prev) => (prev ? { ...prev, ...response } : null));
+    //     }
+    //   }) 
+    //   .catch((error) => {
+    //     console.error("Failed to update profile:", error);
+    //   });
+
+    // equal to this code
+    try {
+      const response = await UsersApi.updatedProfile(updatedData);
+      if (response) {
+        // Update successful, you might want to update the user state in parent component
+        setUser((prev) => (prev ? { ...prev, ...response } : null));
+      }
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      throw error;
+    }
   };
 
-  const handleChangePassword = (payload: ChangePasswordRequest) => {
-    UsersApi.changePassword(payload)
-      .then((response) => {
-        if (response) {
-          console.log("Password changed successfully");
-          // Show success message to the user
-        }
-      })
-      .catch((error) => {
-        console.error("Failed to change password:", error);
-      });
+  const handleChangePassword = async (payload: ChangePasswordRequest) => {
+    // UsersApi.changePassword(payload)
+    //   .then((response) => {
+    //     if (response) {
+    //       console.log("Password changed successfully");
+    //       // Show success message to the user
+    //     }
+    //   })
+    //   .catch((error) => {
+    //     console.error("Failed to change password:", error);
+    //   });
+
+    try {
+      const response = await UsersApi.changePassword(payload);
+      if (response) {
+        // show success message/toast
+      }
+    } catch (error) {
+      console.error("Failed to change password:", error);
+    }
   }
 
   const handleSignOut = () => {

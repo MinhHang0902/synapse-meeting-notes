@@ -25,3 +25,10 @@ export interface ApiPaginatedResponse<T = unknown>
   pageSize: number;
   total: number;
 }
+
+export interface DefaultListQuery {
+  pageIndex?: number;
+  pageSize?: number;
+  sortKey?: string;
+  sortOrder?: string;
+}
