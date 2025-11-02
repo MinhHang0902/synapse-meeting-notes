@@ -1,7 +1,7 @@
 "use client"
 
 import ProtectedLayout from "@/components/layouts/ProtectedLayout"
-import { UsersSettings } from "@/components/settings/usersettings"
+import { UsersSettings } from "@/components/settings/user-settings"
 
 export default function SettingsPage() {
   return (

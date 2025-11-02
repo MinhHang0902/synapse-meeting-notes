@@ -11,6 +11,8 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Button } from "../ui/button";
+import { ROLE_TO_API, type CreateUserRequest, type CreateUserResponse, type RoleUI } from "@/types/interfaces/user";
+
 
 export default function AddUserModal({
   open,
@@ -19,19 +21,24 @@ export default function AddUserModal({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  onSubmit?: (payload: { fullName: string; email: string; role: "Admin" | "User" }) => void;
+  // ⇩⇩ onSubmit giờ trả Promise để nhận được kết quả tạo user
+  onSubmit: (payload: CreateUserRequest) => Promise<CreateUserResponse | void>;
 }) {
-  const [fullName, setFullName] = useState("");
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<"Admin" | "User" | "">("");
+  const [roleUI, setRoleUI] = useState<RoleUI | "">("");
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const emailValid = useMemo(() => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email), [email]);
-  const canSubmit = !!fullName.trim() && emailValid && !!role;
+  const canSubmit = !!name.trim() && emailValid && !!roleUI && !submitting;
 
   const reset = () => {
-    setFullName("");
+    setName("");
     setEmail("");
-    setRole("");
+    setRoleUI("");
+    setErrorMsg(null);
+    setSubmitting(false);
   };
 
   const handleClose = (v: boolean) => {
@@ -39,16 +46,66 @@ export default function AddUserModal({
     onOpenChange(v);
   };
 
-  const submit = () => {
+  // --- thay thế toàn bộ hàm submit bằng phiên bản này ---
+  const submit = async (): Promise<void> => {
     if (!canSubmit) return;
-    const newUser = {
-      fullName: fullName.trim(),
-      email: email.trim(),
-      role: role as "Admin" | "User",
-    };
-    onSubmit?.(newUser);
-    reset();
-    onOpenChange(false);
+
+    try {
+      setSubmitting(true);
+      setErrorMsg(null);
+
+      // chuẩn hóa input
+      const payload = {
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        role: ROLE_TO_API[roleUI],
+      };
+
+      let created: CreateUserResponse | void;
+
+      // Cha tự gọi API và có thể trả về CreateUserResponse
+      created = await onSubmit(payload);
+
+      // Nếu thành công
+      reset();
+      onOpenChange(false);
+    } catch (err: any) {
+      // Bắt lỗi chi tiết từ axios
+      const status = err?.response?.status;
+      const serverMsg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message;
+
+      if (status === 412) {
+        // Hiển thị thông điệp dễ hiểu hơn cho 412
+        setErrorMsg(
+          typeof serverMsg === "string"
+            ? serverMsg
+            : "Precondition failed (412). Vui lòng kiểm tra lại dữ liệu — có thể email đã tồn tại hoặc role không hợp lệ."
+        );
+      } else if (status === 400) {
+        setErrorMsg(
+          typeof serverMsg === "string"
+            ? serverMsg
+            : "Bad request (400). Vui lòng kiểm tra dữ liệu nhập."
+        );
+      } else {
+        setErrorMsg(
+          typeof serverMsg === "string"
+            ? serverMsg
+            : `Request failed${status ? ` (status ${status})` : ""}.`
+        );
+      }
+
+      console.error("Create user failed:", {
+        status,
+        data: err?.response?.data,
+        err,
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!open) return null;
@@ -84,9 +141,10 @@ export default function AddUserModal({
             <input
               type="text"
               placeholder="Enter full name (e.g., John Doe)"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full h-9 px-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={submitting}
+              className="w-full h-9 px-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors disabled:opacity-60"
             />
           </div>
 
@@ -99,7 +157,8 @@ export default function AddUserModal({
               placeholder="user@company.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full h-9 px-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
+              disabled={submitting}
+              className="w-full h-9 px-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors disabled:opacity-60"
             />
             {!emailValid && email.length > 0 && (
               <p className="mt-2 text-xs text-red-600">Please enter a valid email.</p>
@@ -110,10 +169,10 @@ export default function AddUserModal({
             <Label className="text-sm font-medium text-gray-900 mb-2 block">
               Role <span className="text-red-500">*</span>
             </Label>
-            <Select value={role} onValueChange={(v: "Admin" | "User") => setRole(v)}>
-              <SelectTrigger className="bg-white">
+            <Select value={roleUI} onValueChange={(v: RoleUI) => setRoleUI(v)}>
+              <SelectTrigger className="bg-white disabled:opacity-60" disabled={submitting}>
                 <SelectValue placeholder="Select role">
-                  {role ? role : "Select role"}
+                  {roleUI || "Select role"}
                 </SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -122,6 +181,8 @@ export default function AddUserModal({
               </SelectContent>
             </Select>
           </div>
+
+          {errorMsg && <p className="text-sm text-red-600">{errorMsg}</p>}
         </div>
 
         {/* Footer */}
@@ -130,6 +191,7 @@ export default function AddUserModal({
             variant="outline"
             className="px-6 bg-transparent"
             onClick={() => handleClose(false)}
+            disabled={submitting}
           >
             <X className="w-4 h-4 mr-2" />
             Cancel
@@ -137,12 +199,11 @@ export default function AddUserModal({
           <Button
             disabled={!canSubmit}
             onClick={submit}
-            className={`px-6 text-white ${
-              canSubmit ? "bg-black hover:bg-black/90" : "bg-gray-400 cursor-not-allowed"
-            }`}
+            className={`px-6 text-white ${canSubmit ? "bg-black hover:bg-black/90" : "bg-gray-400 cursor-not-allowed"
+              }`}
           >
             <UserPlus className="w-4 h-4 mr-2" />
-            Add User
+            {submitting ? "Adding..." : "Add User"}
           </Button>
         </div>
       </div>

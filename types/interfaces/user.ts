@@ -1,6 +1,6 @@
 import { DefaultListQuery } from "./common";
 
-//voi cac request, neu truong la optional, can co dau ?
+// voi cac request, neu truong la optional, can co dau ?
 export interface UserProjectMember {
     project: {
         project_id: number;
@@ -11,10 +11,10 @@ export interface UserProjectMember {
     }
 }
 
-//GET: users/me (use same by UpdateProfileResponse and ChangePasswordResponse)
+// GET: users/me (use same by UpdateProfileResponse and ChangePasswordResponse)
 export interface UserInfoResponse {
     user_id: number;
-    name: string;   
+    name: string;
     email: string;
     system_role_id: number;
     status: string;
@@ -26,25 +26,26 @@ export interface UserInfoResponse {
         system_role_id: number;
         role_name: string;
     },
-    projectMembers: UserProjectMember[]
+    projectMembers: UserProjectMember[];
 }
 
-//PATCH: users/profile
+// PATCH: users/profile
 export interface UpdateProfileRequest {
     name: string;
 }
 
-//PATCH: users/change-password
+// PATCH: users/change-password
 export interface ChangePasswordRequest {
     currentPassword: string;
     newPassword: string;
 }
 
-//GET: users
+// GET: users
 export interface UserListRequestFilterRequest extends DefaultListQuery {
     search?: string;
     status?: string;
     role?: string;
+    paging: true,
 }
 export interface UserListResponse {
     paging: boolean;
@@ -85,10 +86,12 @@ export interface CreateUserResponse {
 
 export interface UpdateUserRequest {
     name: string;
+    email: string;
     role: string;
     status: string;
 }
 
+// (giữ nguyên tên theo input – có typo)
 export interface SaveUserRequesr {
     user_id: number;
     name: string;
@@ -101,7 +104,7 @@ export interface SaveUserRequesr {
     deleted_at: Date;
 }
 
-//DELETE: delete user/{userId}
+// DELETE: delete user/{userId}
 export interface DeleteUserResponse {
     user_id: number;
     name: string;
@@ -111,6 +114,42 @@ export interface DeleteUserResponse {
     status: string;
     last_login: Date;
     created_at: Date;
-    updaetd_at: Date;
+    updaetd_at: Date; // giữ nguyên theo input
     deleted_at: Date;
+}
+
+// Alias tiện dùng (vì tên gốc có typo)
+export type SaveUserResponse = SaveUserRequesr;
+
+export type RoleUI = "Admin" | "User";
+export type RoleAPI = "ADMIN" | "USER";
+
+export const ROLE_TO_API: Record<RoleUI, RoleAPI> = {
+    Admin: "ADMIN",
+    User: "USER",
+};
+
+export const ROLE_TO_UI: Record<RoleAPI, RoleUI> = {
+    ADMIN: "Admin",
+    USER: "User",
+};
+
+export type StatusUI = 'Active' | 'Inactive';
+export type StatusAPI = 'ACTIVE' | 'INACTIVE';
+
+export const STATUS_TO_API: Record<StatusUI, StatusAPI> = {
+    Active: "ACTIVE",
+    Inactive: "INACTIVE",
+};
+
+export interface UserRow {
+    id: string;
+    name: string;
+    email: string;
+    role: RoleUI;
+    status: StatusUI;
+    lastLogin: string;
+    created: string;
+    initials: string;
+    color: string;
 }
