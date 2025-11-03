@@ -1,4 +1,4 @@
-import { DefaultListQuery } from "./common";
+import { DefaultListQuery, DefaultListResponse } from "./common";
 
 // voi cac request, neu truong la optional, can co dau ?
 export interface UserProjectMember {
@@ -45,14 +45,8 @@ export interface UserListRequestFilterRequest extends DefaultListQuery {
     search?: string;
     status?: string;
     role?: string;
-    paging: true,
 }
-export interface UserListResponse {
-    paging: boolean;
-    hasMore: boolean;
-    pageIndex: number;
-    totalPages: number;
-    totalItems: number;
+export interface UserListResponse extends DefaultListResponse {
     data: UserListData[];
 }
 

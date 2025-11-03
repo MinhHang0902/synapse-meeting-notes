@@ -1,266 +1,266 @@
-"use client"
+"use client";
 
-import { useEffect, useRef, useState } from "react"
-import { Button } from "@/components/ui/button"
-import {
-    LayoutGrid,
-    NotebookText,
-    Users2,
-    Edit2,
-    Trash2,
-} from "lucide-react"
-import ProjectOverview from "./project-overview"
-import ProjectMinutes from "./project-minutes"
-import ProjectMembers from "./project-members"
-import EditProjectModal from "./edit-project-modal"
+import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { LayoutGrid, NotebookText, Users2, Edit2, Trash2 } from "lucide-react";
+import ProjectOverview from "./project-overview";
+import ProjectMinutes from "./project-minutes";
+import ProjectMembers from "./project-members";
+import EditProjectModal from "./edit-project-modal";
+import { ProjectsApi } from "@/lib/api/project";
+import type { ProjectDetailResponse, MemberProjectData } from "@/types/interfaces/project";
 
+type TabKey = "overview" | "minutes" | "members";
 
+const toUIStatus = (s?: string | null) =>
+  String(s || "").toUpperCase() === "COMPLETED" ? "Completed" : "Active";
+const toAPIStatus = (s: "Active" | "Completed") => (s === "Completed" ? "COMPLETED" : "ACTIVE");
 
-/* ============ ProjectDetail ============ */
-type TabKey = "overview" | "minutes" | "members"
-
-export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
-    const [activeTab, setActiveTab] = useState<TabKey>("overview")
-    const [openEdit, setOpenEdit] = useState(false)
-
-    const tabs = [
-        { key: "overview", label: "Overview", icon: LayoutGrid },
-        { key: "minutes", label: "Minutes", icon: NotebookText },
-        { key: "members", label: "Members", icon: Users2 },
-    ] as const
-
-    const containerRef = useRef<HTMLDivElement | null>(null)
-    const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({})
-    const [indicator, setIndicator] = useState({ left: 0, width: 0 })
-
-    const recalc = () => {
-        const el = itemRefs.current[activeTab]
-        const wrap = containerRef.current
-        if (!el || !wrap) return
-        const { left: l1 } = wrap.getBoundingClientRect()
-        const { left: l2, width } = el.getBoundingClientRect()
-        setIndicator({ left: l2 - l1, width })
-    }
-
-    useEffect(() => {
-        recalc()
-        window.addEventListener("resize", recalc)
-        return () => window.removeEventListener("resize", recalc)
-    }, [activeTab])
-
-    const project = {
-        name: "Digital Transformation Initiative",
-        description: "Comprehensive digital modernization project for enterprise systems",
-        fullDescription: "Modernizing legacy systems and implementing cloud-native solutions",
-        createdDate: "September 15, 2025",
-        status: "Active",
-        managers: ["Sarah Johnson", "Mike Chen"],
-        reviewers: ["David Kim", "Lisa Wong", "Alex Rodriguez"],
-        viewers: ["John Smith", "Emma Davis", "+5 more"],
-    };
-
-    const recentActivity = [
-        {
-            id: 1,
-            type: "file",
-            user: "Sarah Johnson",
-            action: "uploaded",
-            item: "Q3_Financial_Report.pdf",
-            time: "2 hours ago",
-        },
-        {
-            id: 2,
-            type: "mom",
-            action: "exported for",
-            item: "Weekly Team Meeting - Sept 20",
-            time: "5 hours ago",
-        },
-        {
-            id: 3,
-            type: "member",
-            user: "Alex Rodriguez",
-            action: "added as Reviewer",
-            time: "1 day ago",
-        },
-        {
-            id: 4,
-            type: "action",
-            action: "3 new action items created from",
-            item: "Strategy Review Meeting",
-            time: "2 days ago",
-        },
-    ];
-    const meetingMinutes = [
-        {
-            id: 1,
-            fileName: "Q3_Financial_Report.pdf",
-            uploader: "Sarah Johnson",
-            uploadDate: "Sept 21, 2025",
-            fileType: "pdf",
-        },
-        {
-            id: 2,
-            fileName: "Budget_Analysis_2025.xlsx",
-            uploader: "Mike Chen",
-            uploadDate: "Sept 20, 2025",
-            fileType: "excel",
-        },
-        {
-            id: 3,
-            fileName: "Project_Requirements.docx",
-            uploader: "David Kim",
-            uploadDate: "Sept 19, 2025", 
-            fileType: "word", 
-        }, 
-        { 
-            id: 4, 
-            fileName: "Stakeholder_Presentation.pptx", 
-            uploader: "Lisa Wong",
-            uploadDate: "Sept 18, 2025", 
-            fileType: "powerpoint", 
-        }, 
-        { 
-            id: 5, 
-            fileName: "Architecture_Diagram.png", 
-            uploader: "Alex Rodriguez", 
-            uploadDate: "Sept 17, 2025", 
-            fileType: "image", 
-        },]; 
-        
-        const teamMembers = 
-        [{ 
-            id: 1,
-             name: "Sarah Johnson", 
-             email: "sarah.johnson@company.com", 
-             role: "Manager", 
-             avatar: "SJ", 
-             avatarColor: "bg-blue-500", 
-            },
-            { 
-                id: 2,
-                name: "Mike Chen", 
-                email: "mike.chen@company.com", 
-                role: "Manager", 
-                avatar: "MC", 
-                avatarColor: "bg-pink-500", 
-            }, 
-            { 
-                id: 3, 
-                name: "David Kim", 
-                email: "david.kim@company.com", 
-                role: "Reviewer", 
-                avatar: "DK", 
-                avatarColor: "bg-cyan-500", 
-            }, 
-            { 
-                id: 4, 
-                name: "Lisa Wong", 
-                email: "lisa.wong@company.com", 
-                role: "Reviewer", avatar: "LW", 
-                avatarColor: "bg-orange-500", 
-            }, 
-            { 
-                id: 5, 
-                name: "Alex Rodriguez", 
-                email: "alex.rodriguez@company.com", 
-                role: "Reviewer", avatar: "AR", 
-                avatarColor: "bg-cyan-300", 
-            }, 
-            { 
-                id: 6, 
-                name: "John Smith", 
-                email: "john.smith@company.com", 
-                role: "Viewer", 
-                avatar: "JS", 
-                avatarColor: "bg-orange-300", 
-            }, 
-            { 
-                id: 7, 
-                name: "Emma Davis", 
-                email: "emma.davis@company.com", 
-                role: "Viewer", 
-                avatar: "ED", 
-                avatarColor: "bg-pink-400", 
-            },];
-            
-
-    return (
-        <div className="space-y-6">
-            {/* Header */}
-            <div className="flex items-start justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold text-foreground mb-2">{project.name}</h1>
-                    <p className="text-gray-600">{project.description}</p>
-                </div>
-                <div className="flex gap-3">
-                    <Button
-                        className="bg-black text-white hover:bg-black/90 gap-2"
-                        onClick={() => setOpenEdit(true)}
-                    >
-                        <Edit2 size={16} />
-                        Edit Project
-                    </Button>
-                    <Button className="bg-black text-white hover:bg-black/90 gap-2">
-                        <Trash2 size={16} />
-                        Delete
-                    </Button>
-                </div>
-            </div>
-
-            {/* Tabs */}
-            <div className="border-b border-gray-200">
-                <div ref={containerRef} className="relative flex gap-8">
-                    <span
-                        className="pointer-events-none absolute -bottom-px h-[2px] bg-black rounded-full"
-                        style={{
-                            width: indicator.width,
-                            transform: `translateX(${indicator.left}px)`,
-                            transition:
-                                "transform 260ms cubic-bezier(.22,.61,.36,1), width 260ms cubic-bezier(.22,.61,.36,1)",
-                        }}
-                    />
-                    {tabs.map(({ key, label, icon: Icon }) => {
-                        const active = activeTab === key
-                        return (
-                            <button
-                                key={key}
-                                ref={(el) => {
-                                    itemRefs.current[key] = el
-                                }}
-                                onClick={() => setActiveTab(key as TabKey)}
-                                className={[
-                                    "relative pb-3 px-1 inline-flex items-center gap-1.5 text-sm transition-colors",
-                                    active ? "text-black" : "text-gray-500 hover:text-gray-800",
-                                ].join(" ")}
-                            >
-                                <Icon size={14} className={active ? "text-black" : "text-gray-500"} />
-                                <span className="font-medium">{label}</span>
-                            </button>
-                        )
-                    })}
-                </div>
-            </div>
-
-            {/* Content */}
-            {activeTab === "overview" && <ProjectOverview project={project} recentActivity={recentActivity} />}
-            {activeTab === "minutes" && <ProjectMinutes meetingMinutes={meetingMinutes} />}
-            {activeTab === "members" && <ProjectMembers teamMembers={teamMembers} />}
-
-            {/* Edit Project Popup */}
-            <EditProjectModal
-                open={openEdit}
-                onOpenChange={setOpenEdit}
-                defaultValues={{
-                    name: project.name,
-                    description: project.fullDescription,
-                }}
-                onSubmit={(data) => {
-                    console.log("Save project changes:", data)
-                }}
-            />
-        </div>
-    )
-        
+function toText(v: unknown): string {
+  if (v == null) return "-";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (typeof v === "object") {
+    const anyV = v as any;
+    return anyV?.name ?? anyV?.fullName ?? anyV?.email ?? anyV?.title ?? anyV?.label ?? anyV?.id ?? "-";
+  }
+  return "-";
 }
 
-export default ProjectDetail
+function formatDate(d?: string | Date | null) {
+  if (!d) return "-";
+  const dt = typeof d === "string" ? new Date(d) : d;
+  if (Number.isNaN(dt.getTime())) return "-";
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getDate()).padStart(2, "0");
+  return `${dd} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][dt.getMonth()]} ${yyyy}`;
+}
+
+function membersByRole(
+  members: MemberProjectData[] | undefined,
+  role: "MANAGER" | "REVIEWER" | "VIEWER"
+) {
+  return (members || [])
+    .filter((m) => String(m.projectRole?.role_type || "").toUpperCase() === role)
+    .map((m) => toText(m.user));
+}
+
+export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
+  const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [openEdit, setOpenEdit] = useState(false);
+
+  // underline indicator
+  const tabs = [
+    { key: "overview", label: "Overview", icon: LayoutGrid },
+    { key: "minutes", label: "Minutes", icon: NotebookText },
+    { key: "members", label: "Members", icon: Users2 },
+  ] as const;
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const itemRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const [indicator, setIndicator] = useState({ left: 0, width: 0 });
+  const recalc = () => {
+    const el = itemRefs.current[activeTab];
+    const wrap = containerRef.current;
+    if (!el || !wrap) return;
+    const { left: l1 } = wrap.getBoundingClientRect();
+    const { left: l2, width } = el.getBoundingClientRect();
+    setIndicator({ left: l2 - l1, width });
+  };
+  useEffect(() => {
+    recalc();
+    window.addEventListener("resize", recalc);
+    return () => window.removeEventListener("resize", recalc);
+  }, [activeTab]);
+
+  // ===== API state =====
+  const [loading, setLoading] = useState(true);
+  const [detail, setDetail] = useState<ProjectDetailResponse | null>(null);
+
+  const project = detail
+    ? {
+        name: toText(detail.project_name),
+        description: toText((detail as any).project_description), // <<< FIX
+        createdDate: formatDate(detail.project_createdAt),
+        status: toUIStatus(detail.project_status) as "Active" | "Completed",
+        managers: membersByRole(detail.project_membersAndRoles, "MANAGER"),
+        reviewers: membersByRole(detail.project_membersAndRoles, "REVIEWER"),
+        viewers: membersByRole(detail.project_membersAndRoles, "VIEWER"),
+      }
+    : {
+        name: "",
+        description: "",
+        createdDate: "",
+        status: "Active" as const,
+        managers: [] as string[],
+        reviewers: [] as string[],
+        viewers: [] as string[],
+      };
+
+  // minutes
+  const meetingMinutes =
+    (detail?.project_minutes as any[])?.map((it, idx) => ({
+      id: it?.id ?? idx + 1,
+      fileName: toText(it?.file_name || it?.title || "Untitled"),
+      uploader: toText(it?.uploader_name),
+      uploadDate: formatDate(it?.uploaded_at),
+      fileType: (String(it?.file_type || "").toLowerCase() ||
+        (it?.file_name?.split(".").pop()?.toLowerCase() ?? "file")) as
+        | "pdf"
+        | "excel"
+        | "word"
+        | "powerpoint"
+        | "image",
+    })) ?? [];
+
+  // activities
+  const recentActivity =
+    (detail?.project_RecentActivities as any[])?.map((a, i) => ({
+      id: a?.id ?? i + 1,
+      type: toText(a?.type || "file"),
+      user: toText(a?.user || a?.actor || ""),
+      action: toText(a?.action || "updated"),
+      item: toText(a?.item || a?.subject || ""),
+      time: toText(a?.time || "just now"),
+    })) ?? [];
+
+  // members
+  const teamMembers =
+    (detail?.project_membersAndRoles || []).map((m, i) => {
+      const name = toText(m.user);
+      const emailRaw = (m as any)?.user?.email ?? "";
+      const email = typeof emailRaw === "string" ? emailRaw : toText(emailRaw);
+      const displayForInitials = name || email || "Member";
+      const initials =
+        displayForInitials
+          .split(" ")
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((s) => s[0])
+          .join("")
+          .toUpperCase() || "MB";
+      const palette = ["bg-blue-500", "bg-pink-500", "bg-cyan-500", "bg-orange-500", "bg-emerald-500", "bg-indigo-500"];
+      const color = palette[(email + name).length % palette.length];
+      const roleType = String(m.projectRole?.role_type || "").toUpperCase();
+      const role = roleType === "MANAGER" ? "Manager" : roleType === "REVIEWER" ? "Reviewer" : "Viewer";
+      return {
+        id: (m as any)?.user?.user_id ?? i + 1,
+        name,
+        email,
+        role,
+        avatar: initials,
+        avatarColor: color,
+      };
+    }) ?? [];
+
+  // fetch detail
+  const load = async () => {
+    try {
+      setLoading(true);
+      const res = await ProjectsApi.detail(Number(id));
+      setDetail(res);
+    } catch (e) {
+      console.error("Load project detail failed:", e);
+      setDetail(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const handleDelete = async () => {
+    try {
+      await ProjectsApi.remove(Number(id));
+      console.log("Deleted project", id);
+    } catch (e) {
+      console.error("Delete project failed:", e);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground mb-2">{project.name}</h1>
+          <p className="text-gray-600">{project.description}</p>
+        </div>
+        <div className="flex gap-3">
+          <Button className="bg-black text-white hover:bg-black/90 gap-2" onClick={() => setOpenEdit(true)}>
+            <Edit2 size={16} />
+            Edit Project
+          </Button>
+          <Button className="bg-black text-white hover:bg-black/90 gap-2" onClick={handleDelete}>
+            <Trash2 size={16} />
+            Delete Project
+          </Button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <div ref={containerRef} className="relative flex gap-8">
+          <span
+            className="pointer-events-none absolute -bottom-px h-[2px] bg-black rounded-full"
+            style={{
+              width: indicator.width,
+              transform: `translateX(${indicator.left}px)`,
+              transition: "transform 260ms cubic-bezier(.22,.61,.36,1), width 260ms cubic-bezier(.22,.61,.36,1)",
+            }}
+          />
+          {tabs.map(({ key, label, icon: Icon }) => {
+            const active = activeTab === key;
+            return (
+              <button
+                key={key}
+                ref={(el) => {
+                  itemRefs.current[key] = el;
+                }}
+                onClick={() => setActiveTab(key as TabKey)}
+                className={[
+                  "relative pb-3 px-1 inline-flex items-center gap-1.5 text-sm transition-colors",
+                  active ? "text-black" : "text-gray-500 hover:text-gray-800",
+                ].join(" ")}
+              >
+                <Icon size={14} className={active ? "text-black" : "text-gray-500"} />
+                <span className="font-medium">{label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Content */}
+      {!loading && activeTab === "overview" && <ProjectOverview project={project} recentActivity={recentActivity} />}
+      {!loading && activeTab === "minutes" && <ProjectMinutes meetingMinutes={meetingMinutes} />}
+      {!loading && activeTab === "members" && <ProjectMembers teamMembers={teamMembers} />}
+
+      {/* Edit Project Popup */}
+      <EditProjectModal
+        open={openEdit}
+        onOpenChange={setOpenEdit}
+        defaultValues={{
+          name: project.name,
+          description: project.description, // dùng mô tả đã đúng field
+        }}
+        onSubmit={async (data) => {
+          try {
+            await ProjectsApi.update(Number(id), {
+              name: data.name,
+              description: data.description,
+              status: toAPIStatus(project.status),
+            });
+            await load(); // refetch để cập nhật UI
+          } catch (e) {
+            console.error("Update project failed:", e);
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+export default ProjectDetail;

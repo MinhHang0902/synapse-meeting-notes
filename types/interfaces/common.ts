@@ -32,3 +32,11 @@ export interface DefaultListQuery {
   sortKey?: string;
   sortOrder?: string;
 }
+
+export interface DefaultListResponse {
+  paging: boolean;
+  hasMore: boolean;
+  pageIndex: number;
+  totalPages: number;
+  totalItems: number;
+}

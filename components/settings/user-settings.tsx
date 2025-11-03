@@ -158,7 +158,6 @@ export function UsersSettings() {
   const buildQuery = (): UserListRequestFilterRequest => ({
     pageIndex,
     pageSize,
-    paging: true,
     search: searchQuery || undefined,
     role: roleFilter === ROLE_ALL || roleFilter === "" ? undefined : (roleFilter as RoleUI),
     status:
@@ -410,8 +409,8 @@ export function UsersSettings() {
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset ${user.role === "Admin"
-                          ? "bg-amber-50 text-amber-700 ring-amber-200"
-                          : "bg-indigo-50 text-indigo-700 ring-indigo-200"
+                        ? "bg-amber-50 text-amber-700 ring-amber-200"
+                        : "bg-indigo-50 text-indigo-700 ring-indigo-200"
                         }`}
                     >
                       {user.role}
@@ -421,8 +420,8 @@ export function UsersSettings() {
                   <td className="px-4 py-3">
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium ring-1 ring-inset ${user.status === "Active"
-                          ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-                          : "bg-zinc-100 text-zinc-700 ring-zinc-200"
+                        ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                        : "bg-zinc-100 text-zinc-700 ring-zinc-200"
                         }`}
                     >
                       {user.status}
@@ -493,8 +492,8 @@ export function UsersSettings() {
             key={page}
             onClick={() => setPageIndex(page)}
             className={`w-8 h-8 rounded text-sm font-medium flex items-center justify-center transition-colors ${pageIndex === page
-                ? "bg-black text-white"
-                : "text-gray-900 hover:bg-gray-200/70"
+              ? "bg-black text-white"
+              : "text-gray-900 hover:bg-gray-200/70"
               }`}
           >
             {page}

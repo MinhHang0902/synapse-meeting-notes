@@ -1,27 +1,21 @@
 import { LargeNumberLike } from "crypto";
+import { DefaultListResponse } from "./common";
 
 //GET: /projects
 export interface ProjectListFilterRequest {
     search?: string;
     status?: string;
-    role?: string;
-    paging: true,
-
 }
 
-export interface ProjectListResponse {
-    paging: string;
-    hasMore: string;
-    pageIndex: number;
-    totalPages: number;
-    totalItems: number;
-    data: [ProjectListData]
+export interface ProjectListResponse extends DefaultListResponse {
+    data: ProjectListData[]
 }
 
 export interface ProjectListData {
     project_id: number;
     project_name: string;
     project_description: string;
+    project_status: string;
     project_members_length: number;
     project_minutes_length: number;
     project_owner: string;
@@ -33,9 +27,9 @@ export interface CreateProjectRequest {
     name: string;
     description: string;
     status: string;
-    managers: string;
-    reviewers: string;
-    viewers: string;
+    managers?: string;
+    reviewers?: string;
+    viewers?: string;
 }
 
 export interface CreateProjectResponse {
@@ -48,7 +42,7 @@ export interface CreateProjectResponse {
         created_at: Date;
         updated_at: Date;
         deleted_at: Date;
-        members: [MemberProjectData];
+        members: MemberProjectData[];
     }
     insertedCount: number;
     roles: {
@@ -80,10 +74,10 @@ export interface ProjectDetailResponse {
     project_status: string;
     project_RecentActivities: [];
     project_minutes: [];
-    project_membersAndRoles: [MemberProjectData];
+    project_membersAndRoles: MemberProjectData[];
 }
 
-//PATCH: projects/{projectId} NOT DONE
+//PATCH: projects/{projectId}
 export interface UpdateProjectRequest {
     name: string;
     description: string;
@@ -91,10 +85,17 @@ export interface UpdateProjectRequest {
 }
 
 export interface UpdateProjectResponse {
-
+    project_id: number;
+    project_name: string;
+    description: string;
+    status: string;
+    created_by: number;
+    created_at: Date;
+    updated_at: Date;
+    deleted_at: Date;
 }
 
-//DELETE: projects/{projectId} NOT DONE 
+//DELETE: projects/{projectId} 
 export interface DeleteProjectResponse {
     project_id: number;
     project_name: string;
@@ -102,34 +103,69 @@ export interface DeleteProjectResponse {
     deleteMembersCount: number;
 }
 
-//POST: projects/add-member/{projectId} NOT DONE
+//POST: projects/add-member/{projectId} 
 export interface AddMemberRequest {
     email: string;
     role: string;
 }
 
 export interface AddMemberResponse {
-
+    id: number;
+    project_id: number;
+    user_id: number;
+    project_role_id: number;
+    created_at: Date;
+    updated_at: Date;
+    deleted_at: Date;
+    user: {
+        user_id: number;
+        name: string;
+    }
+    projectRole: {
+        role_type: string;
+    }
 }
 
-//PATCH: projects/updated-member/{projectId} NOT DONE 
+//PATCH: projects/updated-member/{projectId} 
 export interface UpdateMemberRequest {
     email: string;
     role: string;
 }
 
 export interface UpdateMemberResponse {
-
+    id: number;
+    project_id: number;
+    user_id: number;
+    project_role_id: number;
+    created_at: Date;
+    updated_at: Date;
+    deleted_at: Date;
+    user: {
+        user_id: number;
+        name: string;
+    }
+    projectRole: {
+        role_type: string;
+    }
 }
 
-//DELETE projects/delete-member/{projectId}/{memberId} NOT DONE
+//DELETE projects/delete-member/{projectId}/{memberId} 
 export interface DeleteMemberResponse {
-
+    id: number;
+    project_id: number;
+    user_id: number;
+    project_role_id: number;
+    created_at: Date;
+    updated_at: Date;
+    deleted_at: Date;
 }
+
 
 //GET: projects/user-not-in-project/{projectId} NOT DONE
 export interface CheckMemberNotInResponse {
-
+    user_id: number;
+    name: string;
+    email: string;
 }
 
 

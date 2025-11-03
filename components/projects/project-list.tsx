@@ -1,26 +1,27 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  X,
   Plus,
   Users,
-  Crown,
-  Eye,
   ChevronLeft,
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  FolderPlus,
-  Folder,
   FileText,
-  UserCheck,
-  Mail,
 } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CreateProjectModal from "./project-detail/create-project-modal";
+
+import { ProjectsApi } from "@/lib/api/project";
+import type {
+  ProjectListData,
+  ProjectListResponse,
+  CreateProjectRequest,
+} from "@/types/interfaces/project";
 
 export interface TeamMember {
   email: string;
@@ -37,55 +38,124 @@ export interface Project {
   lastUpdated: string;
 }
 
-const SEED: Project[] = [
-  { id: "1", name: "Marketing Campaign Q2", description: "Translation of marketing materials for Q2", status: "Active", members: 5, files: 12, owner: "John Smith", lastUpdated: "Jan 20, 2024" },
-  { id: "2", name: "Company Website", description: "Multi-language website content translation", status: "Completed", members: 4, files: 25, owner: "Sarah Johnson", lastUpdated: "Jan 10, 2024" },
-  { id: "3", name: "Digital Transformation Initiative", description: "Manual and technical documents translation", status: "Active", members: 3, files: 8, owner: "Anna Lee", lastUpdated: "Jan 18, 2024" },
-  { id: "4", name: "Legal Contracts", description: "Translation of contracts and legal documents", status: "Completed", members: 2, files: 15, owner: "Michael Brown", lastUpdated: "Jan 15, 2024" },
-];
+const statusToUI = (s?: string | null): "Active" | "Completed" =>
+  String(s || "").toUpperCase() === "COMPLETED" ? "Completed" : "Active";
+
+function toText(v: unknown): string {
+  if (v == null) return "-";
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  if (typeof v === "object") {
+    const anyV = v as any;
+    return anyV?.name ?? anyV?.fullName ?? anyV?.email ?? anyV?.title ?? anyV?.label ?? anyV?.id ?? "-";
+  }
+  return "-";
+}
+
+function formatDate(d?: string | Date | null) {
+  if (!d) return "-";
+  const dt = typeof d === "string" ? new Date(d) : d;
+  if (Number.isNaN(dt.getTime())) return "-";
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, "0");
+  const dd = String(dt.getDate()).padStart(2, "0");
+  const HH = String(dt.getHours()).padStart(2, "0");
+  const MM = String(dt.getMinutes()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd} ${HH}:${MM}`;
+}
+
+function mapProject(p: ProjectListData): Project {
+  return {
+    id: String(p.project_id),
+    name: toText(p.project_name),
+    description: toText(p.project_description),
+    status: statusToUI(p.project_status),
+    members: p.project_members_length ?? 0,
+    files: p.project_minutes_length ?? 0,
+    owner: toText(p.project_owner),
+    lastUpdated: formatDate(p.project_last_updated),
+  };
+}
 
 export function ProjectsList() {
-  const [projects, setProjects] = useState<Project[]>(SEED);
+  const router = useRouter();
+  const pathname = usePathname();
+  const localeFromPath = pathname?.split("/").filter(Boolean)?.[0] || "en"; // ví dụ: /en/pages/projects
+
+  const [projects, setProjects] = useState<Project[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
 
+  const itemsPerPage = 5;
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filtered = projects.filter((p) =>
-    p.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [loading, setLoading] = useState(false);
 
-  const itemsPerPage = 5;
-  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
-  const safePage = Math.min(currentPage, totalPages);
-  const startIndex = (safePage - 1) * itemsPerPage;
-  const displayed = filtered.slice(startIndex, startIndex + itemsPerPage);
+  const fetchProjects = async (page = currentPage) => {
+    setLoading(true);
+    try {
+      const res: ProjectListResponse = await ProjectsApi.list({
+        pageIndex: page,
+        pageSize: itemsPerPage,
+        search: searchQuery || undefined,
+      });
+      setProjects((res.data || []).map(mapProject));
+      setTotalPages(res.totalPages || 1);
+    } catch (err) {
+      console.error("Fetch projects failed:", err);
+      setProjects([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const handleCreateProject = (data: {
+  useEffect(() => {
+    fetchProjects(currentPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage]);
+
+  const handleSearchClick = async () => {
+    setCurrentPage(1);
+    await fetchProjects(1);
+  };
+
+  const handleOpenProject = (id: string) => {
+    // Đẩy đúng path có locale: /{locale}/pages/projects/{id}
+    router.push(`/${localeFromPath}/pages/projects/${id}`);
+  };
+
+  const handleCreateProject = async (data: {
     projectName: string;
     description: string;
     managers: TeamMember[];
     reviewers: TeamMember[];
     viewers: TeamMember[];
   }) => {
-    const now = new Date();
-    const newProject: Project = {
-      id: String(Date.now()),
-      name: data.projectName || "Untitled Project",
-      description: data.description || "—",
-      status: "Active",
-      members: data.managers.length + data.reviewers.length + data.viewers.length,
-      files: 0,
-      owner: data.managers[0]?.name || "You",
-      lastUpdated: now.toLocaleString("en-US", { month: "short", day: "2-digit", year: "numeric" }),
-    };
-    setProjects((prev) => [newProject, ...prev]);
-    setCurrentPage(1);
+    try {
+      const payload: CreateProjectRequest = {
+        name: (data.projectName || "").trim(),
+        description: (data.description || "").trim(),
+        status: "ACTIVE",
+        managers: data.managers?.map((m) => m.email).filter(Boolean).join(","),
+        reviewers: data.reviewers?.map((m) => m.email).filter(Boolean).join(","),
+        viewers: data.viewers?.map((m) => m.email).filter(Boolean).join(","),
+      };
+      await ProjectsApi.create(payload);
+      setModalOpen(false);
+      setCurrentPage(1);
+      await fetchProjects(1);
+    } catch (err) {
+      console.error("Create project failed:", err);
+    }
   };
+
+  const displayed = projects;
+  const safePage = Math.min(currentPage, Math.max(1, totalPages));
 
   return (
     <div className="space-y-6">
-      {/* Controls */}
       <div className="flex gap-3 mb-6">
         <input
           type="text"
@@ -93,17 +163,20 @@ export function ProjectsList() {
           value={searchQuery}
           onChange={(e) => {
             setSearchQuery(e.target.value);
-            setCurrentPage(1);
           }}
           className="flex-1 max-w-sm h-9 px-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
         />
         <Button variant="outline">Filter by Status</Button>
-        <Button className="bg-black text-white hover:bg-black/90">Search</Button>
+        <Button
+          className="bg-black text-white hover:bg-black/90"
+          onClick={handleSearchClick}
+          disabled={loading}
+        >
+          {loading ? "Searching..." : "Search"}
+        </Button>
       </div>
 
-      {/* Grid 3 columns */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {/* Create Project Card */}
         <div
           className="border-2 border-dashed border-gray-300 rounded-lg p-8 flex flex-col items-center justify-center min-h-64 hover:border-gray-400 transition-colors cursor-pointer"
           onClick={() => setModalOpen(true)}
@@ -126,11 +199,14 @@ export function ProjectsList() {
           </Button>
         </div>
 
-        {/* Project Cards */}
         {displayed.map((project) => (
           <div
             key={project.id}
-            className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+            className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
+            onClick={() => handleOpenProject(project.id)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && handleOpenProject(project.id)}
           >
             <div className="flex items-start justify-between mb-3">
               <h3 className="text-lg font-bold text-gray-900">{project.name}</h3>
@@ -172,7 +248,10 @@ export function ProjectsList() {
       {/* Pagination */}
       <div className="flex items-center justify-center gap-2 mt-8">
         <button
-          onClick={() => setCurrentPage(1)}
+          onClick={() => {
+            setCurrentPage(1);
+            fetchProjects(1);
+          }}
           disabled={safePage === 1}
           className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
           aria-label="First page"
@@ -180,7 +259,11 @@ export function ProjectsList() {
           <ChevronsLeft className="w-4 h-4" />
         </button>
         <button
-          onClick={() => setCurrentPage(Math.max(1, safePage - 1))}
+          onClick={() => {
+            const next = Math.max(1, safePage - 1);
+            setCurrentPage(next);
+            fetchProjects(next);
+          }}
           disabled={safePage === 1}
           className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
           aria-label="Previous page"
@@ -191,11 +274,12 @@ export function ProjectsList() {
         {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
           <button
             key={page}
-            onClick={() => setCurrentPage(page)}
+            onClick={() => {
+              setCurrentPage(page);
+              fetchProjects(page);
+            }}
             className={`w-8 h-8 rounded text-sm font-medium flex items-center justify-center transition-colors ${
-              safePage === page
-                ? "bg-black text-white"
-                : "text-gray-900 hover:bg-gray-200/70"
+              safePage === page ? "bg-black text-white" : "text-gray-900 hover:bg-gray-200/70"
             }`}
           >
             {page}
@@ -203,7 +287,11 @@ export function ProjectsList() {
         ))}
 
         <button
-          onClick={() => setCurrentPage(Math.min(totalPages, safePage + 1))}
+          onClick={() => {
+            const next = Math.min(totalPages, safePage + 1);
+            setCurrentPage(next);
+            fetchProjects(next);
+          }}
           disabled={safePage === totalPages}
           className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
           aria-label="Next page"
@@ -211,7 +299,10 @@ export function ProjectsList() {
           <ChevronRight className="w-4 h-4" />
         </button>
         <button
-          onClick={() => setCurrentPage(totalPages)}
+          onClick={() => {
+            setCurrentPage(totalPages);
+            fetchProjects(totalPages);
+          }}
           disabled={safePage === totalPages}
           className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
           aria-label="Last page"
