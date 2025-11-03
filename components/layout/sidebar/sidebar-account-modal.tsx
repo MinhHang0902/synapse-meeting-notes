@@ -143,7 +143,7 @@ export default function MyAccountModal({
                       setName(user.name);
                       setEditing(false);
                     }}
-                    className="border-gray-300 bg-transparent text-gray-700 hover:bg-gray-100"
+                    className="px-6 bg-transparent"
                   >
                     Cancel
                   </Button>

@@ -115,8 +115,8 @@ export function UsersSettings() {
 
   /** Filters */
   const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState<RoleUI | typeof ROLE_ALL | "">("");
-  const [statusFilter, setStatusFilter] = useState<StatusUI | typeof STATUS_ALL | "">("");
+  const [roleFilter, setRoleFilter] = useState<RoleUI | typeof ROLE_ALL | "">(ROLE_ALL);
+  const [statusFilter, setStatusFilter] = useState<StatusUI | typeof STATUS_ALL | "">(STATUS_ALL);
 
   /** Modals */
   const [openAdd, setOpenAdd] = useState(false);
@@ -194,6 +194,25 @@ export function UsersSettings() {
   const onClickSearch = async () => {
     setPageIndex(1);
     if (!accessDenied) await fetchUsers(1);
+  };
+
+  // Handle search input change - refresh list when cleared
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    
+    // If search is cleared, refresh the list
+    if (value === "") {
+      setPageIndex(1);
+      fetchUsers(1);
+    }
+  };
+
+  // Handle Enter key press in search input
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      onClickSearch();
+    }
   };
 
   /* -------- CRUD -------- */
@@ -277,34 +296,35 @@ export function UsersSettings() {
 
   /* -------- Render -------- */
   return (
-    <div className="space-y-6">
-      {/* Title + Search/Filters */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
+    <div className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold text-gray-900">Synapse User List</h2>
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Search */}
-          <div className="relative w-72">
+        <div className="flex items-center gap-3">
+          {/* Search - flex-1 để tự động co dãn */}
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search name or email..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange}
+              onKeyPress={handleSearchKeyPress}
               className="w-full h-9 pl-10 pr-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
             />
           </div>
-
+          
           {/* Role filter */}
           <Select
-            value={roleFilter || ""}
+            value={roleFilter || ROLE_ALL}
             onValueChange={(v) =>
               setRoleFilter(v as RoleUI | typeof ROLE_ALL | "")
             }
           >
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-40 h-9">
               <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Role" />
+              <SelectValue placeholder="Role">
+                {roleFilter === ROLE_ALL ? "All roles" : roleFilter || "Role"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={ROLE_ALL}>All roles</SelectItem>
@@ -315,14 +335,16 @@ export function UsersSettings() {
 
           {/* Status filter */}
           <Select
-            value={statusFilter || ""}
+            value={statusFilter || STATUS_ALL}
             onValueChange={(v) =>
               setStatusFilter(v as StatusUI | typeof STATUS_ALL | "")
             }
           >
-            <SelectTrigger className="w-44">
+            <SelectTrigger className="w-44 h-9">
               <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder="Status">
+                {statusFilter === STATUS_ALL ? "All status" : statusFilter || "Status"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value={STATUS_ALL}>All status</SelectItem>
@@ -332,7 +354,7 @@ export function UsersSettings() {
           </Select>
 
           <Button
-            className="bg-black hover:bg-black/80 text-white"
+            className="bg-black hover:bg-black/80 text-white h-9"
             onClick={onClickSearch}
             disabled={loading}
           >
@@ -341,7 +363,7 @@ export function UsersSettings() {
 
           <div className="flex items-center justify-end">
             <Button
-              className="bg-black hover:bg-black/80 text-white"
+              className="bg-black hover:bg-black/80 text-white h-9 flex items-center"
               onClick={() => setOpenAdd(true)}
             >
               <UserPlus className="w-4 h-4 mr-2 text-white" />
@@ -349,7 +371,6 @@ export function UsersSettings() {
             </Button>
           </div>
         </div>
-      </div>
 
       {/* Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -540,7 +561,7 @@ export function UsersSettings() {
         title="Warning"
         description={
           userToDelete
-            ? `Bạn có chắc muốn xóa người dùng "${userToDelete.name}"? Hành động này không thể hoàn tác.`
+            ? `Do you really want to delete this person "${userToDelete.name}"? This action cannot be undone.`
             : "Do you really want to delete this person? This action cannot be undone."
         }
         cancelText="Cancel"

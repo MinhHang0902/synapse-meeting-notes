@@ -175,7 +175,7 @@ export default function ChangePasswordModal({
           <Button
             variant="outline"
             onClick={() => handleClose(false)}
-            className="px-6 bg-transparent text-gray-700 border-gray-300 hover:bg-gray-100"
+            className="px-6 bg-transparent"
           >
             <X className="w-4 h-4 mr-2" />
             Discard

@@ -92,7 +92,7 @@ export default function OtpPage() {
                     <Mail className="absolute left-3 top-2.5 text-gray-400" size={18} />
                     <Input
                         className={`pl-9 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20 rounded-lg ${error ? 'border-red-400' : ''}`}
-                        placeholder="794920"
+                        placeholder="••••••"
                         value={otp}
                         onChange={(e) => setOtp(e.target.value)}
                         type="number"

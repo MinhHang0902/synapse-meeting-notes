@@ -6,34 +6,22 @@ import {
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogCancel,
-  AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Trash2 } from "lucide-react";
-import { cn } from "@/lib/utils"; // nếu chưa có, thay bằng className nối chuỗi
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, Trash2, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type ConfirmDeleteDialogProps = {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-
-  /** Texts */
   title?: string;
   description?: string;
-
-  /** Buttons */
   cancelText?: string;
   confirmText?: string;
-
-  /** Handlers */
   onConfirm: () => void | Promise<void>;
   onCancel?: () => void;
-
-  /** Optional: external loading control */
   loading?: boolean;
-
-  /** Optional: className overrides */
   className?: string;
 };
 
@@ -41,7 +29,7 @@ export default function ConfirmDeleteDialog({
   open,
   onOpenChange,
   title = "Warning",
-  description = "Do you really want to delete this person? This action cannot be undone.",
+  description = 'Do you really want to delete this person "Bob Reviewer"? This action cannot be undone.',
   cancelText = "Cancel",
   confirmText = "Delete",
   onConfirm,
@@ -67,69 +55,65 @@ export default function ConfirmDeleteDialog({
     }
   };
 
+  // Split description into two lines automatically at sentence boundary
+  const [firstLine, secondLine] = description.split("? ");
+
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent
         className={cn(
-          // khung + bóng + bo góc
-          "max-w-sm p-0 overflow-hidden rounded-2xl shadow-2xl",
-          // nền trắng
-          "bg-white",
+          "bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden",
+          "px-2 py-2", 
           className
         )}
       >
-        {/* Header (theo style mockup) */}
-        <AlertDialogHeader className="px-6 pt-6">
-          <div className="w-full flex flex-col items-center text-center">
-            <div className="mb-3">
-              <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-500" />
-              </div>
+        {/* Header */}
+        <AlertDialogHeader className="px-2 pt-3 text-center flex flex-col items-center">
+          <div className="mb-1">
+            <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
             </div>
-            <AlertDialogTitle className="text-red-500 text-xl font-semibold">
-              {title}
-            </AlertDialogTitle>
+          </div>
+          <AlertDialogTitle className="text-red-500 text-xl font-semibold">
+            {title}
+          </AlertDialogTitle>
 
-            <AlertDialogDescription className="text-gray-700 mt-2">
-              {description}
-            </AlertDialogDescription>
+          {/* Description: 2 lines, centered */}
+          <div className="mt-3 text-gray-700 text-sm text-center leading-relaxed">
+            <p>{firstLine}?</p>
+            <p className="mt-1">This action cannot be undone.</p>
           </div>
         </AlertDialogHeader>
 
-        {/* Divider nhẹ */}
-        <div className="px-6 pt-4">
-          <div className="h-px w-full bg-black/[0.06]" />
-        </div>
-
-        {/* Footer (buttons) */}
-        <AlertDialogFooter className="px-6 py-4 flex gap-3 sm:justify-end">
-          <AlertDialogCancel
+        {/* Footer (same style as EditUserModal) */}
+        <div className="border-t border-gray-200 px-2 py-3 flex gap-3 justify-end bg-white rounded-b-2xl">
+          <Button
+            variant="outline"
             onClick={handleCancel}
             disabled={loading}
             className={cn(
-              // giữ kích thước & style giống mockup (pill, xám nhạt)
-              "bg-gray-100 text-gray-700 hover:bg-gray-200",
-              "rounded-full px-5 h-10",
-              "border-0 shadow-none"
+              "px-6 bg-transparent border border-gray-300 text-gray-800",
+              "hover:bg-black hover:text-white transition-colors",
+              "rounded-lg h-9"
             )}
           >
+            <X className="w-4 h-4 mr-2" />
             {cancelText}
-          </AlertDialogCancel>
+          </Button>
 
-          <AlertDialogAction
+          <Button
             onClick={handleConfirm}
             disabled={loading}
             className={cn(
-              // nút đỏ, có icon thùng rác
-              "bg-red-500 hover:bg-red-600 text-white",
-              "rounded-full px-5 h-10",
-              "flex items-center gap-2"
+              "px-6 text-white bg-red-500 hover:bg-red-600",
+              "rounded-lg h-9 flex items-center gap-2",
+              loading && "opacity-70 cursor-not-allowed"
             )}
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-4 h-4 mr-2" />
             {loading ? "Deleting..." : confirmText}
-          </AlertDialogAction>
-        </AlertDialogFooter>
+          </Button>
+        </div>
       </AlertDialogContent>
     </AlertDialog>
   );

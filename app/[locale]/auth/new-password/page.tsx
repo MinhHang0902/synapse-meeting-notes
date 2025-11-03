@@ -3,14 +3,13 @@
 import BackButton from "@/components/auth/BackButton";
 import FormLayout from "@/components/auth/FormLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { AuthApi } from "@/lib/api/auth";
 import { isStrongPassword } from "@/lib/utils";
 import { getSessionItemWithExpiry } from "@/lib/utils/storage";
-import { Lock } from "lucide-react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { PasswordField } from "@/components/auth/PasswordField";
 
 export default function NewPasswordPage() {
     const router = useRouter();
@@ -21,7 +20,7 @@ export default function NewPasswordPage() {
 
     const resetToken = getSessionItemWithExpiry<string>("reset_password_token");
     if (!resetToken) {
-        // hết hạn hoặc thiếu token → quay lại flow
+        // hết hạn hoặc thiếu token → quay lại flow quên mật khẩu
         router.replace(`/${locale}/auth/forgot-password`);
         return null;
     }
@@ -36,6 +35,7 @@ export default function NewPasswordPage() {
 
         if (newPassword !== confirmPassword) {
             setError("Passwords do not match.");
+            return;
         }
 
         try {
@@ -46,47 +46,45 @@ export default function NewPasswordPage() {
         } catch (error) {
             setError("Failed to reset password. Please try again.");
         }
-    }
+    };
 
     return (
         <Wrapper>
             <BackButton />
-            <FormLayout title="Set New Password" subtitle="Enter your new password to complete the reset process">
-                <div>
-                    <label className="text-sm text-gray-300">New Password</label>
-                    <div className="relative mt-1">
-                        <Lock className="absolute left-3 top-2.5 text-gray-400" size={18} />
-                        <Input
-                            type="password"
-                            className="pl-9 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20 rounded-lg"
-                            placeholder="••••••••"
+            <FormLayout
+                title="Set New Password"
+                subtitle="Enter your new password to complete the reset process"
+            >
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-sm text-gray-300">New Password</label>
+                        <PasswordField
                             value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                <div>
-                    <label className="text-sm text-gray-300">Confirm New Password</label>
-                    <div className="relative mt-1">
-                        <Lock className="absolute left-3 top-2.5 text-gray-400" size={18} />
-                        <Input
-                            type="password"
-                            className="pl-9 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20 rounded-lg"
+                            onChange={setNewPassword}
                             placeholder="••••••••"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            className="mt-1 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20 rounded-lg"
                         />
                     </div>
-                </div>
 
-                {error && <p className="text-red-400 text-sm">{error}</p>}
-                <Button
-                    className="mt-5 w-full h-10 rounded-lg bg-white text-gray-900 font-medium hover:bg-white/90 transition-colors shadow-sm"
-                    onClick={handleSetNewPassword}
-                >
-                    Save New Password
-                </Button>
+                    <div>
+                        <label className="text-sm text-gray-300">Confirm New Password</label>
+                        <PasswordField
+                            value={confirmPassword}
+                            onChange={setConfirmPassword}
+                            placeholder="••••••••"
+                            className="mt-1 border-white/10 bg-white/5 text-gray-100 placeholder:text-gray-400 focus-visible:ring-white/20 rounded-lg"
+                        />
+                    </div>
+
+                    {error && <p className="text-red-400 text-sm">{error}</p>}
+
+                    <Button
+                        className="mt-5 w-full h-10 rounded-lg bg-white text-gray-900 font-medium hover:bg-white/90 transition-colors shadow-sm"
+                        onClick={handleSetNewPassword}
+                    >
+                        Save New Password
+                    </Button>
+                </div>
             </FormLayout>
         </Wrapper>
     );
