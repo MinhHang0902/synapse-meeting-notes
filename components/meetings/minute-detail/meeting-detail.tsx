@@ -1,4 +1,3 @@
-// components/meeting/meeting-detail/page.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -14,12 +13,13 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import MeetingTranscript from "./meeting-transcript";
-import MeetingEditor from "./meeting-editor";
+import MeetingEditor, { ActionItem } from "./meeting-editor";
 import { MeetingsApi } from "@/lib/api/meeting";
 import type {
   GetOneMeetingMinuteResponse,
   UpdateMeetingMinuteRequest,
 } from "@/types/interfaces/meeting";
+import axios from "axios";
 
 /** ==== UI types dành riêng cho editor (không dùng type API) ==== */
 type EditorAttendee = { userId?: number; name: string; role: string };
@@ -27,6 +27,7 @@ type EditorActionItem = {
   id: string;
   description: string;
   assignee: string;
+  assigneeId?: number; // NEW: cho phép assign người ngoài attendees
   dueDate: string; // "YYYY-MM-DD"
 };
 
@@ -104,21 +105,16 @@ export default function MinuteDetailPage({
           data.actual_start ? new Date(data.actual_start).toISOString().slice(0, 16) : ""
         );
 
-        // Attendees từ participants
-        setAttendees(
-          (data.participants || []).map((p) => ({
-            userId: p.user?.user_id,
-            name: p.user?.name || "",
-            role: "",
-          }))
-        );
+        // ❗ MẶC ĐỊNH KHÔNG CÓ ATTENDEE (để user tự thêm) → KHÔNG seed từ API
+        setAttendees([]);
 
-        // Action items
+        // Action items seed cho UI (assigneeId nếu có)
         setActionItems(
           (data.actionItems || []).map((ai) => ({
             id: String(ai.action_id),
             description: ai.description || "",
             assignee: ai.assignee?.name || "",
+            assigneeId: ai.assignee?.user_id, // NEW
             dueDate: ai.due_date ? new Date(ai.due_date).toISOString().slice(0, 10) : "",
           }))
         );
@@ -140,12 +136,12 @@ export default function MinuteDetailPage({
     setAttendees((s) => [...s, { name, role: "" }]);
 
   const removeActionItem = (id: string) =>
-    setActionItems((s) => s.filter((i) => i.id === undefined || i.id !== id));
+    setActionItems((s) => s.filter((i) => i.id !== id));
 
   const updateActionItem = (
     id: string,
-    field: keyof EditorActionItem,
-    value: string
+    field: keyof ActionItem,
+    value: string | number
   ) =>
     setActionItems((s) =>
       s.map((i) => (i.id === id ? { ...i, [field]: value } : i))
@@ -167,7 +163,13 @@ export default function MinuteDetailPage({
     meetingTitle: string;
     meetingDate: string;
     attendees: { userId?: number; name: string; role?: string }[];
-    actionItems: { id: string; description: string; assignee: string; dueDate: string }[];
+    actionItems: {
+      id: string;
+      description: string;
+      assignee: string;
+      assigneeId?: number;
+      dueDate: string;
+    }[];
     agenda: string; // textarea (multi-line)
     summary: string; // textarea
     decisions: string; // textarea (multi-line)
@@ -189,38 +191,90 @@ export default function MinuteDetailPage({
       .map((s) => s.trim())
       .filter(Boolean);
 
+    // attendeeIds: CHỈ lấy id hợp lệ; nếu rỗng, KHÔNG gửi field này
     const attendeeIds = draft.attendees
       .map((a) => a.userId)
-      .filter((id): id is number => typeof id === "number");
+      .filter((id): id is number => typeof id === "number" && !Number.isNaN(id));
 
-    const actionItemsApi = draft.actionItems.map((a) => ({
-      id: a.id ? Number(a.id) : undefined,
-      description: a.description,
-      assigneeId: 0, // TODO: map tên -> id khi backend cung cấp danh sách user
-      due_date: a.dueDate ? new Date(a.dueDate) : new Date(),
-      status: "OPEN",
-      completed_at: undefined,
-    }));
+    // map tên -> userId từ attendees (fallback nếu action item không có assigneeId riêng)
+    const nameToUserId = new Map<string, number>();
+    draft.attendees.forEach((a) => {
+      if (a.name && typeof a.userId === "number") {
+        nameToUserId.set(a.name.trim(), a.userId);
+      }
+    });
 
-    const payload: UpdateMeetingMinuteRequest = {
+    // action_items: ưu tiên assigneeId riêng; nếu không có thì mới thử map tên từ attendees
+    const actionItemsApi = draft.actionItems
+      .map((a) => {
+        const desc = (a.description || "").trim();
+        if (!desc) return null;
+
+        let assigneeId: number | undefined =
+          typeof a.assigneeId === "number" && !Number.isNaN(a.assigneeId)
+            ? a.assigneeId
+            : undefined;
+
+        if (!assigneeId) {
+          const name = (a.assignee || "").trim();
+          assigneeId = name ? nameToUserId.get(name) : undefined;
+        }
+
+        if (!assigneeId) return null; // BE yêu cầu assigneeId hợp lệ → bỏ qua nếu chưa có
+
+        const item: any = {
+          description: desc,
+          assigneeId,
+          status: "OPEN",
+        };
+        if (a.id && !Number.isNaN(Number(a.id))) item.id = Number(a.id);
+
+        if (a.dueDate) {
+          const d = new Date(a.dueDate);
+          if (!Number.isNaN(d.getTime())) item.due_date = d;
+        }
+        return item;
+      })
+      .filter(Boolean) as any[];
+
+    // actual_start hợp lệ
+    const actualStart =
+      draft.meetingDate && !Number.isNaN(new Date(draft.meetingDate).getTime())
+        ? new Date(draft.meetingDate)
+        : detail.actual_start || detail.schedule_start || new Date();
+
+    const payloadAny: any = {
       title: draft.meetingTitle || detail.title,
       status: detail.status || "DRAFT",
-      actual_start: draft.meetingDate
-        ? new Date(draft.meetingDate)
-        : detail.actual_start || detail.schedule_start || new Date(),
-      attendeeIds,
+      actual_start: actualStart,
       agenda: agendaArr,
       meeting_summary: draft.summary || "",
       decisions: decisionsArr,
-      action_items: actionItemsApi,
+      attendeeIds: [],
+      action_items: [],
     };
+    if (attendeeIds.length > 0) payloadAny.attendeeIds = attendeeIds;
+    if (actionItemsApi.length > 0) payloadAny.action_items = actionItemsApi;
 
     try {
-      await MeetingsApi.update(Number(detail.minute_id), payload);
+      await MeetingsApi.update(
+        Number(detail.minute_id),
+        payloadAny as unknown as UpdateMeetingMinuteRequest
+      );
       setLastSavedAt(new Date());
-    } catch (e) {
-      console.error(e);
-      setSaveError("Failed to save changes.");
+    } catch (e: any) {
+      console.error("PUT /meeting-minutes error:", e);
+      if (axios.isAxiosError(e)) {
+        const msg =
+          e.response?.data?.message ||
+          e.response?.data?.error ||
+          e.response?.data?.detail ||
+          e.message;
+        setSaveError(`Save failed: ${msg}`);
+        console.log("Server response data:", e.response?.data);
+      } else {
+        setSaveError("Save failed: Unexpected error");
+      }
     } finally {
       setSaving(false);
     }
@@ -241,20 +295,28 @@ export default function MinuteDetailPage({
   /** Cập nhật MoM trước khi gửi email (tùy chọn) */
   const updateBeforeSend = async () => {
     if (!detail) return;
-    const payload: UpdateMeetingMinuteRequest = {
+
+    const attendeeIds = attendees
+      .map((a) => a.userId)
+      .filter((id): id is number => typeof id === "number" && !Number.isNaN(id));
+
+    const payloadAny: any = {
       title: meetingTitle || detail.title,
       status: detail.status || "DRAFT",
       actual_start: detail.actual_start || detail.schedule_start || new Date(),
-      attendeeIds: attendees
-        .map((a) => a.userId)
-        .filter((id): id is number => typeof id === "number"),
       agenda: (detail.agenda as any) || [],
       meeting_summary: "",
       decisions: [],
       action_items: [],
+      attendeeIds: [],
     };
+    if (attendeeIds.length > 0) payloadAny.attendeeIds = attendeeIds;
+
     try {
-      await MeetingsApi.update(Number(detail.minute_id), payload);
+      await MeetingsApi.update(
+        Number(detail.minute_id),
+        payloadAny as unknown as UpdateMeetingMinuteRequest
+      );
     } catch {
       // không chặn gửi email nếu update fail
     }
@@ -270,7 +332,6 @@ export default function MinuteDetailPage({
 
   // Chuỗi seed cho editor
   const initialAgendaStr = (detail.agenda || []).join("\n");
-  // Không có field meeting_summary trong response — dùng content làm summary fallback
   const initialSummaryStr = detail.content || "";
   const initialDecisionsStr = (detail.decisions || [])
     .map((d) => d.statement)

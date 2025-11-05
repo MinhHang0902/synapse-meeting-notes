@@ -1,4 +1,3 @@
-// components/meeting/meeting-editor.tsx
 "use client";
 
 import * as React from "react";
@@ -28,6 +27,7 @@ export type ActionItem = {
   id: string;
   description: string;
   assignee: string;
+  assigneeId?: number; // NEW: cho phép assign người ngoài attendees
   dueDate: string;
 };
 export type Attendee = { name: string; role?: string; userId?: number };
@@ -44,7 +44,6 @@ type EditorDraft = {
 
 type Props = {
   minuteId: number;
-
   meetingTitle: string;
   meetingDate: string;
   attendees: Attendee[];
@@ -52,23 +51,18 @@ type Props = {
 
   onChangeTitle: (v: string) => void;
   onChangeDate: (v: string) => void;
-
   onAddAttendee: (name: string) => void;
   onRemoveAttendee: (index: number) => void;
-
-  onUpdateActionItem: (id: string, field: keyof ActionItem, value: string) => void;
+  onUpdateActionItem: (id: string, field: keyof ActionItem, value: string | number) => void;
   onRemoveActionItem: (id: string) => void;
   onAddActionItem: () => void;
 
-  /** chạy trước khi modal gửi email thực hiện send */
   onBeforeSend?: () => Promise<void> | void;
-
-  /** Save callback do parent handle API */
   onSave?: (draft: EditorDraft) => Promise<void> | void;
   saving?: boolean;
   lastSavedAt?: Date;
 
-  /** NEW: seed từ API (cha truyền xuống) */
+  /** seed ban đầu từ API, chỉ dùng 1 lần */
   initialAgenda?: string;
   initialSummary?: string;
   initialDecisions?: string;
@@ -102,23 +96,18 @@ export default function MeetingEditor({
   const [sendOpen, setSendOpen] = React.useState(false);
   const dateInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Local editable contents (khởi tạo từ props thay vì hard-code)
-  const [agenda, setAgenda] = React.useState(initialAgenda ?? "");
-  const [summary, setSummary] = React.useState(initialSummary ?? "");
-  const [decisions, setDecisions] = React.useState(initialDecisions ?? "");
+  // --- Local editable text, khởi tạo một lần duy nhất khi nhận seed ---
+  const [agenda, setAgenda] = React.useState("");
+  const [summary, setSummary] = React.useState("");
+  const [decisions, setDecisions] = React.useState("");
 
-  // khi props seed thay đổi (sau khi fetch), đồng bộ vào state
   React.useEffect(() => {
+    // chỉ seed 1 lần khi component mount, tránh overwrite khi user đang nhập
     setAgenda(initialAgenda ?? "");
-  }, [initialAgenda]);
-
-  React.useEffect(() => {
     setSummary(initialSummary ?? "");
-  }, [initialSummary]);
-
-  React.useEffect(() => {
     setDecisions(initialDecisions ?? "");
-  }, [initialDecisions]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAddAttendee = () => {
     const name = attendeeInput.trim();
@@ -128,9 +117,7 @@ export default function MeetingEditor({
   };
 
   const handleCalendarClick = () => {
-    if (dateInputRef.current) {
-      dateInputRef.current.showPicker();
-    }
+    dateInputRef.current?.showPicker?.();
   };
 
   const emitSave = async () => {
@@ -158,7 +145,6 @@ export default function MeetingEditor({
           </select>
         </div>
 
-        {/* Save button */}
         <Button
           className="gap-2 bg-black text-white hover:bg-black/90 flex-shrink-0"
           onClick={emitSave}
@@ -167,34 +153,28 @@ export default function MeetingEditor({
         >
           {saving ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Saving…
+              <Loader2 className="w-4 h-4 animate-spin" /> Saving…
             </>
           ) : (
             <>
-              <Save className="w-4 h-4" />
-              Save
+              <Save className="w-4 h-4" /> Save
             </>
           )}
         </Button>
 
-        {/* Saved indicator */}
         {lastSavedAt && !saving && (
           <div className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Saved just now
+            <CheckCircle2 className="w-3.5 h-3.5" /> Saved just now
           </div>
         )}
 
         <div className="flex-1" />
 
         <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200 flex-shrink-0">
-          <FileText className="w-4 h-4" />
-          Export PDF
+          <FileText className="w-4 h-4" /> Export PDF
         </Button>
         <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200 flex-shrink-0">
-          <NotebookPen className="w-4 h-4" />
-          Export Word
+          <NotebookPen className="w-4 h-4" /> Export Word
         </Button>
         <Button
           className="gap-2 bg-gray-900 text-white hover:bg-black flex-shrink-0"
@@ -204,30 +184,27 @@ export default function MeetingEditor({
             setSendOpen(true);
           }}
         >
-          <Mail className="w-4 h-4" />
-          Send Email
+          <Mail className="w-4 h-4" /> Send Email
         </Button>
       </div>
 
       {/* Meeting Title */}
       <div className="space-y-1.5">
         <label className="font-semibold text-gray-900 text-sm inline-flex items-center gap-2">
-          <Type className="w-4 h-4" />
-          Meeting Title
+          <Type className="w-4 h-4" /> Meeting Title
         </label>
         <input
           type="text"
           value={meetingTitle}
           onChange={(e) => onChangeTitle(e.target.value)}
-          className="w-full px-4 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
+          className="w-full px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
         />
       </div>
 
       {/* Date & Time */}
       <div className="space-y-1.5">
         <label className="font-semibold text-gray-900 text-sm inline-flex items-center gap-2">
-          <CalendarClock className="w-4 h-4" />
-          Date & Time
+          <CalendarClock className="w-4 h-4" /> Date & Time
         </label>
         <div className="relative">
           <input
@@ -235,7 +212,7 @@ export default function MeetingEditor({
             type="datetime-local"
             value={meetingDate}
             onChange={(e) => onChangeDate(e.target.value)}
-            className="w-full px-4 py-2 pr-10 text-sm bg-white text-gray-900 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-10 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+            className="w-full px-4 py-2 pr-10 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400 [&::-webkit-calendar-picker-indicator]:opacity-0"
           />
           <button
             type="button"
@@ -250,8 +227,7 @@ export default function MeetingEditor({
       {/* Attendees */}
       <div className="space-y-2">
         <label className="font-semibold text-gray-900 text-sm inline-flex items-center gap-2">
-          <Users2 className="w-4 h-4" />
-          Attendees
+          <Users2 className="w-4 h-4" /> Attendees
         </label>
         <div className="flex flex-wrap gap-2">
           {attendees.map((a, i) => (
@@ -277,7 +253,7 @@ export default function MeetingEditor({
           value={attendeeInput}
           onChange={(e) => setAttendeeInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleAddAttendee()}
-          className="w-full px-4 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
+          className="w-full px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
         />
       </div>
 
@@ -293,47 +269,38 @@ export default function MeetingEditor({
         <textarea
           value={agenda}
           onChange={(e) => setAgenda(e.target.value)}
-          className="w-full min-h-28 resize-y px-3 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
+          className="w-full min-h-28 resize-y px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
         />
       </div>
 
-      {/* Divider */}
-      <div className="-mx-6 border-t border-gray-200"></div>
-
       {/* Summary */}
       <div>
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 mt-4">
           <StickyNote className="w-4 h-4" />
           <h3 className="text-sm font-semibold text-gray-900">Meeting Summary</h3>
         </div>
         <textarea
           value={summary}
           onChange={(e) => setSummary(e.target.value)}
-          className="w-full min-h-28 resize-y px-3 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
+          className="w-full min-h-28 resize-y px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
         />
       </div>
 
-      {/* Divider */}
-      <div className="-mx-6 border-t border-gray-200"></div>
-
       {/* Decisions */}
       <div>
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-2 mt-4">
           <Gavel className="w-4 h-4" />
           <h3 className="text-sm font-semibold text-gray-900">Key Decisions</h3>
         </div>
         <textarea
           value={decisions}
           onChange={(e) => setDecisions(e.target.value)}
-          className="w-full min-h-28 resize-y px-3 py-2 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
+          className="w-full min-h-28 resize-y px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
         />
       </div>
 
-      {/* Divider */}
-      <div className="-mx-6 border-t border-gray-200"></div>
-
       {/* Action Items */}
-      <div className="space-y-3">
+      <div className="space-y-3 mt-4">
         <div className="flex items-center gap-2">
           <CheckSquare className="w-4 h-4" />
           <label className="font-semibold text-gray-900 text-sm">Action Items</label>
@@ -351,14 +318,15 @@ export default function MeetingEditor({
         </div>
 
         <div>
-          <Button onClick={onAddActionItem} className="bg-black text-white hover:bg-black/90 gap-2">
-            <Plus className="w-4 h-4" />
-            Add Action Item
+          <Button
+            onClick={onAddActionItem}
+            className="bg-black text-white hover:bg-black/90 gap-2"
+          >
+            <Plus className="w-4 h-4" /> Add Action Item
           </Button>
         </div>
       </div>
 
-      {/* Modal gửi email */}
       <SendMinuteModal
         isOpen={sendOpen}
         onClose={() => setSendOpen(false)}
@@ -376,14 +344,12 @@ function ActionItemRow({
   onRemoveActionItem,
 }: {
   item: ActionItem;
-  onUpdateActionItem: (id: string, field: keyof ActionItem, value: string) => void;
+  onUpdateActionItem: (id: string, field: keyof ActionItem, value: string | number) => void;
   onRemoveActionItem: (id: string) => void;
 }) {
   const dueDateInputRef = React.useRef<HTMLInputElement>(null);
   const handleDueDateCalendarClick = () => {
-    if (dueDateInputRef.current) {
-      dueDateInputRef.current.showPicker();
-    }
+    dueDateInputRef.current?.showPicker?.();
   };
 
   return (
@@ -394,20 +360,21 @@ function ActionItemRow({
           value={item.description}
           onChange={(e) => onUpdateActionItem(item.id, "description", e.target.value)}
           placeholder="Enter action item description..."
-          className="w-full text-sm px-2 py-1 bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded focus:outline-none focus:border-gray-400 transition-colors"
+          className="w-full text-sm px-2 py-1 bg-white border border-gray-200 rounded focus:border-gray-400"
         />
       </div>
-
       <div className="col-span-6 md:col-span-3">
         <input
           type="text"
           value={item.assignee}
           onChange={(e) => onUpdateActionItem(item.id, "assignee", e.target.value)}
           placeholder="Assignee"
-          className="w-full text-sm px-2 py-1 bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded focus:outline-none focus:border-gray-400 transition-colors"
+          className="w-full text-sm px-2 py-1 bg-white border border-gray-200 rounded focus:border-gray-400"
         />
+        {/* Nếu bạn bổ sung user picker, hãy gọi:
+            onUpdateActionItem(item.id, "assigneeId", selectedUserId);
+         */}
       </div>
-
       <div className="col-span-5 md:col-span-2">
         <div className="relative">
           <input
@@ -415,7 +382,7 @@ function ActionItemRow({
             type="date"
             value={item.dueDate}
             onChange={(e) => onUpdateActionItem(item.id, "dueDate", e.target.value)}
-            className="w-full text-sm px-2 py-1 pr-7 bg-white text-gray-900 border border-gray-200 rounded focus:outline-none focus:border-gray-400 transition-colors [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-7 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+            className="w-full text-sm px-2 py-1 pr-7 bg-white border border-gray-200 rounded focus:border-gray-400 [&::-webkit-calendar-picker-indicator]:opacity-0"
           />
           <button
             type="button"
@@ -426,7 +393,6 @@ function ActionItemRow({
           </button>
         </div>
       </div>
-
       <div className="col-span-1 flex items-center justify-center">
         <button
           onClick={() => onRemoveActionItem(item.id)}
