@@ -1,18 +1,22 @@
-"use client"
+// components/meeting/send-minute-modal.tsx
+"use client";
 
 import { Button } from "@/components/ui/button";
 import { FileText, Mail, X } from "lucide-react";
 import React from "react";
+import { MeetingsApi } from "@/lib/api/meeting";
 
 export default function SendMinuteModal({
   isOpen,
   onClose,
+  minuteId,
   fileName = "Q3_Financial_Report.pdf",
   projectName = "Digital Transformation Initiative",
   meetingTitle = "Q3 Financial Review",
 }: {
   isOpen: boolean;
   onClose: () => void;
+  minuteId: number;
   fileName?: string;
   projectName?: string;
   meetingTitle?: string;
@@ -24,27 +28,39 @@ export default function SendMinuteModal({
   const [message, setMessage] = React.useState(
     `Hi team,
 
-Please find attached the meeting minutes from our ${meetingTitle} session held on September 21, 2025.
+Please find attached the meeting minutes from our ${meetingTitle} session.
 
 Key highlights from the meeting:
 • Q3 performance exceeded expectations with 15% cost savings
 • Cloud migration progressing well (80% complete)
 • User engagement increased by 25%`
   );
+  const [sending, setSending] = React.useState(false);
 
-  const handleSendEmail = () => {
-    console.log("Sending email with:", { sendToAll, subject, message, fileName });
-    onClose();
+  const handleSendEmail = async () => {
+    try {
+      setSending(true);
+      // TODO: nếu "Send to all" => lấy danh sách email từ Members; tạm để mảng rỗng demo
+      const recipientEmails = sendToAll ? [] : [];
+      await MeetingsApi.sendEmail(minuteId, {
+        recipientEmails,
+        subject,
+        message,
+      });
+      onClose();
+      alert("Email sent");
+    } catch (e) {
+      alert("Failed to send email");
+    } finally {
+      setSending(false);
+    }
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal role="dialog">
-      {/* overlay */}
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-
-      {/* modal */}
       <div className="relative bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="bg-black text-white p-6 flex items-start justify-between sticky top-0 z-20 rounded-t-2xl border-b border-white/10">
@@ -53,9 +69,7 @@ Key highlights from the meeting:
               <Mail className="w-5 h-5" />
               <h2 className="text-xl font-semibold">Send Meeting Minute</h2>
             </div>
-            <p className="text-white/70 text-sm">
-              Share MoM with project members via email
-            </p>
+            <p className="text-white/70 text-sm">Share MoM with project members via email</p>
           </div>
           <button
             onClick={onClose}
@@ -146,13 +160,13 @@ Key highlights from the meeting:
 
         {/* Footer */}
         <div className="border-t border-gray-200 p-6 flex gap-3 justify-end sticky bottom-0 bg-white rounded-b-2xl">
-          <Button onClick={onClose} variant="outline" className="px-6 bg-transparent">
+          <Button onClick={onClose} variant="outline" className="px-6 bg-transparent" disabled={sending}>
             <X className="w-4 h-4 mr-2" />
             Cancel
           </Button>
-          <Button onClick={handleSendEmail} className="bg-black hover:bg-black/90 px-6 text-white">
+          <Button onClick={handleSendEmail} className="bg-black hover:bg-black/90 px-6 text-white" disabled={sending}>
             <Mail className="w-4 h-4 mr-2" />
-            Send Email
+            {sending ? "Sending..." : "Send Email"}
           </Button>
         </div>
       </div>

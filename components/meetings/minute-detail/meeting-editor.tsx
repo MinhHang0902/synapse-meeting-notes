@@ -1,3 +1,4 @@
+// components/meeting/meeting-editor.tsx
 "use client";
 
 import * as React from "react";
@@ -16,15 +17,34 @@ import {
   CheckSquare,
   Mail,
   Calendar,
+  Save,
+  CheckCircle2,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ActionItem, Attendee } from "@/types/interfaces/meeting";
 import SendMinuteModal from "./send-minute-modal";
 
-/* =========================
-   Meeting Editor (main)
-   ========================= */
+export type ActionItem = {
+  id: string;
+  description: string;
+  assignee: string;
+  dueDate: string;
+};
+export type Attendee = { name: string; role?: string; userId?: number };
+
+type EditorDraft = {
+  meetingTitle: string;
+  meetingDate: string;
+  attendees: Attendee[];
+  actionItems: ActionItem[];
+  agenda: string;
+  summary: string;
+  decisions: string;
+};
+
 type Props = {
+  minuteId: number;
+
   meetingTitle: string;
   meetingDate: string;
   attendees: Attendee[];
@@ -36,18 +56,28 @@ type Props = {
   onAddAttendee: (name: string) => void;
   onRemoveAttendee: (index: number) => void;
 
-  onUpdateActionItem: (
-    id: string,
-    field: keyof ActionItem,
-    value: string
-  ) => void;
+  onUpdateActionItem: (id: string, field: keyof ActionItem, value: string) => void;
   onRemoveActionItem: (id: string) => void;
   onAddActionItem: () => void;
+
+  /** chạy trước khi modal gửi email thực hiện send */
+  onBeforeSend?: () => Promise<void> | void;
+
+  /** Save callback do parent handle API */
+  onSave?: (draft: EditorDraft) => Promise<void> | void;
+  saving?: boolean;
+  lastSavedAt?: Date;
+
+  /** NEW: seed từ API (cha truyền xuống) */
+  initialAgenda?: string;
+  initialSummary?: string;
+  initialDecisions?: string;
 
   className?: string;
 };
 
 export default function MeetingEditor({
+  minuteId,
   meetingTitle,
   meetingDate,
   attendees,
@@ -59,36 +89,36 @@ export default function MeetingEditor({
   onUpdateActionItem,
   onRemoveActionItem,
   onAddActionItem,
+  onBeforeSend,
+  onSave,
+  saving,
+  lastSavedAt,
+  initialAgenda,
+  initialSummary,
+  initialDecisions,
   className,
 }: Props) {
   const [attendeeInput, setAttendeeInput] = React.useState("");
   const [sendOpen, setSendOpen] = React.useState(false);
   const dateInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Editable contents
-  const [agenda, setAgenda] = React.useState(
-    [
-      "1. Q3 Financial Performance Review",
-      "2. Technical Infrastructure Update",
-      "3. Business Impact Assessment",
-      "4. UX Improvements Overview",
-      "5. Q4 Action Items Planning",
-    ].join("\n")
-  );
-  const [summary, setSummary] = React.useState(
-    [
-      "• Q2 improvements in user satisfaction scores…",
-      "• Positive ROI metrics indicating success…",
-      "The team discussed Q4 planning and established clear action items with specific deadlines to maintain momentum.",
-    ].join("\n")
-  );
-  const [decisions, setDecisions] = React.useState(
-    [
-      "1. Prepare comprehensive business impact assessment…",
-      "2. Approve additional security clearance for cloud…",
-      "3. Legal review of data governance policies…",
-    ].join("\n")
-  );
+  // Local editable contents (khởi tạo từ props thay vì hard-code)
+  const [agenda, setAgenda] = React.useState(initialAgenda ?? "");
+  const [summary, setSummary] = React.useState(initialSummary ?? "");
+  const [decisions, setDecisions] = React.useState(initialDecisions ?? "");
+
+  // khi props seed thay đổi (sau khi fetch), đồng bộ vào state
+  React.useEffect(() => {
+    setAgenda(initialAgenda ?? "");
+  }, [initialAgenda]);
+
+  React.useEffect(() => {
+    setSummary(initialSummary ?? "");
+  }, [initialSummary]);
+
+  React.useEffect(() => {
+    setDecisions(initialDecisions ?? "");
+  }, [initialDecisions]);
 
   const handleAddAttendee = () => {
     const name = attendeeInput.trim();
@@ -103,16 +133,61 @@ export default function MeetingEditor({
     }
   };
 
+  const emitSave = async () => {
+    if (!onSave) return;
+    const draft: EditorDraft = {
+      meetingTitle,
+      meetingDate,
+      attendees,
+      actionItems,
+      agenda,
+      summary,
+      decisions,
+    };
+    await onSave(draft);
+  };
+
   return (
     <div className={["space-y-6", className || ""].join(" ")}>
       {/* Toolbar */}
       <div className="flex items-center gap-3 pb-4 border-b border-gray-200 -mx-6 px-6">
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="text-sm text-gray-600 whitespace-nowrap">Template:</span>
-          <select className="px-3 py-2 pr-8 border border-gray-300 rounded text-sm bg-white w-[140px] truncate appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg%20width%3d%2712%27%20height%3d%278%27%20viewBox%3d%270%200%2012%208%27%20fill%3d%27none%27%20xmlns%3d%27http%3a%2f%2fwww.w3.org%2f2000%2fsvg%27%3e%3cpath%20d%3d%27M1%201.5L6%206.5L11%201.5%27%20stroke%3d%27%23666%27%20stroke-width%3d%271.5%27%20stroke-linecap%3d%27round%27%20stroke-linejoin%3d%27round%27%2f%3e%3c%2fsvg%3e')] bg-[length:12px] bg-[right_0.75rem_center] bg-no-repeat">
+          <select className="px-3 py-2 pr-8 border border-gray-300 rounded text-sm bg-white w-[160px] truncate appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg%20width%3d%2712%27%20height%3d%278%27%20viewBox%3d%270%200%2012%208%27%20fill%3d%27none%27%20xmlns%3d%27http%3a%2f%2fwww.w3.org%2f2000%2fsvg%27%3e%3cpath%20d%3d%27M1%201.5L6%206.5L11%201.5%27%20stroke%3d%27%23666%27%20stroke-width%3d%271.5%27%20stroke-linecap%3d%27round%27%20stroke-linejoin%3d%27round%27%2f%3e%3c%2fsvg%3e')] bg-[length:12px] bg-[right_0.75rem_center] bg-no-repeat">
             <option>Default Meeting Template</option>
           </select>
         </div>
+
+        {/* Save button */}
+        <Button
+          className="gap-2 bg-black text-white hover:bg-black/90 flex-shrink-0"
+          onClick={emitSave}
+          disabled={!!saving}
+          title="Save changes"
+        >
+          {saving ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Saving…
+            </>
+          ) : (
+            <>
+              <Save className="w-4 h-4" />
+              Save
+            </>
+          )}
+        </Button>
+
+        {/* Saved indicator */}
+        {lastSavedAt && !saving && (
+          <div className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Saved just now
+          </div>
+        )}
+
+        <div className="flex-1" />
+
         <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200 flex-shrink-0">
           <FileText className="w-4 h-4" />
           Export PDF
@@ -122,8 +197,12 @@ export default function MeetingEditor({
           Export Word
         </Button>
         <Button
-          className="gap-2 bg-black text-white hover:bg-black/90 flex-shrink-0"
-          onClick={() => setSendOpen(true)}
+          className="gap-2 bg-gray-900 text-white hover:bg-black flex-shrink-0"
+          onClick={async () => {
+            if (onSave) await emitSave();
+            if (onBeforeSend) await onBeforeSend();
+            setSendOpen(true);
+          }}
         >
           <Mail className="w-4 h-4" />
           Send Email
@@ -144,7 +223,7 @@ export default function MeetingEditor({
         />
       </div>
 
-      {/* Date & Time with Calendar Icon */}
+      {/* Date & Time */}
       <div className="space-y-1.5">
         <label className="font-semibold text-gray-900 text-sm inline-flex items-center gap-2">
           <CalendarClock className="w-4 h-4" />
@@ -202,7 +281,7 @@ export default function MeetingEditor({
         />
       </div>
 
-      {/* Divider full width */}
+      {/* Divider */}
       <div className="-mx-6 border-t border-gray-200"></div>
 
       {/* Agenda */}
@@ -218,10 +297,10 @@ export default function MeetingEditor({
         />
       </div>
 
-      {/* Divider full width */}
+      {/* Divider */}
       <div className="-mx-6 border-t border-gray-200"></div>
 
-      {/* Meeting Summary */}
+      {/* Summary */}
       <div>
         <div className="flex items-center gap-2 mb-2">
           <StickyNote className="w-4 h-4" />
@@ -234,10 +313,10 @@ export default function MeetingEditor({
         />
       </div>
 
-      {/* Divider full width */}
+      {/* Divider */}
       <div className="-mx-6 border-t border-gray-200"></div>
 
-      {/* Key Decisions */}
+      {/* Decisions */}
       <div>
         <div className="flex items-center gap-2 mb-2">
           <Gavel className="w-4 h-4" />
@@ -250,7 +329,7 @@ export default function MeetingEditor({
         />
       </div>
 
-      {/* Divider full width */}
+      {/* Divider */}
       <div className="-mx-6 border-t border-gray-200"></div>
 
       {/* Action Items */}
@@ -271,12 +350,8 @@ export default function MeetingEditor({
           ))}
         </div>
 
-        {/* Add button */}
         <div>
-          <Button
-            onClick={onAddActionItem}
-            className="bg-black text-white hover:bg-black/90 gap-2"
-          >
+          <Button onClick={onAddActionItem} className="bg-black text-white hover:bg-black/90 gap-2">
             <Plus className="w-4 h-4" />
             Add Action Item
           </Button>
@@ -288,12 +363,13 @@ export default function MeetingEditor({
         isOpen={sendOpen}
         onClose={() => setSendOpen(false)}
         meetingTitle={meetingTitle}
+        minuteId={minuteId}
       />
     </div>
   );
 }
 
-/* Action Item Row Component */
+/* Action Item Row */
 function ActionItemRow({
   item,
   onUpdateActionItem,
@@ -304,7 +380,6 @@ function ActionItemRow({
   onRemoveActionItem: (id: string) => void;
 }) {
   const dueDateInputRef = React.useRef<HTMLInputElement>(null);
-
   const handleDueDateCalendarClick = () => {
     if (dueDateInputRef.current) {
       dueDateInputRef.current.showPicker();
@@ -313,42 +388,33 @@ function ActionItemRow({
 
   return (
     <div className="grid grid-cols-12 gap-3 items-center p-3 border border-gray-200 rounded bg-white">
-      {/* Description */}
       <div className="col-span-12 md:col-span-6">
         <input
           type="text"
           value={item.description}
-          onChange={(e) =>
-            onUpdateActionItem(item.id, "description", e.target.value)
-          }
+          onChange={(e) => onUpdateActionItem(item.id, "description", e.target.value)}
           placeholder="Enter action item description..."
           className="w-full text-sm px-2 py-1 bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded focus:outline-none focus:border-gray-400 transition-colors"
         />
       </div>
 
-      {/* Assignee */}
       <div className="col-span-6 md:col-span-3">
         <input
           type="text"
           value={item.assignee}
-          onChange={(e) =>
-            onUpdateActionItem(item.id, "assignee", e.target.value)
-          }
+          onChange={(e) => onUpdateActionItem(item.id, "assignee", e.target.value)}
           placeholder="Assignee"
           className="w-full text-sm px-2 py-1 bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded focus:outline-none focus:border-gray-400 transition-colors"
         />
       </div>
 
-      {/* Due Date with Calendar Icon */}
       <div className="col-span-5 md:col-span-2">
         <div className="relative">
           <input
             ref={dueDateInputRef}
             type="date"
             value={item.dueDate}
-            onChange={(e) =>
-              onUpdateActionItem(item.id, "dueDate", e.target.value)
-            }
+            onChange={(e) => onUpdateActionItem(item.id, "dueDate", e.target.value)}
             className="w-full text-sm px-2 py-1 pr-7 bg-white text-gray-900 border border-gray-200 rounded focus:outline-none focus:border-gray-400 transition-colors [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-0 [&::-webkit-calendar-picker-indicator]:w-7 [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
           />
           <button
@@ -361,7 +427,6 @@ function ActionItemRow({
         </div>
       </div>
 
-      {/* Delete Button */}
       <div className="col-span-1 flex items-center justify-center">
         <button
           onClick={() => onRemoveActionItem(item.id)}

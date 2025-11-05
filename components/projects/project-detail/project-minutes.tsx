@@ -58,7 +58,7 @@ export default function ProjectMinutes({
         >
           <Link href={`/${locale}/pages/projects/${id}/upload-minute`}>
             <Upload size={14} />
-            Upload Minutes
+            Upload Minute
           </Link>
         </Button>
       </div>
@@ -83,9 +83,12 @@ export default function ProjectMinutes({
                 </div>
               </div>
             </div>
-            <button className="text-sm text-gray-600 hover:text-gray-900">
+            <Link
+              href={`/${locale}/pages/projects/${id}/meeting-detail/${f.id}?file=${encodeURIComponent(f.fileName)}`}
+              className="text-sm text-gray-600 hover:text-gray-900"
+            >
               View
-            </button>
+            </Link>
           </div>
         ))}
       </div>
