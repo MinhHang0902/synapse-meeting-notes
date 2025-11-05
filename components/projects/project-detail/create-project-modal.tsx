@@ -27,6 +27,20 @@ export default function CreateProjectModal({
     const [reviewerInput, setReviewerInput] = useState("");
     const [viewerInput, setViewerInput] = useState("");
 
+    // Reset all form data when modal opens
+    useEffect(() => {
+        if (isOpen) {
+            setProjectName("");
+            setDescription("");
+            setManagers([{ email: "ngan@gmail.com", name: "Ngan" }]);
+            setReviewers([]);
+            setViewers([]);
+            setManagerInput("");
+            setReviewerInput("");
+            setViewerInput("");
+        }
+    }, [isOpen]);
+
     useEffect(() => {
         if (!isOpen) return;
         const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -36,11 +50,12 @@ export default function CreateProjectModal({
 
     if (!isOpen) return null;
 
-    const addFromInput = (value: string, setList: any, list: TeamMember[]) => {
+    const addFromInput = (value: string, setList: any, list: TeamMember[], clearInput: () => void) => {
         const v = value.trim();
         if (!v) return;
         const name = v.split("@")[0] || v;
         setList([...list, { email: v, name }]);
+        clearInput();
     };
 
 
@@ -134,12 +149,16 @@ export default function CreateProjectModal({
                                         placeholder="Enter manager email address..."
                                         value={managerInput}
                                         onChange={(e) => setManagerInput(e.target.value)}
-                                        onKeyDown={(e) => e.key === "Enter" && addFromInput(managerInput, setManagers, managers)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                addFromInput(managerInput, setManagers, managers, () => setManagerInput(""));
+                                            }
+                                        }}
                                         className="w-full h-9 pl-9 pr-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
                                     />
                                     <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                 </div>
-                                <Button onClick={() => addFromInput(managerInput, setManagers, managers)} variant="outline" className="px-4 bg-transparent">
+                                <Button onClick={() => addFromInput(managerInput, setManagers, managers, () => setManagerInput(""))} variant="outline" className="px-4 bg-transparent">
                                     <Plus className="w-4 h-4 mr-1" />
                                     Add
                                 </Button>
@@ -184,12 +203,16 @@ export default function CreateProjectModal({
                                         placeholder="Enter reviewer email address..."
                                         value={reviewerInput}
                                         onChange={(e) => setReviewerInput(e.target.value)}
-                                        onKeyDown={(e) => e.key === "Enter" && addFromInput(reviewerInput, setReviewers, reviewers)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                addFromInput(reviewerInput, setReviewers, reviewers, () => setReviewerInput(""));
+                                            }
+                                        }}
                                         className="w-full h-9 pl-9 pr-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
                                     />
                                     <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                 </div>
-                                <Button onClick={() => addFromInput(reviewerInput, setReviewers, reviewers)} variant="outline" className="px-4 bg-transparent">
+                                <Button onClick={() => addFromInput(reviewerInput, setReviewers, reviewers, () => setReviewerInput(""))} variant="outline" className="px-4 bg-transparent">
                                     <Plus className="w-4 h-4 mr-1" />
                                     Add
                                 </Button>
@@ -233,12 +256,16 @@ export default function CreateProjectModal({
                                         placeholder="Enter viewer email address..."
                                         value={viewerInput}
                                         onChange={(e) => setViewerInput(e.target.value)}
-                                        onKeyDown={(e) => e.key === "Enter" && addFromInput(viewerInput, setViewers, viewers)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                addFromInput(viewerInput, setViewers, viewers, () => setViewerInput(""));
+                                            }
+                                        }}
                                         className="w-full h-9 pl-9 pr-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
                                     />
                                     <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                                 </div>
-                                <Button onClick={() => addFromInput(viewerInput, setViewers, viewers)} variant="outline" className="px-4 bg-transparent">
+                                <Button onClick={() => addFromInput(viewerInput, setViewers, viewers, () => setViewerInput(""))} variant="outline" className="px-4 bg-transparent">
                                     <Plus className="w-4 h-4 mr-1" />
                                     Add
                                 </Button>

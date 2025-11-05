@@ -26,6 +26,7 @@ import type {
   RoleUI,
   StatusUI,
 } from "@/types/interfaces/user";
+import { STATUS_TO_API, ROLE_TO_API } from "@/types/interfaces/user";
 import ConfirmDeleteDialog from "../confirm-dialog";
 
 /* ---------------------------------------------
@@ -155,16 +156,25 @@ export function UsersSettings() {
   }, []);
 
   /* -------- Build query from filters/paging -------- */
-  const buildQuery = (): UserListRequestFilterRequest => ({
-    pageIndex,
-    pageSize,
-    search: searchQuery || undefined,
-    role: roleFilter === ROLE_ALL || roleFilter === "" ? undefined : (roleFilter as RoleUI),
-    status:
+  const buildQuery = (): UserListRequestFilterRequest => {
+    const roleParam =
+      roleFilter === ROLE_ALL || roleFilter === ""
+        ? undefined
+        : ROLE_TO_API[roleFilter as RoleUI];
+
+    const statusParam =
       statusFilter === STATUS_ALL || statusFilter === ""
         ? undefined
-        : (statusFilter as StatusUI),
-  });
+        : STATUS_TO_API[statusFilter as StatusUI];
+
+    return {
+      pageIndex,
+      pageSize,
+      search: searchQuery || undefined,
+      role: roleParam,
+      status: statusParam,
+    };
+  };
 
   /* -------- Fetch users -------- */
   const fetchUsers = async (overridePageIndex?: number) => {
@@ -174,7 +184,15 @@ export function UsersSettings() {
       if (overridePageIndex) query.pageIndex = overridePageIndex;
       const res = await UsersApi.getAll(query);
       setTotalPages(res.totalPages || 1);
-      setUserRows(res.data.map(mapUser));
+      let rows = res.data.map(mapUser);
+      // Client-side safety filter in case backend ignores filters
+      if (roleFilter !== ROLE_ALL && roleFilter !== "") {
+        rows = rows.filter((r) => r.role === roleFilter);
+      }
+      if (statusFilter !== STATUS_ALL && statusFilter !== "") {
+        rows = rows.filter((r) => r.status === statusFilter);
+      }
+      setUserRows(rows);
     } catch (e) {
       console.error("Fetch users failed:", e);
       setUserRows([]);
@@ -190,6 +208,15 @@ export function UsersSettings() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageIndex, accessLoading, accessDenied]);
+
+  // Refresh when filters change
+  useEffect(() => {
+    if (!accessLoading && !accessDenied) {
+      setPageIndex(1);
+      fetchUsers(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roleFilter, statusFilter]);
 
   const onClickSearch = async () => {
     setPageIndex(1);
