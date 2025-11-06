@@ -69,7 +69,7 @@ export const MeetingsApi = {
         signal,
       }
     );
-    return res.data as GetOneMeetingMinuteResponse;
+    return res.data.data as GetOneMeetingMinuteResponse;
   },
 
   /** POST /meeting-minutes/:minuteId/send-email */
@@ -82,5 +82,13 @@ export const MeetingsApi = {
       data
     );
     return res.data as SendMeetingMinuteEmailResponse;
+  },
+
+  /** GET /meeting-minutes/:minuteId/file → { url } */
+  getDownloadUrl: async (
+    minuteId: number
+  ): Promise<{ url: string }> => {
+    const res = await sendGet(`/api/core/v1/meeting-minutes/${minuteId}/file`);
+    return res.data as { url: string };
   },
 };

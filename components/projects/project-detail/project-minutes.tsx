@@ -84,7 +84,7 @@ export default function ProjectMinutes({
               </div>
             </div>
             <Link
-              href={`/${locale}/pages/projects/${id}/meeting-detail/${f.id}?file=${encodeURIComponent(f.fileName)}`}
+              href={`/${locale}/pages/meetings/${f.id}?file=${encodeURIComponent(f.fileName)}`}
               className="text-sm text-gray-600 hover:text-gray-900"
             >
               View

@@ -42,16 +42,29 @@ type EditorDraft = {
   decisions: string;
 };
 
+type ProjectMember = {
+  user: {
+    user_id: number;
+    name: string;
+    email: string;
+  };
+  projectRole: {
+    project_role_id: number;
+    role_type: string;
+  };
+};
+
 type Props = {
   minuteId: number;
   meetingTitle: string;
   meetingDate: string;
   attendees: Attendee[];
   actionItems: ActionItem[];
+  projectMembers: ProjectMember[];
 
   onChangeTitle: (v: string) => void;
   onChangeDate: (v: string) => void;
-  onAddAttendee: (name: string) => void;
+  onAddAttendee: (userId: number, name: string, role?: string) => void;
   onRemoveAttendee: (index: number) => void;
   onUpdateActionItem: (id: string, field: keyof ActionItem, value: string | number) => void;
   onRemoveActionItem: (id: string) => void;
@@ -76,6 +89,7 @@ export default function MeetingEditor({
   meetingDate,
   attendees,
   actionItems,
+  projectMembers,
   onChangeTitle,
   onChangeDate,
   onAddAttendee,
@@ -92,7 +106,7 @@ export default function MeetingEditor({
   initialDecisions,
   className,
 }: Props) {
-  const [attendeeInput, setAttendeeInput] = React.useState("");
+  const [selectedAttendeeId, setSelectedAttendeeId] = React.useState<number | "">("");
   const [sendOpen, setSendOpen] = React.useState(false);
   const dateInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -110,10 +124,19 @@ export default function MeetingEditor({
   }, []);
 
   const handleAddAttendee = () => {
-    const name = attendeeInput.trim();
-    if (!name) return;
-    onAddAttendee(name);
-    setAttendeeInput("");
+    if (!selectedAttendeeId) return;
+    const selected = projectMembers.find((m) => m.user.user_id === selectedAttendeeId);
+    if (!selected) return;
+    
+    // Kiểm tra xem user đã được thêm chưa
+    const alreadyAdded = attendees.some((a) => a.userId === selected.user.user_id);
+    if (alreadyAdded) {
+      setSelectedAttendeeId("");
+      return;
+    }
+    
+    onAddAttendee(selected.user.user_id, selected.user.name, selected.projectRole.role_type);
+    setSelectedAttendeeId("");
   };
 
   const handleCalendarClick = () => {
@@ -247,14 +270,29 @@ export default function MeetingEditor({
             </div>
           ))}
         </div>
-        <input
-          type="text"
-          placeholder="Add attendee name…"
-          value={attendeeInput}
-          onChange={(e) => setAttendeeInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleAddAttendee()}
-          className="w-full px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
-        />
+        <div className="flex gap-2">
+          <select
+            value={selectedAttendeeId}
+            onChange={(e) => setSelectedAttendeeId(e.target.value ? Number(e.target.value) : "")}
+            className="flex-1 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
+          >
+            <option value="">Select member to add...</option>
+            {projectMembers
+              .filter((m) => !attendees.some((a) => a.userId === m.user.user_id))
+              .map((member) => (
+                <option key={member.user.user_id} value={member.user.user_id}>
+                  {member.user.name} ({member.user.email}) - {member.projectRole.role_type}
+                </option>
+              ))}
+          </select>
+          <Button
+            onClick={handleAddAttendee}
+            disabled={!selectedAttendeeId}
+            className="px-4 bg-black text-white hover:bg-black/90"
+          >
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Divider */}
@@ -311,6 +349,7 @@ export default function MeetingEditor({
             <ActionItemRow
               key={item.id}
               item={item}
+              projectMembers={projectMembers}
               onUpdateActionItem={onUpdateActionItem}
               onRemoveActionItem={onRemoveActionItem}
             />
@@ -340,10 +379,12 @@ export default function MeetingEditor({
 /* Action Item Row */
 function ActionItemRow({
   item,
+  projectMembers,
   onUpdateActionItem,
   onRemoveActionItem,
 }: {
   item: ActionItem;
+  projectMembers: ProjectMember[];
   onUpdateActionItem: (id: string, field: keyof ActionItem, value: string | number) => void;
   onRemoveActionItem: (id: string) => void;
 }) {
@@ -364,16 +405,26 @@ function ActionItemRow({
         />
       </div>
       <div className="col-span-6 md:col-span-3">
-        <input
-          type="text"
-          value={item.assignee}
-          onChange={(e) => onUpdateActionItem(item.id, "assignee", e.target.value)}
-          placeholder="Assignee"
-          className="w-full text-sm px-2 py-1 bg-white border border-gray-200 rounded focus:border-gray-400"
-        />
-        {/* Nếu bạn bổ sung user picker, hãy gọi:
-            onUpdateActionItem(item.id, "assigneeId", selectedUserId);
-         */}
+        <select
+          value={item.assigneeId || ""}
+          onChange={(e) => {
+            const userId = Number(e.target.value);
+            const selectedMember = projectMembers.find((m) => m.user.user_id === userId);
+            if (selectedMember) {
+              // Cập nhật cả assigneeId và assignee (name)
+              onUpdateActionItem(item.id, "assigneeId", userId);
+              onUpdateActionItem(item.id, "assignee", selectedMember.user.name);
+            }
+          }}
+          className="w-full text-sm px-2 py-1 bg-white border border-gray-200 rounded focus:border-gray-400 appearance-auto"
+        >
+          <option value="">Select assignee...</option>
+          {projectMembers.map((member) => (
+            <option key={member.user.user_id} value={member.user.user_id}>
+              {member.user.name} ({member.user.email})
+            </option>
+          ))}
+        </select>
       </div>
       <div className="col-span-5 md:col-span-2">
         <div className="relative">

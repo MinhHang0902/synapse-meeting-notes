@@ -31,7 +31,7 @@ export default function UploadMinute() {
     try {
       setSubmitting(true);
 
-      const resp = await MeetingsApi.process({
+      await MeetingsApi.process({
         // gửi đúng kiểu File/Blob theo interface mới
         files: selectedFile,
         language: String(locale || "en"),
@@ -43,12 +43,11 @@ export default function UploadMinute() {
         actual_end: new Date(),
       });
 
-      const createdId = resp.minute_id;
-      router.push(
-        `/${locale}/pages/projects/${id}/meeting-detail/${createdId}?file=${encodeURIComponent(
-          selectedFile.name
-        )}`
-      );
+      alert("Upload thành công!");
+      setSelectedFile(null);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     } catch (e) {
       console.error(e);
       alert("Process failed");

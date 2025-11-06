@@ -15,10 +15,12 @@ import { Button } from "@/components/ui/button";
 import MeetingTranscript from "./meeting-transcript";
 import MeetingEditor, { ActionItem } from "./meeting-editor";
 import { MeetingsApi } from "@/lib/api/meeting";
+import { ProjectsApi } from "@/lib/api/project";
 import type {
   GetOneMeetingMinuteResponse,
   UpdateMeetingMinuteRequest,
 } from "@/types/interfaces/meeting";
+import type { MemberProjectData } from "@/types/interfaces/project";
 import axios from "axios";
 
 /** ==== UI types dành riêng cho editor (không dùng type API) ==== */
@@ -47,6 +49,7 @@ export default function MinuteDetailPage({
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [detail, setDetail] = useState<GetOneMeetingMinuteResponse | null>(null);
+  const [projectMembers, setProjectMembers] = useState<MemberProjectData[]>([]);
 
   // Editor state (UI schema)
   const [meetingTitle, setMeetingTitle] = useState("");
@@ -59,9 +62,57 @@ export default function MinuteDetailPage({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
-  // transcript tạm (nếu backend có content dạng plain)
-  const transcriptFallback =
-    detail?.content?.trim() ? [{ speaker: "System", text: detail.content }] : [];
+  // transcript gốc từ AI service - ưu tiên segments (có speaker), fallback về raw_text
+  const transcriptFallback = (() => {
+    const firstTranscript = detail?.transcripts?.[0];
+    if (!firstTranscript) return [];
+
+    // Nếu có segments với speaker info
+    if (firstTranscript.segments && firstTranscript.segments.length > 0) {
+      return firstTranscript.segments.map((seg) => {
+        // Parse "Speaker: text" format
+        const match = seg.content.match(/^([^:]+):\s*(.+)$/);
+        if (match) {
+          return { speaker: match[1].trim(), text: match[2].trim() };
+        }
+        // Fallback if no colon format
+        return { speaker: "Unknown", text: seg.content };
+      });
+    }
+
+    // Fallback: raw_text without speaker info
+    if (firstTranscript.raw_text?.trim()) {
+      return [{ speaker: "System", text: firstTranscript.raw_text }];
+    }
+
+    return [];
+  })();
+
+  // Generate speakers object from transcript lines
+  const transcriptSpeakers = (() => {
+    const speakerColors = [
+      "text-blue-600",
+      "text-green-600", 
+      "text-purple-600",
+      "text-orange-600",
+      "text-pink-600",
+      "text-indigo-600",
+      "text-teal-600",
+      "text-red-600",
+    ];
+    
+    const uniqueSpeakers = new Set(transcriptFallback.map(line => line.speaker));
+    const speakers: Record<string, { name: string; color: string }> = {};
+    
+    Array.from(uniqueSpeakers).forEach((speaker, index) => {
+      speakers[speaker] = {
+        name: speaker,
+        color: speakerColors[index % speakerColors.length],
+      };
+    });
+    
+    return speakers;
+  })();
 
   /* ---------- Animated underline for tabs ---------- */
   function useTabIndicator() {
@@ -88,7 +139,7 @@ export default function MinuteDetailPage({
   }
   const { tabsWrapRef, tabBtnRefs, indicator } = useTabIndicator();
 
-  /* ---------- Fetch detail ---------- */
+  /* ---------- Fetch detail & project members ---------- */
   useEffect(() => {
     const load = async () => {
       try {
@@ -96,6 +147,17 @@ export default function MinuteDetailPage({
         setErr(null);
         const data = await MeetingsApi.detail(Number(minuteId));
         setDetail(data);
+        
+        // Load project members
+        if (data.project_id) {
+          try {
+            const projectDetail = await ProjectsApi.detail(data.project_id);
+            setProjectMembers(projectDetail.project_membersAndRoles || []);
+          } catch (e) {
+            console.error("Failed to load project members:", e);
+            setProjectMembers([]);
+          }
+        }
 
         // Title
         setMeetingTitle(data.title || "");
@@ -105,8 +167,14 @@ export default function MinuteDetailPage({
           data.actual_start ? new Date(data.actual_start).toISOString().slice(0, 16) : ""
         );
 
-        // ❗ MẶC ĐỊNH KHÔNG CÓ ATTENDEE (để user tự thêm) → KHÔNG seed từ API
-        setAttendees([]);
+        // Load attendees từ participants (dữ liệu từ AI service)
+        setAttendees(
+          (data.participants || []).map((p) => ({
+            userId: p.user?.user_id,
+            name: p.user?.name || "",
+            role: "", // User interface không có role field
+          }))
+        );
 
         // Action items seed cho UI (assigneeId nếu có)
         setActionItems(
@@ -132,8 +200,8 @@ export default function MinuteDetailPage({
   const removeAttendee = (index: number) =>
     setAttendees((s) => s.filter((_, i) => i !== index));
 
-  const addAttendee = (name: string) =>
-    setAttendees((s) => [...s, { name, role: "" }]);
+  const addAttendee = (userId: number, name: string, role: string = "") =>
+    setAttendees((s) => [...s, { userId, name, role }]);
 
   const removeActionItem = (id: string) =>
     setActionItems((s) => s.filter((i) => i.id !== id));
@@ -231,47 +299,92 @@ export default function MinuteDetailPage({
 
         if (a.dueDate) {
           const d = new Date(a.dueDate);
-          if (!Number.isNaN(d.getTime())) item.due_date = d;
+          if (!Number.isNaN(d.getTime())) item.due_date = d.toISOString();
         }
         return item;
       })
       .filter(Boolean) as any[];
 
     // actual_start hợp lệ
-    const actualStart =
-      draft.meetingDate && !Number.isNaN(new Date(draft.meetingDate).getTime())
-        ? new Date(draft.meetingDate)
-        : detail.actual_start || detail.schedule_start || new Date();
+    let actualStartDate: Date;
+    if (draft.meetingDate && !Number.isNaN(new Date(draft.meetingDate).getTime())) {
+      actualStartDate = new Date(draft.meetingDate);
+    } else if (detail.actual_start) {
+      actualStartDate = new Date(detail.actual_start);
+    } else if (detail.schedule_start) {
+      actualStartDate = new Date(detail.schedule_start);
+    } else {
+      actualStartDate = new Date();
+    }
 
-    const payloadAny: any = {
+    const payload: UpdateMeetingMinuteRequest = {
       title: draft.meetingTitle || detail.title,
       status: detail.status || "DRAFT",
-      actual_start: actualStart,
+      actual_start: actualStartDate.toISOString(), // Convert Date to ISO-8601 string
       agenda: agendaArr,
       meeting_summary: draft.summary || "",
       decisions: decisionsArr,
-      attendeeIds: [],
-      action_items: [],
+      attendeeIds: attendeeIds,
+      action_items: actionItemsApi,
     };
-    if (attendeeIds.length > 0) payloadAny.attendeeIds = attendeeIds;
-    if (actionItemsApi.length > 0) payloadAny.action_items = actionItemsApi;
 
     try {
-      await MeetingsApi.update(
+      console.log("=== DEBUG SAVE ===");
+      console.log("minuteId:", Number(detail.minute_id));
+      console.log("payload:", JSON.stringify(payload, null, 2));
+      
+      const updatedDetail = await MeetingsApi.update(
         Number(detail.minute_id),
-        payloadAny as unknown as UpdateMeetingMinuteRequest
+        payload
       );
+      // Cập nhật detail state với dữ liệu mới từ server
+      setDetail(updatedDetail);
+      
+      // Đồng bộ lại UI state với dữ liệu mới từ server
+      setMeetingTitle(updatedDetail.title || "");
+      setMeetingDate(
+        updatedDetail.actual_start
+          ? new Date(updatedDetail.actual_start).toISOString().slice(0, 16)
+          : ""
+      );
+      
+      // Cập nhật attendees từ participants
+      setAttendees(
+        (updatedDetail.participants || []).map((p) => ({
+          userId: p.user?.user_id,
+          name: p.user?.name || "",
+          role: "", // User interface không có role field
+        }))
+      );
+      
+      // Cập nhật action items từ server response
+      setActionItems(
+        (updatedDetail.actionItems || []).map((ai) => ({
+          id: String(ai.action_id),
+          description: ai.description || "",
+          assignee: ai.assignee?.name || "",
+          assigneeId: ai.assignee?.user_id,
+          dueDate: ai.due_date ? new Date(ai.due_date).toISOString().slice(0, 10) : "",
+        }))
+      );
+      
       setLastSavedAt(new Date());
     } catch (e: any) {
       console.error("PUT /meeting-minutes error:", e);
       if (axios.isAxiosError(e)) {
+        console.error("=== ERROR DETAILS ===");
+        console.error("Status:", e.response?.status);
+        console.error("Response data:", e.response?.data);
+        console.error("Request URL:", e.config?.url);
+        console.error("Request method:", e.config?.method);
+        console.error("Request data:", e.config?.data);
+        
         const msg =
           e.response?.data?.message ||
           e.response?.data?.error ||
           e.response?.data?.detail ||
           e.message;
         setSaveError(`Save failed: ${msg}`);
-        console.log("Server response data:", e.response?.data);
       } else {
         setSaveError("Save failed: Unexpected error");
       }
@@ -286,7 +399,9 @@ export default function MinuteDetailPage({
     if (!confirm("Delete this meeting minute?")) return;
     try {
       await MeetingsApi.remove(Number(minuteId));
-      router.back();
+      // Điều hướng về danh sách và làm mới danh sách ngay
+      router.replace(`/${locale}/pages/meetings`);
+      router.refresh();
     } catch (e) {
       alert("Failed to delete.");
     }
@@ -330,9 +445,9 @@ export default function MinuteDetailPage({
   }
   if (!detail) return null;
 
-  // Chuỗi seed cho editor
+  // Chuỗi seed cho editor (từ AI service)
   const initialAgendaStr = (detail.agenda || []).join("\n");
-  const initialSummaryStr = detail.content || "";
+  const initialSummaryStr = detail.meeting_summary || detail.content || "";
   const initialDecisionsStr = (detail.decisions || [])
     .map((d) => d.statement)
     .filter(Boolean)
@@ -440,7 +555,11 @@ export default function MinuteDetailPage({
                   ? transcriptFallback
                   : [{ speaker: "System", text: "No transcript content." }]
               }
-              speakers={{ System: { name: "System", color: "text-blue-600" } }}
+              speakers={
+                Object.keys(transcriptSpeakers).length > 0
+                  ? transcriptSpeakers
+                  : { System: { name: "System", color: "text-blue-600" } }
+              }
             />
           )}
 
@@ -457,6 +576,7 @@ export default function MinuteDetailPage({
                 meetingDate={meetingDate}
                 attendees={attendees}
                 actionItems={actionItems}
+                projectMembers={projectMembers}
                 onChangeTitle={setMeetingTitle}
                 onChangeDate={setMeetingDate}
                 onAddAttendee={addAttendee}
@@ -534,6 +654,16 @@ export default function MinuteDetailPage({
 
             <div className="space-y-2.5">
               <Button
+                onClick={async () => {
+                  try {
+                    const { url } = await MeetingsApi.getDownloadUrl(Number(detail.minute_id));
+                    if (!url) return;
+                    window.open(url, "_blank", "noopener,noreferrer");
+                  } catch (e) {
+                    console.error("Download failed:", e);
+                    alert("Không thể tải tệp: vui lòng thử lại sau.");
+                  }
+                }}
                 className="w-full justify-start gap-3 h-10 bg-white text-gray-700 border border-gray-200 hover:bg-gray-900 hover:text-white hover:border-gray-900 transition-all duration-200 font-medium group"
                 variant="outline"
               >

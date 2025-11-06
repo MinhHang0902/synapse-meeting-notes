@@ -77,7 +77,7 @@ export interface MeetingMinuteByIdResponse {
 export interface UpdateMeetingMinuteRequest {
   title: string;
   status: string;
-  actual_start: Date;
+  actual_start: string; // ISO-8601 string
   attendeeIds: number[];
   agenda: string[];
   meeting_summary: string;
@@ -86,9 +86,9 @@ export interface UpdateMeetingMinuteRequest {
     id?: number; // provided to update existing action items, not provided to create new ones
     description: string;
     assigneeId: number;
-    due_date: Date;
+    due_date: string; // ISO-8601 string
     status: string;
-    completed_at?: Date;
+    completed_at?: string; // ISO-8601 string
   }[];
 }
 
@@ -122,6 +122,15 @@ interface Transcript {
   source: string;
   language: string;
   raw_text: string;
+  segments?: TranscriptSegment[];
+}
+
+interface TranscriptSegment {
+  segment_id: number;
+  transcript_id: number;
+  content: string;
+  start_ms?: number;
+  end_ms?: number;
 }
 
 // Dùng chung hết cho detail, create, update
@@ -142,6 +151,7 @@ export interface GetOneMeetingMinuteResponse {
   created_by: number;
   version: number;
   content: string;
+  meeting_summary?: string; // Summary từ AI service
   format: string;
   publish_by: number;
   published_at: Date;
