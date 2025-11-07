@@ -23,6 +23,14 @@ import type {
 import type { MemberProjectData } from "@/types/interfaces/project";
 import axios from "axios";
 
+// Helper: safely format date-like input to ISO substring; returns empty string if invalid
+function safeIsoSlice(input: unknown, sliceEnd: number): string {
+  if (!input) return "";
+  const d = new Date(input as any);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, sliceEnd);
+}
+
 /** ==== UI types dành riêng cho editor (không dùng type API) ==== */
 type EditorAttendee = { userId?: number; name: string; role: string };
 type EditorActionItem = {
@@ -162,10 +170,8 @@ export default function MinuteDetailPage({
         // Title
         setMeetingTitle(data.title || "");
 
-        // Date: ưu tiên actual_start
-        setMeetingDate(
-          data.actual_start ? new Date(data.actual_start).toISOString().slice(0, 16) : ""
-        );
+        // Date: ưu tiên actual_start (safe parse)
+        setMeetingDate(safeIsoSlice(data.actual_start, 16));
 
         // Load attendees từ participants (dữ liệu từ AI service)
         setAttendees(
@@ -183,7 +189,7 @@ export default function MinuteDetailPage({
             description: ai.description || "",
             assignee: ai.assignee?.name || "",
             assigneeId: ai.assignee?.user_id, // NEW
-            dueDate: ai.due_date ? new Date(ai.due_date).toISOString().slice(0, 10) : "",
+            dueDate: safeIsoSlice(ai.due_date, 10),
           }))
         );
       } catch (e) {
@@ -342,11 +348,7 @@ export default function MinuteDetailPage({
       
       // Đồng bộ lại UI state với dữ liệu mới từ server
       setMeetingTitle(updatedDetail.title || "");
-      setMeetingDate(
-        updatedDetail.actual_start
-          ? new Date(updatedDetail.actual_start).toISOString().slice(0, 16)
-          : ""
-      );
+      setMeetingDate(safeIsoSlice(updatedDetail.actual_start, 16));
       
       // Cập nhật attendees từ participants
       setAttendees(
@@ -364,7 +366,7 @@ export default function MinuteDetailPage({
           description: ai.description || "",
           assignee: ai.assignee?.name || "",
           assigneeId: ai.assignee?.user_id,
-          dueDate: ai.due_date ? new Date(ai.due_date).toISOString().slice(0, 10) : "",
+          dueDate: safeIsoSlice(ai.due_date, 10),
         }))
       );
       

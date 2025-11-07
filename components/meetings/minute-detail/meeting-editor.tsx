@@ -110,6 +110,118 @@ export default function MeetingEditor({
   const [sendOpen, setSendOpen] = React.useState(false);
   const dateInputRef = React.useRef<HTMLInputElement>(null);
 
+  const formatDateTimeLocal = (v: string) => {
+    if (!v) return "";
+    try {
+      const d = new Date(v);
+      if (Number.isNaN(d.getTime())) return v;
+      return d.toLocaleString();
+    } catch {
+      return v;
+    }
+  };
+
+  const buildExportHtml = () => {
+    const safe = (s: string) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br/>");
+    const attendeesHtml = attendees
+      .map((a) => `<li>${safe(a.name)}${a.role ? ` (${safe(a.role)})` : ""}</li>`)
+      .join("");
+    const actionItemsHtml = actionItems
+      .map(
+        (ai) =>
+          `<tr><td>${safe(ai.description)}</td><td>${safe(ai.assignee)}</td><td>${safe(ai.dueDate)}</td></tr>`
+      )
+      .join("");
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${safe(meetingTitle || "Meeting Minutes")}</title>
+  <style>
+    body { font-family: Arial, Helvetica, sans-serif; color: #111; }
+    h1 { font-size: 20px; margin: 0 0 12px; }
+    h2 { font-size: 16px; margin: 18px 0 8px; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; font-size: 12px; }
+    th { background: #f5f5f5; text-align: left; }
+    ul { margin: 0; padding-left: 18px; }
+    .meta { color: #555; margin-bottom: 16px; font-size: 12px; }
+    .section { margin-bottom: 16px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</head>
+<body>
+  <h1>${safe(meetingTitle || "Meeting Minutes")}</h1>
+  <div class="meta">
+    <div><b>Date & Time:</b> ${safe(formatDateTimeLocal(meetingDate))}</div>
+    <div><b>Minute ID:</b> <span class="mono">${String(minuteId)}</span></div>
+  </div>
+
+  <div class="section">
+    <h2>Attendees</h2>
+    <ul>${attendeesHtml || "<li>None</li>"}</ul>
+  </div>
+
+  <div class="section">
+    <h2>Agenda</h2>
+    <div>${safe(agenda)}</div>
+  </div>
+
+  <div class="section">
+    <h2>Meeting Summary</h2>
+    <div>${safe(summary)}</div>
+  </div>
+
+  <div class="section">
+    <h2>Key Decisions</h2>
+    <div>${safe(decisions)}</div>
+  </div>
+
+  <div class="section">
+    <h2>Action Items</h2>
+    <table>
+      <thead>
+        <tr><th>Description</th><th>Assignee</th><th>Due Date</th></tr>
+      </thead>
+      <tbody>
+        ${actionItemsHtml || `<tr><td colspan="3">None</td></tr>`}
+      </tbody>
+    </table>
+  </div>
+</body>
+</html>`;
+  };
+
+  const downloadWord = () => {
+    const html = buildExportHtml();
+    const blob = new Blob([html], { type: "application/msword;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const baseName = (meetingTitle || "meeting-minutes").replace(/[^a-z0-9-_]+/gi, "_");
+    a.href = url;
+    a.download = `${baseName}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportPdf = () => {
+    // Mở cửa sổ in để người dùng "Save as PDF"
+    const html = buildExportHtml();
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    // đợi layout
+    setTimeout(() => {
+      w.focus();
+      w.print();
+    }, 300);
+  };
+
   // --- Local editable text, khởi tạo một lần duy nhất khi nhận seed ---
   const [agenda, setAgenda] = React.useState("");
   const [summary, setSummary] = React.useState("");
@@ -193,10 +305,10 @@ export default function MeetingEditor({
 
         <div className="flex-1" />
 
-        <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200 flex-shrink-0">
+        <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200 flex-shrink-0" onClick={exportPdf}>
           <FileText className="w-4 h-4" /> Export PDF
         </Button>
-        <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200 flex-shrink-0">
+        <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200 flex-shrink-0" onClick={downloadWord}>
           <NotebookPen className="w-4 h-4" /> Export Word
         </Button>
         <Button

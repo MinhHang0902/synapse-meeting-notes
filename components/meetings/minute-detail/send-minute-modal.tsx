@@ -47,6 +47,9 @@ Key highlights from the meeting:
     null
   );
 
+  // File attachment state
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+
   const [sending, setSending] = React.useState(false);
 
   const pushEmails = (raw: string) => {
@@ -101,22 +104,37 @@ Key highlights from the meeting:
         setRecipientError("Please enter at least one recipient email.");
         return;
       }
+      // đảm bảo có file đính kèm
+      if (!selectedFile) {
+        alert("Please select a file to attach.");
+        return;
+      }
       setSending(true);
 
       await MeetingsApi.sendEmail(minuteId, {
         recipientEmails,
         subject,
         message,
+        attachment: selectedFile,
       });
 
       onClose();
       alert("Email sent");
+      // Reset file selection
+      setSelectedFile(null);
     } catch (e) {
       console.error(e);
-      alert("Failed to send email");
+      const anyErr = e as any;
+      const msg = anyErr?.response?.data?.message || anyErr?.message || "Failed to send email";
+      alert(msg);
     } finally {
       setSending(false);
     }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setSelectedFile(file);
   };
 
   if (!isOpen) return null;
@@ -223,7 +241,7 @@ Key highlights from the meeting:
               className="w-full p-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors min-h-32"
             />
             <p className="text-sm text-gray-500 mt-2">
-              The current MoM content will be exported and attached automatically.
+              Please select a file to attach below.
             </p>
           </div>
 
@@ -232,27 +250,31 @@ Key highlights from the meeting:
             <label className="flex items-center gap-2 font-medium text-gray-900 mb-3">
               Attachment
             </label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center space-y-4">
-              <div className="flex justify-center">
-                <FileText className="w-8 h-8 text-gray-400" />
-              </div>
-              <p className="text-sm text-gray-600">
-                MoM document will be automatically attached
-              </p>
-
-              <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200 mt-2">
-                <div className="w-10 h-10 bg-red-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-bold text-sm">D</span>
+            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
+              <input
+                type="file"
+                onChange={handleFileChange}
+                className="w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-black file:text-white hover:file:bg-black/90 cursor-pointer"
+                accept=".pdf,.doc,.docx,.txt"
+              />
+              {selectedFile && (
+                <div className="mt-3 flex items-center gap-3 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                  <FileText className="w-5 h-5 text-gray-600" />
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900 text-sm">{selectedFile.name}</p>
+                    <p className="text-xs text-gray-600">
+                      {(selectedFile.size / 1024).toFixed(2)} KB
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFile(null)}
+                    className="text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-                <div className="text-left">
-                  <p className="font-medium text-gray-900 text-sm">
-                    {fileName.replace(".pdf", "_MoM.pdf")}
-                  </p>
-                  <p className="text-xs text-gray-600">
-                    Generated from current MoM content
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>

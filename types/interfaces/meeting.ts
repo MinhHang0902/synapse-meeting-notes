@@ -196,6 +196,7 @@ export interface SendMeetingMinuteEmailRequest {
   recipientEmails: string[];
   subject: string;
   message: string;
+  attachment?: File; // Optional: custom file to attach
 }
 
 export interface SendMeetingMinuteEmailResponse {

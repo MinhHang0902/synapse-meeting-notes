@@ -77,11 +77,32 @@ export const MeetingsApi = {
     minuteId: number,
     data: SendMeetingMinuteEmailRequest
   ): Promise<SendMeetingMinuteEmailResponse> => {
-    const res = await sendPost(
-      `/api/core/v1/meeting-minutes/${minuteId}/send-email`,
-      data
-    );
-    return res.data as SendMeetingMinuteEmailResponse;
+    // Nếu có file, gửi FormData; nếu không, gửi JSON
+    if (data.attachment) {
+      console.log('[SendEmail API] Sending with file:', {
+        fileName: data.attachment.name,
+        fileSize: data.attachment.size,
+        fileType: data.attachment.type,
+      });
+      const formData = new FormData();
+      formData.append('recipientEmails', JSON.stringify(data.recipientEmails));
+      formData.append('subject', data.subject);
+      formData.append('message', data.message);
+      formData.append('attachment', data.attachment);
+      // Không set Content-Type thủ công, axios sẽ tự động set với boundary
+      const res = await axiosInstance.post(
+        `/api/core/v1/meeting-minutes/${minuteId}/send-email`,
+        formData
+      );
+      return res.data as SendMeetingMinuteEmailResponse;
+    } else {
+      const { attachment, ...jsonData } = data;
+      const res = await sendPost(
+        `/api/core/v1/meeting-minutes/${minuteId}/send-email`,
+        jsonData
+      );
+      return res.data as SendMeetingMinuteEmailResponse;
+    }
   },
 
   /** GET /meeting-minutes/:minuteId/file → { url } */
