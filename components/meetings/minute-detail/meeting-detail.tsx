@@ -225,8 +225,10 @@ export default function MinuteDetailPage({
     setActionItems((s) => [
       ...s,
       {
-        id: (Math.max(0, ...s.map((x) => Number(x.id))) + 1).toString(),
-        description: "New action item",
+        id: `temp-${Date.now().toString(36)}-${Math.random()
+          .toString(36)
+          .slice(2, 8)}`,
+        description: "",
         assignee: "",
         dueDate: "",
       },
@@ -269,6 +271,7 @@ export default function MinuteDetailPage({
     const attendeeIds = draft.attendees
       .map((a) => a.userId)
       .filter((id): id is number => typeof id === "number" && !Number.isNaN(id));
+    const attendeeIdSet = new Set<number>(attendeeIds);
 
     // map tên -> userId từ attendees (fallback nếu action item không có assigneeId riêng)
     const nameToUserId = new Map<string, number>();
@@ -282,7 +285,8 @@ export default function MinuteDetailPage({
     const actionItemsApi = draft.actionItems
       .map((a) => {
         const desc = (a.description || "").trim();
-        if (!desc) return null;
+        const isExisting = /^\d+$/.test(a.id);
+        if (!desc && !isExisting) return null;
 
         let assigneeId: number | undefined =
           typeof a.assigneeId === "number" && !Number.isNaN(a.assigneeId)
@@ -294,14 +298,30 @@ export default function MinuteDetailPage({
           assigneeId = name ? nameToUserId.get(name) : undefined;
         }
 
-        if (!assigneeId) return null; // BE yêu cầu assigneeId hợp lệ → bỏ qua nếu chưa có
+        if (!assigneeId) {
+          const name = (a.assignee || "").trim();
+          assigneeId = name ? nameToUserId.get(name) : undefined;
+        }
 
-        const item: any = {
-          description: desc,
-          assigneeId,
-          status: "OPEN",
-        };
-        if (a.id && !Number.isNaN(Number(a.id))) item.id = Number(a.id);
+        if (assigneeId) attendeeIdSet.add(assigneeId);
+
+        const item: any = {};
+
+        if (desc) {
+          item.description = desc;
+        } else if (!isExisting) {
+          return null;
+        }
+
+        if (assigneeId !== undefined) {
+          item.assigneeId = assigneeId;
+        }
+
+        if (isExisting) {
+          item.id = Number(a.id);
+        } else {
+          item.status = "OPEN";
+        }
 
         if (a.dueDate) {
           const d = new Date(a.dueDate);
@@ -330,7 +350,7 @@ export default function MinuteDetailPage({
       agenda: agendaArr,
       meeting_summary: draft.summary || "",
       decisions: decisionsArr,
-      attendeeIds: attendeeIds,
+      attendeeIds: Array.from(attendeeIdSet),
       action_items: actionItemsApi,
     };
 
