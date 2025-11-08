@@ -29,10 +29,6 @@ import type {
 import { STATUS_TO_API, ROLE_TO_API } from "@/types/interfaces/user";
 import ConfirmDeleteDialog from "../confirm-dialog";
 
-/* ---------------------------------------------
- * Helpers
- * --------------------------------------------- */
-
 const ROLE_ALL = "ALL";
 const STATUS_ALL = "ALL";
 
@@ -83,9 +79,7 @@ function pickColor(seed: string) {
 }
 
 function mapUser(u: UserListData): UserRow {
-  // Backend trả systemRole.role_name dạng "ADMIN" | "USER"
   const role: RoleUI = u.systemRole?.role_name === "ADMIN" ? "Admin" : "User";
-  // Backend status có thể là "ACTIVE"/"INACTIVE" hoặc lowercase → normalize
   const status: StatusUI =
     String(u.status || "").toUpperCase() === "INACTIVE" ? "Inactive" : "Active";
 
@@ -105,40 +99,29 @@ function mapUser(u: UserListData): UserRow {
   };
 }
 
-/* ---------------------------------------------
- * Component
- * --------------------------------------------- */
-
 export function UsersSettings() {
-  /** Access gate */
   const [accessLoading, setAccessLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
 
-  /** Filters */
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleUI | typeof ROLE_ALL | "">(ROLE_ALL);
   const [statusFilter, setStatusFilter] = useState<StatusUI | typeof STATUS_ALL | "">(STATUS_ALL);
 
-  /** Modals */
   const [openAdd, setOpenAdd] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserRow | null>(null);
 
-  /** Delete dialog */
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [userToDelete, setUserToDelete] = useState<UserRow | null>(null);
 
-  /** Paging */
   const pageSize = 6;
   const [pageIndex, setPageIndex] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  /** Data */
   const [loading, setLoading] = useState(false);
   const [userRows, setUserRows] = useState<UserRow[]>([]);
 
-  /* -------- Access Check (Admins only) -------- */
   useEffect(() => {
     (async () => {
       try {
@@ -155,7 +138,6 @@ export function UsersSettings() {
     })();
   }, []);
 
-  /* -------- Build query from filters/paging -------- */
   const buildQuery = (): UserListRequestFilterRequest => {
     const roleParam =
       roleFilter === ROLE_ALL || roleFilter === ""
@@ -176,7 +158,6 @@ export function UsersSettings() {
     };
   };
 
-  /* -------- Fetch users -------- */
   const fetchUsers = async (overridePageIndex?: number) => {
     setLoading(true);
     try {
@@ -185,7 +166,7 @@ export function UsersSettings() {
       const res = await UsersApi.getAll(query);
       setTotalPages(res.totalPages || 1);
       let rows = res.data.map(mapUser);
-      // Client-side safety filter in case backend ignores filters
+      //client-side safety filter in case backend ignores filters
       if (roleFilter !== ROLE_ALL && roleFilter !== "") {
         rows = rows.filter((r) => r.role === roleFilter);
       }
@@ -206,16 +187,14 @@ export function UsersSettings() {
     if (!accessLoading && !accessDenied) {
       fetchUsers();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageIndex, accessLoading, accessDenied]);
 
-  // Refresh when filters change
+  //refresh when filters change
   useEffect(() => {
     if (!accessLoading && !accessDenied) {
       setPageIndex(1);
       fetchUsers(1);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleFilter, statusFilter]);
 
   const onClickSearch = async () => {
@@ -223,26 +202,25 @@ export function UsersSettings() {
     if (!accessDenied) await fetchUsers(1);
   };
 
-  // Handle search input change - refresh list when cleared
+  //handle search input change - refresh list when cleared
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
     
-    // If search is cleared, refresh the list
+    //if search is cleared, refresh the list
     if (value === "") {
       setPageIndex(1);
       fetchUsers(1);
     }
   };
 
-  // Handle Enter key press in search input
+  //handle Enter key press in search input
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       onClickSearch();
     }
   };
 
-  /* -------- CRUD -------- */
   const handleCreateUser = async (payload: CreateUserRequest) => {
     try {
       await UsersApi.create(payload);
@@ -289,13 +267,11 @@ export function UsersSettings() {
     }
   };
 
-  /* -------- Paging helpers -------- */
   const goFirst = () => setPageIndex(1);
   const goPrev = () => setPageIndex((p) => Math.max(1, p - 1));
   const goNext = () => setPageIndex((p) => Math.min(totalPages, p + 1));
   const goLast = () => setPageIndex(totalPages);
 
-  /* -------- Gates -------- */
   if (accessLoading) {
     return (
       <div className="flex h-64 items-center justify-center text-gray-500">
@@ -321,13 +297,11 @@ export function UsersSettings() {
     );
   }
 
-  /* -------- Render -------- */
   return (
     <div className="flex flex-col gap-4">
         <h2 className="text-xl font-semibold text-gray-900">Synapse User List</h2>
 
         <div className="flex items-center gap-3">
-          {/* Search - flex-1 để tự động co dãn */}
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
@@ -340,7 +314,6 @@ export function UsersSettings() {
             />
           </div>
           
-          {/* Role filter */}
           <Select
             value={roleFilter || ROLE_ALL}
             onValueChange={(v) =>
@@ -360,7 +333,6 @@ export function UsersSettings() {
             </SelectContent>
           </Select>
 
-          {/* Status filter */}
           <Select
             value={statusFilter || STATUS_ALL}
             onValueChange={(v) =>
@@ -564,7 +536,6 @@ export function UsersSettings() {
         </button>
       </div>
 
-      {/* Modals */}
       <AddUserModal
         open={openAdd}
         onOpenChange={setOpenAdd}
@@ -581,7 +552,6 @@ export function UsersSettings() {
         onSubmit={handleUpdateUser}
       />
 
-      {/* Confirm Delete */}
       <ConfirmDeleteDialog
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
