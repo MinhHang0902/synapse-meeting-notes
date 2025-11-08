@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   FileText,
   NotebookPen,
@@ -19,9 +20,24 @@ import {
   Save,
   CheckCircle2,
   Loader2,
+  Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import SendMinuteModal from "./send-minute-modal";
+import { TrelloIntegrationApi } from "@/lib/api/trello-integration";
+import type {
+  TrelloBoard,
+  TrelloExportResponse,
+  TrelloIntegrationStatus,
+  TrelloList,
+} from "@/types/interfaces/trello";
 
 export type ActionItem = {
   id: string;
@@ -106,9 +122,211 @@ export default function MeetingEditor({
   initialDecisions,
   className,
 }: Props) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const [selectedAttendeeId, setSelectedAttendeeId] = React.useState<number | "">("");
   const [sendOpen, setSendOpen] = React.useState(false);
+  const [exportingTrello, setExportingTrello] = React.useState(false);
+  const [trelloModalOpen, setTrelloModalOpen] = React.useState(false);
+  const [trelloStatus, setTrelloStatus] = React.useState<TrelloIntegrationStatus | null>(null);
+  const [loadingTrelloStatus, setLoadingTrelloStatus] = React.useState(false);
+  const [connectingTrello, setConnectingTrello] = React.useState(false);
+  const [disconnectingTrello, setDisconnectingTrello] = React.useState(false);
+  const [trelloBoards, setTrelloBoards] = React.useState<TrelloBoard[]>([]);
+  const [loadingTrelloBoards, setLoadingTrelloBoards] = React.useState(false);
+  const [trelloLists, setTrelloLists] = React.useState<TrelloList[]>([]);
+  const [loadingTrelloLists, setLoadingTrelloLists] = React.useState(false);
+  const [selectedBoardId, setSelectedBoardId] = React.useState("");
+  const [selectedTrelloListId, setSelectedTrelloListId] = React.useState("");
   const dateInputRef = React.useRef<HTMLInputElement>(null);
+
+  const loadTrelloLists = React.useCallback(
+    async (boardId: string) => {
+      if (!boardId) {
+        setTrelloLists([]);
+        setSelectedTrelloListId("");
+        return;
+      }
+
+      try {
+        setLoadingTrelloLists(true);
+        const response = await fetch(`/api/trello/lists?boardId=${encodeURIComponent(boardId)}`);
+        const data = (await response.json()) as { lists?: TrelloList[]; message?: string };
+        if (response.status === 404) {
+          setTrelloStatus({ connected: false });
+          setTrelloLists([]);
+          setSelectedTrelloListId("");
+          return;
+        }
+        if (response.status === 401) {
+          throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+        }
+        if (!response.ok) {
+          throw new Error(
+            typeof data.message === "string"
+              ? data.message
+              : "Không thể tải danh sách list Trello. Vui lòng kiểm tra board ID.",
+          );
+        }
+        const lists = Array.isArray(data.lists) ? data.lists : [];
+        setTrelloLists(lists);
+        if (lists.length > 0) {
+          setSelectedTrelloListId(lists[0].id);
+        } else {
+          setSelectedTrelloListId("");
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : "Không thể tải danh sách list Trello.";
+        window.alert(message);
+      } finally {
+        setLoadingTrelloLists(false);
+      }
+    },
+    [],
+  );
+
+  const loadTrelloBoards = React.useCallback(async () => {
+    try {
+      setLoadingTrelloBoards(true);
+      const response = await fetch("/api/trello/boards");
+      const data = (await response.json()) as { boards?: TrelloBoard[]; message?: string };
+      if (response.status === 404) {
+        setTrelloStatus({ connected: false });
+        setTrelloBoards([]);
+        setTrelloLists([]);
+        setSelectedBoardId("");
+        setSelectedTrelloListId("");
+        return;
+      }
+      if (response.status === 401) {
+        throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      }
+      if (!response.ok) {
+        throw new Error(
+          typeof data.message === "string"
+            ? data.message
+            : "Không thể tải danh sách board Trello. Vui lòng kiểm tra token.",
+        );
+      }
+      const boards = Array.isArray(data.boards) ? data.boards : [];
+      setTrelloBoards(boards);
+      if (boards.length > 0) {
+        const firstBoardId = boards[0].id;
+        setSelectedBoardId(firstBoardId);
+        setSelectedTrelloListId("");
+        setTrelloLists([]);
+        void loadTrelloLists(firstBoardId);
+      } else {
+        setSelectedBoardId("");
+        setTrelloLists([]);
+        setSelectedTrelloListId("");
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Không thể tải danh sách board Trello.";
+      window.alert(message);
+    } finally {
+      setLoadingTrelloBoards(false);
+    }
+  }, [loadTrelloLists]);
+
+  const handleConnectTrello = React.useCallback(async () => {
+    if (connectingTrello) return;
+    if (typeof window === "undefined") return;
+    try {
+      setConnectingTrello(true);
+      const returnUrl = `${window.location.pathname}${window.location.search}`;
+      const response = await fetch(
+        `/api/trello/oauth/request-token?returnUrl=${encodeURIComponent(returnUrl)}`,
+      );
+      const data = (await response.json()) as { redirectUrl?: string; message?: string };
+      if (!response.ok || !data.redirectUrl) {
+        throw new Error(
+          typeof data.message === "string"
+            ? data.message
+            : "Không thể khởi tạo kết nối Trello. Vui lòng thử lại.",
+        );
+      }
+      window.location.href = data.redirectUrl;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Không thể kết nối Trello. Vui lòng thử lại.";
+      window.alert(message);
+    } finally {
+      setConnectingTrello(false);
+    }
+  }, [connectingTrello]);
+
+  const handleDisconnectTrello = React.useCallback(async () => {
+    if (disconnectingTrello) return;
+    try {
+      setDisconnectingTrello(true);
+      await TrelloIntegrationApi.disconnect();
+      window.alert("Đã ngắt kết nối Trello.");
+      setTrelloStatus({ connected: false });
+      setTrelloBoards([]);
+      setTrelloLists([]);
+      setSelectedBoardId("");
+      setSelectedTrelloListId("");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Không thể ngắt kết nối Trello. Vui lòng thử lại.";
+      window.alert(message);
+    } finally {
+      setDisconnectingTrello(false);
+    }
+  }, [disconnectingTrello]);
+
+  const refreshTrelloStatus = React.useCallback(async () => {
+    try {
+      setLoadingTrelloStatus(true);
+      const status = await TrelloIntegrationApi.getStatus();
+      setTrelloStatus(status);
+      if (status.connected) {
+        await loadTrelloBoards();
+      } else {
+        setTrelloBoards([]);
+        setTrelloLists([]);
+        setSelectedBoardId("");
+        setSelectedTrelloListId("");
+      }
+    } catch (error) {
+      console.error("Failed to load Trello status", error);
+      setTrelloStatus({ connected: false });
+    } finally {
+      setLoadingTrelloStatus(false);
+    }
+  }, [loadTrelloBoards]);
+
+  const trelloConnectedParam = searchParams?.get("trelloConnected");
+  const trelloErrorParam = searchParams?.get("trelloError");
+
+  React.useEffect(() => {
+    if (!trelloModalOpen) return;
+    void refreshTrelloStatus();
+  }, [trelloModalOpen, refreshTrelloStatus]);
+
+  React.useEffect(() => {
+    if (!trelloConnectedParam) return;
+    if (typeof window === "undefined") return;
+
+    if (trelloConnectedParam === "1") {
+      window.alert("Kết nối Trello thành công.");
+    } else {
+      window.alert(trelloErrorParam || "Kết nối Trello thất bại. Vui lòng thử lại.");
+    }
+
+    void refreshTrelloStatus();
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("trelloConnected");
+    params.delete("trelloError");
+    const newQuery = params.toString();
+    const newUrl = `${window.location.pathname}${newQuery ? `?${newQuery}` : ""}`;
+    router.replace(newUrl, { scroll: false });
+  }, [trelloConnectedParam, trelloErrorParam, refreshTrelloStatus, router, searchParams]);
 
   const formatDateTimeLocal = (v: string) => {
     if (!v) return "";
@@ -269,6 +487,53 @@ export default function MeetingEditor({
     await onSave(draft);
   };
 
+  const handleExportTrello = async (listId: string, boardId: string) => {
+    if (exportingTrello) return;
+    try {
+      setExportingTrello(true);
+      const response = await fetch("/api/trello/export", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          meetingTitle,
+          actionItems: actionItems.map((item) => ({
+            description: item.description,
+            assignee: item.assignee,
+            dueDate: item.dueDate,
+          })),
+          listId,
+          boardId,
+        }),
+      });
+
+      const data = (await response.json()) as TrelloExportResponse | { message?: string };
+
+      if (!response.ok) {
+        throw new Error(
+          "message" in data && typeof data.message === "string"
+            ? data.message
+            : "Xuất Trello thất bại, vui lòng thử lại.",
+        );
+      }
+
+      const cardsCreated = "cardsCreated" in data ? data.cardsCreated : 0;
+      window.alert(`Đã tạo ${cardsCreated} card mới trên Trello.`);
+      setTrelloModalOpen(false);
+      setSelectedTrelloListId("");
+      setSelectedBoardId("");
+      setTrelloLists([]);
+      setTrelloBoards([]);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Xuất Trello thất bại, vui lòng thử lại.";
+      window.alert(message);
+    } finally {
+      setExportingTrello(false);
+    }
+  };
+
   return (
     <div className={["space-y-6", className || ""].join(" ")}>
       {/* Toolbar */}
@@ -310,6 +575,13 @@ export default function MeetingEditor({
         </Button>
         <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200 flex-shrink-0" onClick={downloadWord}>
           <NotebookPen className="w-4 h-4" /> Export Word
+        </Button>
+        <Button
+          className="gap-2 bg-blue-600 text-white hover:bg-blue-700 flex-shrink-0"
+          onClick={() => setTrelloModalOpen(true)}
+          disabled={exportingTrello}
+        >
+          <Share2 className="w-4 h-4" /> Export Trello
         </Button>
         <Button
           className="gap-2 bg-gray-900 text-white hover:bg-black flex-shrink-0"
@@ -484,6 +756,193 @@ export default function MeetingEditor({
         meetingTitle={meetingTitle}
         minuteId={minuteId}
       />
+      <Dialog
+        open={trelloModalOpen}
+        onOpenChange={(open) => {
+          if (!open && exportingTrello) return;
+          setTrelloModalOpen(open);
+          if (!open) {
+            setSelectedTrelloListId("");
+            setSelectedBoardId("");
+            setTrelloLists([]);
+            setTrelloBoards([]);
+          }
+        }}
+      >
+        <DialogContent className="space-y-6">
+          <DialogHeader>
+            <DialogTitle>Export Trello</DialogTitle>
+            <DialogDescription>
+              Chọn list trên Trello để tạo card từ các action item hiện có.
+            </DialogDescription>
+          </DialogHeader>
+
+          {loadingTrelloStatus ? (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Loader2 className="w-4 h-4 animate-spin" /> Đang kiểm tra trạng thái Trello…
+            </div>
+          ) : trelloStatus?.connected ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                <div>
+                  Đang kết nối dưới tên{" "}
+                  <span className="font-medium">
+                    {trelloStatus.member?.fullName || trelloStatus.member?.username || "Trello user"}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={handleDisconnectTrello}
+                  disabled={disconnectingTrello || exportingTrello}
+                >
+                  {disconnectingTrello ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Đang ngắt…
+                    </>
+                  ) : (
+                    "Ngắt kết nối"
+                  )}
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-900" htmlFor="trello-board-select">
+                  Trello Board
+                </label>
+                <select
+                  id="trello-board-select"
+                  className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
+                  value={selectedBoardId}
+                  onChange={(event) => {
+                    const boardId = event.target.value;
+                    setSelectedBoardId(boardId);
+                    setSelectedTrelloListId("");
+                    setTrelloLists([]);
+                    if (boardId) {
+                      void loadTrelloLists(boardId);
+                    }
+                  }}
+                  disabled={loadingTrelloBoards || exportingTrello}
+                >
+                  <option value="">Chọn board…</option>
+                  {trelloBoards.map((board) => (
+                    <option key={board.id} value={board.id}>
+                      {board.name}
+                    </option>
+                  ))}
+                </select>
+                {loadingTrelloBoards && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Đang tải board…
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-900" htmlFor="trello-list-select">
+                  Danh sách Trello
+                </label>
+                <select
+                  id="trello-list-select"
+                  className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
+                  value={selectedTrelloListId}
+                  onChange={(event) => setSelectedTrelloListId(event.target.value)}
+                  disabled={
+                    trelloLists.length === 0 ||
+                    exportingTrello ||
+                    loadingTrelloLists ||
+                    !selectedBoardId
+                  }
+                >
+                  {trelloLists.length === 0 ? (
+                    <option value="">Không có list khả dụng</option>
+                  ) : (
+                    trelloLists.map((list) => (
+                      <option key={list.id} value={list.id}>
+                        {list.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+                {loadingTrelloLists && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Đang tải list…
+                  </div>
+                )}
+                <p className="text-xs text-gray-500">Board cần thuộc tài khoản Trello hiện tại.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-600">
+                Tài khoản của bạn chưa kết nối với Trello. Hãy kết nối để xuất action items dưới dạng
+                Trello cards.
+              </p>
+              <Button
+                className="bg-blue-600 text-white hover:bg-blue-700"
+                onClick={handleConnectTrello}
+                disabled={connectingTrello}
+              >
+                {connectingTrello ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Đang mở Trello…
+                  </>
+                ) : (
+                  "Kết nối Trello"
+                )}
+              </Button>
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (exportingTrello) return;
+                setTrelloModalOpen(false);
+                setSelectedTrelloListId("");
+                setSelectedBoardId("");
+                setTrelloLists([]);
+                setTrelloBoards([]);
+              }}
+            >
+              Hủy
+            </Button>
+            {trelloStatus?.connected && (
+              <Button
+                className="bg-blue-600 text-white hover:bg-blue-700"
+                onClick={() => {
+                  if (!selectedBoardId) {
+                    window.alert("Vui lòng chọn board Trello.");
+                    return;
+                  }
+                  if (!selectedTrelloListId) {
+                    window.alert("Vui lòng chọn list Trello trước khi export.");
+                    return;
+                  }
+                  void handleExportTrello(selectedTrelloListId, selectedBoardId);
+                }}
+                disabled={
+                  !selectedTrelloListId ||
+                  !selectedBoardId ||
+                  exportingTrello ||
+                  loadingTrelloLists
+                }
+              >
+                {exportingTrello ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" /> Đang export…
+                  </>
+                ) : (
+                  "Xác nhận"
+                )}
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
