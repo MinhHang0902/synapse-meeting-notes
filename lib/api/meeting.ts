@@ -11,9 +11,7 @@ import {
 import { sendGet, sendPost, sendDelete, sendPut, axiosInstance } from "./axios";
 import { buildProcessFormData } from "./form-data";
 
-/** Chuẩn như UsersApi, prefix base: /api/core/v1 */
 export const MeetingsApi = {
-  /** GET /meeting-minutes */
   getAll: async (
     query?: MeetingMinutesRequest & {
       pageIndex?: number;
@@ -35,13 +33,11 @@ export const MeetingsApi = {
     return res.data as MeetingMinutesResponse;
   },
 
-  /** GET /meeting-minutes/:minuteId */
   detail: async (minuteId: number): Promise<GetOneMeetingMinuteResponse> => {
     const res = await sendGet(`/api/core/v1/meeting-minutes/${minuteId}`);
     return res.data as GetOneMeetingMinuteResponse;
   },
 
-  /** PUT /meeting-minutes/:minuteId */
   update: async (
     minuteId: number,
     data: UpdateMeetingMinuteRequest
@@ -50,12 +46,10 @@ export const MeetingsApi = {
     return res.data as GetOneMeetingMinuteResponse;
   },
 
-  /** DELETE /meeting-minutes/:minuteId */
   remove: async (minuteId: number): Promise<void> => {
     await sendDelete(`/api/core/v1/meeting-minutes/${minuteId}`);
   },
 
-  /** POST /meeting-minutes/process */
   process: async (
     data: ProcessMeetingMinuteRequest,
     signal?: AbortSignal
@@ -72,12 +66,10 @@ export const MeetingsApi = {
     return res.data.data as GetOneMeetingMinuteResponse;
   },
 
-  /** POST /meeting-minutes/:minuteId/send-email */
   sendEmail: async (
     minuteId: number,
     data: SendMeetingMinuteEmailRequest
   ): Promise<SendMeetingMinuteEmailResponse> => {
-    // Nếu có file, gửi FormData; nếu không, gửi JSON
     if (data.attachment) {
       console.log('[SendEmail API] Sending with file:', {
         fileName: data.attachment.name,
@@ -89,7 +81,6 @@ export const MeetingsApi = {
       formData.append('subject', data.subject);
       formData.append('message', data.message);
       formData.append('attachment', data.attachment);
-      // Không set Content-Type thủ công, axios sẽ tự động set với boundary
       const res = await axiosInstance.post(
         `/api/core/v1/meeting-minutes/${minuteId}/send-email`,
         formData
@@ -105,7 +96,6 @@ export const MeetingsApi = {
     }
   },
 
-  /** GET /meeting-minutes/:minuteId/file → { url } */
   getDownloadUrl: async (
     minuteId: number
   ): Promise<{ url: string }> => {
