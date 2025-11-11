@@ -3,7 +3,6 @@ import { ProcessMeetingMinuteRequest } from "@/types/interfaces/meeting";
 export function buildProcessFormData(payload: ProcessMeetingMinuteRequest): FormData {
     const fd = new FormData();
 
-    // ---- files ----
     const { files } = payload;
     if (Array.isArray(files)) {
         files.forEach((f) => {
@@ -13,14 +12,12 @@ export function buildProcessFormData(payload: ProcessMeetingMinuteRequest): Form
         fd.append("files", files);
     }
 
-    // ---- scalar fields ----
     if (payload.language) fd.append("language", payload.language);
     fd.append("project_id", String(payload.project_id));
     if (payload.source) fd.append("source", payload.source);
     if (payload.meeting_link) fd.append("meeting_link", payload.meeting_link);
     if (payload.location) fd.append("location", payload.location);
 
-    // ---- dates → string (ISO hoặc format BE yêu cầu) ----
     const start =
         typeof payload.actual_start === "string"
             ? payload.actual_start

@@ -21,7 +21,6 @@ export default function AddUserModal({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  // ⇩⇩ onSubmit giờ trả Promise để nhận được kết quả tạo user
   onSubmit: (payload: CreateUserRequest) => Promise<CreateUserResponse | void>;
 }) {
   const [name, setName] = useState("");
@@ -46,7 +45,6 @@ export default function AddUserModal({
     onOpenChange(v);
   };
 
-  // --- thay thế toàn bộ hàm submit bằng phiên bản này ---
   const submit = async (): Promise<void> => {
     if (!canSubmit) return;
 
@@ -54,7 +52,7 @@ export default function AddUserModal({
       setSubmitting(true);
       setErrorMsg(null);
 
-      // chuẩn hóa input
+      //chuẩn hóa input
       const payload = {
         name: name.trim(),
         email: email.trim().toLowerCase(),
@@ -63,14 +61,13 @@ export default function AddUserModal({
 
       let created: CreateUserResponse | void;
 
-      // Cha tự gọi API và có thể trả về CreateUserResponse
+      //cha tự gọi API và có thể trả về CreateUserResponse
       created = await onSubmit(payload);
 
-      // Nếu thành công
+      //thành công
       reset();
       onOpenChange(false);
     } catch (err: any) {
-      // Bắt lỗi chi tiết từ axios
       const status = err?.response?.status;
       const serverMsg =
         err?.response?.data?.message ||
@@ -78,7 +75,6 @@ export default function AddUserModal({
         err?.message;
 
       if (status === 412) {
-        // Hiển thị thông điệp dễ hiểu hơn cho 412
         setErrorMsg(
           typeof serverMsg === "string"
             ? serverMsg

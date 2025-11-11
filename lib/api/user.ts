@@ -10,10 +10,8 @@ import {
   SaveUserResponse,
   DeleteUserResponse,
 } from "@/types/interfaces/user";
-import { sendGet, sendPatch, sendPost, sendDelete } from "./axios"; // thêm sendDelete
-
+import { sendGet, sendPatch, sendPost, sendDelete } from "./axios"; 
 export const UsersApi = {
-  // ==== Giữ nguyên các hàm sẵn có ====
   me: async () => {
     try {
       const response = await sendGet("/api/core/v1/users/me");
@@ -55,16 +53,12 @@ export const UsersApi = {
     const url = `/api/core/v1/users${qs.toString() ? `?${qs.toString()}` : ""}`;
     const response = await sendGet(url);
 
-    // FIX: always return .data
     return response.data as UserListResponse;
   } catch (error) {
     throw error;
   }
 },
 
-  // ==== Bổ sung các hàm còn thiếu theo interfaces ====
-
-  /** GET /users/:userId — lấy chi tiết 1 user */
   detail: async (userId: number): Promise<SaveUserResponse> => {
     try {
       const response = await sendGet(`/api/core/v1/users/${userId}`);
@@ -74,7 +68,6 @@ export const UsersApi = {
     }
   },
 
-  /** POST /users — tạo user mới */
   create: async (data: CreateUserRequest): Promise<CreateUserResponse> => {
     try {
       const response = await sendPost("/api/core/v1/users", data);
@@ -84,7 +77,6 @@ export const UsersApi = {
     }
   },
 
-  /** PATCH /users/:userId — cập nhật thông tin user */
   update: async (userId: number, data: UpdateUserRequest): Promise<SaveUserResponse> => {
     try {
       const response = await sendPatch(`/api/core/v1/users/${userId}`, data);
@@ -94,7 +86,6 @@ export const UsersApi = {
     }
   },
 
-  /** DELETE /users/:userId — xoá user */
   remove: async (userId: number): Promise<DeleteUserResponse> => {
     try {
       const response = await sendDelete(`/api/core/v1/users/${userId}`);

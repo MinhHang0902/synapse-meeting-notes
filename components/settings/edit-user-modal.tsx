@@ -39,7 +39,7 @@ export default function EditUserModal({
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Fill form when user changes
+  //fill form when user changes
   useEffect(() => {
     if (user) {
       setFullName(user.name || "");
