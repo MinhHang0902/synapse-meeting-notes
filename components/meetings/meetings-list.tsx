@@ -1,7 +1,7 @@
 // components/meeting/meeting-list.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Search,
   ChevronLeft,
@@ -22,8 +22,14 @@ import {
 import { MeetingsApi } from "@/lib/api/meeting";
 import type { MeetingMinutesData, MeetingMinutesResponse } from "@/types/interfaces/meeting";
 import { useLocale } from "next-intl";
+import { useDebounce } from "@/hooks/useDebounce";
 
+type ProjectOption = {
+  value: string;
+  label: string;
+};
 
+const ALL_PROJECTS_VALUE = "ALL";
 
 export function MeetingMinutesList() {
   const router = useRouter();
@@ -31,47 +37,76 @@ export function MeetingMinutesList() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedProject, setSelectedProject] = useState("All Projects");
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(ALL_PROJECTS_VALUE);
 
   const [list, setList] = useState<MeetingMinutesData[]>([]);
-  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([
+    { value: ALL_PROJECTS_VALUE, label: "All Projects" },
+  ]);
 
   const pageSize = 6;
 
   const DETAIL_BASE = `/${locale}/pages/meetings`;
 
-  useEffect(() => {
-    const load = async () => {
+  const debouncedSearchTerm = useDebounce(searchTerm, 400);
+
+  const fetchMeetings = useCallback(
+    async (page: number, keyword: string, projectId: string) => {
+      setLoading(true);
+      setErr(null);
       try {
-        setLoading(true);
-        setErr(null);
+        const normalizedKeyword = keyword.trim();
+        const projectFilter = projectId !== ALL_PROJECTS_VALUE ? projectId : undefined;
+
         const res: MeetingMinutesResponse = await MeetingsApi.getAll({
-          search: searchTerm || undefined,
-          project_id: selectedProject !== "All Projects" ? selectedProject : undefined,
-          pageIndex: currentPage,
+          search: normalizedKeyword ? normalizedKeyword : undefined,
+          project_id: projectFilter,
+          pageIndex: page,
           pageSize,
         });
-        setList(res.data ?? []);
-        setTotal(Array.isArray(res.data) ? res.data.length : 0);
+
+        const data = res.data ?? [];
+        setList(data);
+        const pages = res.totalPages && res.totalPages > 0 ? res.totalPages : 1;
+        setTotalPages(pages);
+
+        setProjectOptions((prev) => {
+          const map = new Map(prev.map((option) => [option.value, option.label]));
+          data.forEach((item) => {
+            const projectIdFromItem = item.project?.project_id;
+            if (projectIdFromItem != null) {
+              const value = String(projectIdFromItem);
+              const label =
+                item.project?.project_name ?? `Project ${projectIdFromItem}`;
+              map.set(value, label);
+            }
+          });
+
+          const options = Array.from(map.entries())
+            .filter(([value]) => value !== ALL_PROJECTS_VALUE)
+            .map(([value, label]) => ({ value, label }));
+
+          options.sort((a, b) => a.label.localeCompare(b.label));
+          return [{ value: ALL_PROJECTS_VALUE, label: "All Projects" }, ...options];
+        });
       } catch (e) {
         console.error(e);
         setErr("Failed to load meeting minutes");
+        setList([]);
+        setTotalPages(1);
       } finally {
         setLoading(false);
       }
-    };
-    load();
-  }, [searchTerm, selectedProject, currentPage]);
+    },
+    [pageSize]
+  );
 
-  const projects = useMemo(() => {
-    const set = new Set<string>(["All Projects"]);
-    list.forEach((m) => set.add(m.project?.project_name ?? "Unknown Project"));
-    return Array.from(set);
-  }, [list]);
-
-  const totalPages = Math.max(1, Math.ceil((total || list.length) / pageSize));
+  useEffect(() => {
+    void fetchMeetings(currentPage, debouncedSearchTerm, selectedProjectId);
+  }, [currentPage, debouncedSearchTerm, selectedProjectId, fetchMeetings]);
 
   const goFirst = () => setCurrentPage(1);
   const goPrev = () => setCurrentPage((p) => Math.max(1, p - 1));
@@ -109,19 +144,22 @@ export function MeetingMinutesList() {
 
         <div className="md:col-span-3">
           <Select
-            value={selectedProject}
+            value={selectedProjectId}
             onValueChange={(v) => {
               setCurrentPage(1);
-              setSelectedProject(v);
+              setSelectedProjectId(v);
             }}
           >
             <SelectTrigger className="h-9 w-full">
-              <SelectValue>{selectedProject}</SelectValue>
+              <SelectValue>
+                {projectOptions.find((option) => option.value === selectedProjectId)?.label ??
+                  "All Projects"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent align="end">
-              {projects.map((p) => (
-                <SelectItem key={p} value={p}>
-                  {p}
+              {projectOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -129,7 +167,14 @@ export function MeetingMinutesList() {
         </div>
 
         <div className="md:col-span-1">
-          <Button className="h-9 w-full bg-black hover:bg-black/90 text-white">
+          <Button
+            className="h-9 w-full bg-black hover:bg-black/90 text-white"
+            disabled={loading}
+            onClick={() => {
+              setCurrentPage(1);
+              void fetchMeetings(1, searchTerm, selectedProjectId);
+            }}
+          >
             Apply
           </Button>
         </div>

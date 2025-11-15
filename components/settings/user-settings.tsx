@@ -138,7 +138,9 @@ export function UsersSettings() {
     })();
   }, []);
 
-  const buildQuery = (): UserListRequestFilterRequest => {
+  const buildQuery = (
+    overrides?: Partial<UserListRequestFilterRequest>
+  ): UserListRequestFilterRequest => {
     const roleParam =
       roleFilter === ROLE_ALL || roleFilter === ""
         ? undefined
@@ -149,20 +151,27 @@ export function UsersSettings() {
         ? undefined
         : STATUS_TO_API[statusFilter as StatusUI];
 
+    const hasSearchOverride = overrides ? Object.prototype.hasOwnProperty.call(overrides, "search") : false;
+    const rawSearch = hasSearchOverride ? overrides?.search ?? "" : searchQuery;
+    const normalizedSearch =
+      typeof rawSearch === "string" ? rawSearch.trim() : "";
+
     return {
-      pageIndex,
+      pageIndex: overrides?.pageIndex ?? pageIndex,
       pageSize,
-      search: searchQuery || undefined,
+      search: normalizedSearch ? normalizedSearch : undefined,
       role: roleParam,
-      status: statusParam,
+      status: overrides?.status ?? statusParam,
     };
   };
 
-  const fetchUsers = async (overridePageIndex?: number) => {
+  const fetchUsers = async (options?: { pageIndex?: number; search?: string }) => {
     setLoading(true);
     try {
-      const query = buildQuery();
-      if (overridePageIndex) query.pageIndex = overridePageIndex;
+      const query = buildQuery({
+        pageIndex: options?.pageIndex,
+        search: options?.search,
+      });
       const res = await UsersApi.getAll(query);
       setTotalPages(res.totalPages || 1);
       let rows = res.data.map(mapUser);
@@ -185,7 +194,7 @@ export function UsersSettings() {
 
   useEffect(() => {
     if (!accessLoading && !accessDenied) {
-      fetchUsers();
+      void fetchUsers();
     }
   }, [pageIndex, accessLoading, accessDenied]);
 
@@ -193,13 +202,15 @@ export function UsersSettings() {
   useEffect(() => {
     if (!accessLoading && !accessDenied) {
       setPageIndex(1);
-      fetchUsers(1);
+      void fetchUsers({ pageIndex: 1 });
     }
   }, [roleFilter, statusFilter]);
 
   const onClickSearch = async () => {
     setPageIndex(1);
-    if (!accessDenied) await fetchUsers(1);
+    if (!accessDenied) {
+      await fetchUsers({ pageIndex: 1, search: searchQuery });
+    }
   };
 
   //handle search input change - refresh list when cleared
@@ -210,14 +221,14 @@ export function UsersSettings() {
     //if search is cleared, refresh the list
     if (value === "") {
       setPageIndex(1);
-      fetchUsers(1);
+      void fetchUsers({ pageIndex: 1, search: "" });
     }
   };
 
   //handle Enter key press in search input
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
-      onClickSearch();
+      void onClickSearch();
     }
   };
 
@@ -225,7 +236,7 @@ export function UsersSettings() {
     try {
       await UsersApi.create(payload);
       setOpenAdd(false);
-      await fetchUsers(1);
+      await fetchUsers({ pageIndex: 1 });
     } catch (e) {
       console.error("Create user failed:", e);
     }
@@ -237,7 +248,7 @@ export function UsersSettings() {
       await UsersApi.update(Number(selectedUser.id), payload);
       setOpenEdit(false);
       setSelectedUser(null);
-      await fetchUsers(pageIndex);
+      await fetchUsers({ pageIndex });
     } catch (e) {
       console.error("Update user failed:", e);
     }
@@ -257,7 +268,7 @@ export function UsersSettings() {
       if (userRows.length === 1 && pageIndex > 1) {
         setPageIndex((p) => p - 1);
       } else {
-        await fetchUsers(pageIndex);
+        await fetchUsers({ pageIndex });
       }
     } catch (e) {
       console.error("Remove user failed:", e);

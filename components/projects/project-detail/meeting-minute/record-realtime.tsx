@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { AlertTriangle, Download, Home, Pause, Play, Share2 } from "lucide-react";
+import { AlertTriangle, Download, Home, Mic, MicOff, Pause, Play, Share2 } from "lucide-react";
 import {
   LiveKitRoom,
   ParticipantTile,
@@ -78,24 +78,46 @@ export default function RealtimeMeeting() {
     }
 
     let cancelled = false;
+    let failureCount = 0;
+    const MAX_FAILURES = 3;
 
     const fetchStatus = async () => {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
+
         const response = await fetch(`/api/realtime/status?projectId=${projectId}`, {
           method: "GET",
           cache: "no-store",
+          signal: controller.signal,
         });
+        
+        clearTimeout(timeoutId);
+
         if (!response.ok) {
           throw new Error("Không thể lấy trạng thái cuộc họp.");
         }
         const data = await response.json();
         if (cancelled) return;
+        
+        // Reset failure count on success
+        failureCount = 0;
         setMeetingStatus(data.meetingActive ? "active" : "idle");
         setHostIdentity(data.hostIdentity ?? null);
       } catch (error) {
         if (cancelled) return;
-        console.warn("Không thể tải trạng thái cuộc họp:", error);
-        setMeetingStatus("idle");
+        
+        failureCount++;
+        
+        // Chỉ log warning nếu không phải abort error
+        if (error instanceof Error && error.name !== 'AbortError') {
+          console.warn(`[${failureCount}/${MAX_FAILURES}] Không thể tải trạng thái cuộc họp:`, error.message);
+        }
+        
+        // Sau nhiều lần thất bại, set về idle và không log nữa
+        if (failureCount >= MAX_FAILURES) {
+          setMeetingStatus("idle");
+        }
       }
     };
 
@@ -324,7 +346,10 @@ export default function RealtimeMeeting() {
           serverUrl={connection.url}
           token={connection.token}
           connect={shouldConnect}
-          options={{ adaptiveStream: true, dynacast: true }}
+          options={{ 
+            adaptiveStream: true, 
+            dynacast: true,
+          }}
           audio
           video={false}
           onConnected={handleConnected}
@@ -408,7 +433,8 @@ function DisconnectedControls({
 }) {
   const primaryLabel =
     meetingStatus === "active" ? "Join Meeting" : "Start Meeting";
-  const isPrimaryDisabled = isConnecting || meetingStatus === "loading";
+  // Chỉ disable khi đang connecting, không disable khi loading status
+  const isPrimaryDisabled = isConnecting;
 
   return (
         <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -432,6 +458,7 @@ function DisconnectedControls({
                 <>
                   <Play className="w-4 h-4" />
                   {primaryLabel}
+                  {meetingStatus === "loading" && " (Đang kiểm tra...)"}
                 </>
               )}
             </button>
@@ -455,9 +482,11 @@ function DisconnectedControls({
         </div>
 
       <p className="mt-3 text-xs text-gray-500">
-        {meetingStatus === "active"
-          ? "Cuộc họp đang diễn ra. Nhấn “Join Meeting” để tham gia."
-          : "Kết nối để bắt đầu cuộc họp và chia sẻ màn hình với các thành viên khác."}
+        {meetingStatus === "loading"
+          ? "Đang kiểm tra trạng thái cuộc họp..."
+          : meetingStatus === "active"
+          ? 'Cuộc họp đang diễn ra. Nhấn "Join Meeting" để tham gia.'
+          : 'Nhấn "Start Meeting" để bắt đầu cuộc họp mới hoặc "Join Meeting" nếu cuộc họp đang diễn ra.'}
       </p>
       {recordingAsset && (
         <p className="mt-2 text-xs text-gray-500">
@@ -723,7 +752,7 @@ function ConnectedControls({
         </p>
           </div>
 
-      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         {isHost ? (
           <button
             onClick={handleEndMeeting}
@@ -757,6 +786,8 @@ function ConnectedControls({
           </button>
         )}
 
+        <MicrophoneToggleButton />
+
         <button
           onClick={onExport}
           disabled={!canExport || exportDisabled}
@@ -787,6 +818,79 @@ function ConnectedControls({
         )}
       </div>
             </div>
+  );
+}
+
+function MicrophoneToggleButton() {
+  const { localParticipant } = useLocalParticipant();
+  const room = useRoomContext();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  
+  // Cập nhật trạng thái muted từ localParticipant
+  useEffect(() => {
+    if (!localParticipant) {
+      setIsMuted(true);
+      return;
+    }
+    
+    const updateMutedState = () => {
+      const audioPublication = Array.from(localParticipant.audioTrackPublications.values())[0];
+      if (audioPublication) {
+        setIsMuted(audioPublication.isMuted);
+      } else {
+        setIsMuted(true);
+      }
+    };
+    
+    // Cập nhật trạng thái ban đầu
+    updateMutedState();
+    
+    // Lắng nghe sự kiện thay đổi trạng thái
+    if (room) {
+      room.on(RoomEvent.LocalTrackPublished, updateMutedState);
+      room.on(RoomEvent.LocalTrackUnpublished, updateMutedState);
+      
+      // Polling trạng thái mỗi 200ms để đảm bảo UI cập nhật kịp thời
+      const intervalId = setInterval(updateMutedState, 200);
+      
+      return () => {
+        room.off(RoomEvent.LocalTrackPublished, updateMutedState);
+        room.off(RoomEvent.LocalTrackUnpublished, updateMutedState);
+        clearInterval(intervalId);
+      };
+    }
+  }, [localParticipant, room]);
+
+  const toggleMicrophone = useCallback(async () => {
+    if (!localParticipant) return;
+    setIsProcessing(true);
+    try {
+      // Sử dụng setMicrophoneEnabled để bật/tắt mic
+      await localParticipant.setMicrophoneEnabled(isMuted);
+    } catch (error) {
+      console.error("Không thể thay đổi trạng thái microphone:", error);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [isMuted, localParticipant]);
+
+  return (
+    <button
+      type="button"
+      onClick={toggleMicrophone}
+      disabled={!localParticipant || isProcessing}
+      className={cn(
+        "inline-flex items-center justify-center gap-2 rounded-md border px-4 py-2.5 text-sm font-medium shadow-sm hover:bg-gray-50 disabled:opacity-60",
+        isMuted
+          ? "border-red-200 bg-red-50 text-red-600 hover:bg-red-100"
+          : "border-gray-200 bg-white text-gray-800"
+      )}
+      title={isMuted ? "Bật microphone" : "Tắt microphone"}
+    >
+      {isMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+      {isProcessing ? "Đang xử lý..." : isMuted ? "Unmute" : "Mute"}
+    </button>
   );
 }
 
@@ -961,7 +1065,8 @@ function useRoomAudioRecorder({
   const statusRef = useRef<RecorderStatus>("idle");
 
   const audioContextRef = useRef<AudioContext | null>(null);
-  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const sourceNodesRef = useRef<Map<string, MediaStreamAudioSourceNode>>(new Map());
+  const mixerNodeRef = useRef<GainNode | null>(null);
   const processorNodeRef = useRef<ScriptProcessorNode | null>(null);
   const silentGainRef = useRef<GainNode | null>(null);
   const channelChunksRef = useRef<Float32Array[][]>([]);
@@ -984,10 +1089,27 @@ function useRoomAudioRecorder({
       if (!mediaStreamTrack) return;
       const stream = ensureStream();
       if (trackIdsRef.current.has(mediaStreamTrack.id)) {
+        console.log(`[Recording] Track ${mediaStreamTrack.id} đã tồn tại trong stream`);
         return;
       }
       stream.addTrack(mediaStreamTrack);
       trackIdsRef.current.add(mediaStreamTrack.id);
+      console.log(`[Recording] Đã thêm track ${mediaStreamTrack.id} vào stream. Tổng tracks: ${stream.getAudioTracks().length}`);
+      
+      // Nếu đang recording, thêm source node cho track mới ngay lập tức
+      const audioContext = audioContextRef.current;
+      const mixer = mixerNodeRef.current;
+      if (statusRef.current === "recording" && audioContext && mixer && !sourceNodesRef.current.has(mediaStreamTrack.id)) {
+        try {
+          const trackStream = new MediaStream([mediaStreamTrack]);
+          const sourceNode = audioContext.createMediaStreamSource(trackStream);
+          sourceNode.connect(mixer);
+          sourceNodesRef.current.set(mediaStreamTrack.id, sourceNode);
+          console.log(`[Recording] Đã tạo source node cho track ${mediaStreamTrack.id} trong khi recording`);
+        } catch (error) {
+          console.error(`[Recording] Lỗi khi tạo source node cho track ${mediaStreamTrack.id}:`, error);
+        }
+      }
     },
     [ensureStream]
   );
@@ -998,6 +1120,18 @@ function useRoomAudioRecorder({
     if (!stream) return;
     stream.removeTrack(mediaStreamTrack);
     trackIdsRef.current.delete(mediaStreamTrack.id);
+    
+    // Disconnect và remove source node nếu có
+    const sourceNode = sourceNodesRef.current.get(mediaStreamTrack.id);
+    if (sourceNode) {
+      try {
+        sourceNode.disconnect();
+        sourceNodesRef.current.delete(mediaStreamTrack.id);
+        console.log(`[Recording] Đã remove source node cho track ${mediaStreamTrack.id}`);
+      } catch (error) {
+        console.error(`[Recording] Lỗi khi remove source node:`, error);
+      }
+    }
   }, []);
 
   const addLocalParticipantTracks = useCallback(
@@ -1017,9 +1151,12 @@ function useRoomAudioRecorder({
     (participant?: RemoteParticipant | null) => {
       if (!participant) return;
       participant.audioTrackPublications.forEach((publication: RemoteTrackPublication) => {
-        const track = publication.track;
-        if (track?.mediaStreamTrack) {
-          addTrackToStream(track.mediaStreamTrack);
+        // Kiểm tra track đã được subscribed và có mediaStreamTrack
+        if (publication.isSubscribed && publication.track?.mediaStreamTrack) {
+          console.log(`[Recording] Adding remote audio track from ${participant.identity}`);
+          addTrackToStream(publication.track.mediaStreamTrack);
+        } else if (!publication.isSubscribed) {
+          console.warn(`[Recording] Remote track from ${participant.identity} chưa được subscribed`);
         }
       });
     },
@@ -1028,8 +1165,11 @@ function useRoomAudioRecorder({
 
   const hydrateExistingTracks = useCallback(() => {
     if (!room) return;
+    console.log(`[Recording] Hydrating tracks: ${room.remoteParticipants.size} remote participants`);
     addLocalParticipantTracks(room.localParticipant ?? null);
     room.remoteParticipants.forEach((participant: RemoteParticipant) => {
+      console.log(`[Recording] Processing remote participant: ${participant.identity}`);
+      console.log(`[Recording] Audio publications count: ${participant.audioTrackPublications.size}`);
       addRemoteParticipantTracks(participant);
     });
   }, [addLocalParticipantTracks, addRemoteParticipantTracks, room]);
@@ -1041,8 +1181,9 @@ function useRoomAudioRecorder({
 
     hydrateExistingTracks();
 
-    const handleTrackSubscribed = (track: RemoteTrack) => {
+    const handleTrackSubscribed = (track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
       if (track.kind === Track.Kind.Audio) {
+        console.log(`[Recording] Track subscribed from ${participant.identity}`);
         addTrackToStream(track.mediaStreamTrack ?? null);
       }
     };
@@ -1071,7 +1212,14 @@ function useRoomAudioRecorder({
       }
     };
 
+    const handleParticipantConnected = (participant: RemoteParticipant) => {
+      console.log(`[Recording] Participant connected: ${participant.identity}`);
+      // Add tracks từ participant mới join
+      addRemoteParticipantTracks(participant);
+    };
+
     const handleParticipantDisconnected = (participant: RemoteParticipant) => {
+      console.log(`[Recording] Participant disconnected: ${participant.identity}`);
       participant.audioTrackPublications.forEach((publication: RemoteTrackPublication) => {
         const track = publication.track;
         if (track?.mediaStreamTrack) {
@@ -1080,6 +1228,7 @@ function useRoomAudioRecorder({
       });
     };
 
+    room.on(RoomEvent.ParticipantConnected, handleParticipantConnected);
     room.on(RoomEvent.TrackSubscribed, handleTrackSubscribed);
     room.on(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed);
     room.on(RoomEvent.LocalTrackPublished, handleLocalPublished);
@@ -1087,6 +1236,7 @@ function useRoomAudioRecorder({
     room.on(RoomEvent.ParticipantDisconnected, handleParticipantDisconnected);
 
     return () => {
+      room.off(RoomEvent.ParticipantConnected, handleParticipantConnected);
       room.off(RoomEvent.TrackSubscribed, handleTrackSubscribed);
       room.off(RoomEvent.TrackUnsubscribed, handleTrackUnsubscribed);
       room.off(RoomEvent.LocalTrackPublished, handleLocalPublished);
@@ -1096,6 +1246,7 @@ function useRoomAudioRecorder({
     };
   }, [
     addTrackToStream,
+    addRemoteParticipantTracks,
     hydrateExistingTracks,
     removeTrackFromStream,
     room,
@@ -1108,6 +1259,11 @@ function useRoomAudioRecorder({
 
     const stream = ensureStream();
     const tracks = stream.getAudioTracks();
+    
+    console.log(`[Recording] Bắt đầu recording với ${tracks.length} audio tracks`);
+    console.log(`[Recording] Số lượng participants trong room: Local + ${room.remoteParticipants.size} remote`);
+    console.log(`[Recording] Track IDs:`, tracks.map(t => t.id));
+    
     if (!tracks.length) {
       const message = "Không tìm thấy audio track trong cuộc họp.";
       setError(message);
@@ -1136,13 +1292,26 @@ function useRoomAudioRecorder({
       await audioContext.resume();
     }
 
-    const sourceNode = audioContext.createMediaStreamSource(stream);
-    sourceNodeRef.current = sourceNode;
+    // Tạo mixer node để mix tất cả audio tracks
+    const mixer = audioContext.createGain();
+    mixer.gain.value = 1.0;
+    mixerNodeRef.current = mixer;
 
-    const channelCount = Math.min(
-      2,
-      sourceNode.channelCount || tracks[0]?.getSettings()?.channelCount || 2
-    );
+    // Tạo separate source node cho mỗi audio track và connect vào mixer
+    console.log(`[Recording] Tạo source nodes cho ${tracks.length} tracks`);
+    tracks.forEach((track) => {
+      try {
+        const trackStream = new MediaStream([track]);
+        const sourceNode = audioContext.createMediaStreamSource(trackStream);
+        sourceNode.connect(mixer);
+        sourceNodesRef.current.set(track.id, sourceNode);
+        console.log(`[Recording] Đã tạo và connect source node cho track ${track.id}`);
+      } catch (error) {
+        console.error(`[Recording] Lỗi khi tạo source node cho track ${track.id}:`, error);
+      }
+    });
+
+    const channelCount = 2; // Stereo recording
 
     const processorNode = audioContext.createScriptProcessor(4096, channelCount, channelCount);
     processorNodeRef.current = processorNode;
@@ -1165,9 +1334,12 @@ function useRoomAudioRecorder({
       totalSamplesRef.current += inputBuffer.length;
     };
 
-    sourceNode.connect(processorNode);
+    // Connect mixer -> processor -> silent gain -> destination
+    mixer.connect(processorNode);
     processorNode.connect(silentGain);
     silentGain.connect(audioContext.destination);
+
+    console.log(`[Recording] Đã setup audio pipeline với ${sourceNodesRef.current.size} source nodes`);
 
     setStatus("recording");
     statusRef.current = "recording";
@@ -1187,8 +1359,19 @@ function useRoomAudioRecorder({
 
       const finalize = async () => {
         try {
+          // Disconnect tất cả source nodes
+          sourceNodesRef.current.forEach((sourceNode, trackId) => {
+            try {
+              sourceNode.disconnect();
+              console.log(`[Recording] Disconnected source node for track ${trackId}`);
+            } catch (error) {
+              console.error(`[Recording] Lỗi disconnect source node ${trackId}:`, error);
+            }
+          });
+          sourceNodesRef.current.clear();
+          
           processorNodeRef.current?.disconnect();
-          sourceNodeRef.current?.disconnect();
+          mixerNodeRef.current?.disconnect();
           silentGainRef.current?.disconnect();
         } catch {
           // ignore
@@ -1197,6 +1380,8 @@ function useRoomAudioRecorder({
         const audioContext = audioContextRef.current;
         const sampleRate = sampleRateRef.current || audioContext?.sampleRate || 48000;
         const totalSamples = totalSamplesRef.current;
+
+        console.log(`[Recording] Finalize: ${totalSamples} samples recorded`);
 
         if (!totalSamples) {
           const message = "Không có dữ liệu audio nào được ghi lại.";
@@ -1238,7 +1423,7 @@ function useRoomAudioRecorder({
         }
 
         audioContextRef.current = null;
-        sourceNodeRef.current = null;
+        mixerNodeRef.current = null;
         processorNodeRef.current = null;
         silentGainRef.current = null;
 
@@ -1266,8 +1451,18 @@ function useRoomAudioRecorder({
 
   const resetRecording = useCallback(() => {
     try {
+      // Disconnect tất cả source nodes
+      sourceNodesRef.current.forEach((sourceNode) => {
+        try {
+          sourceNode.disconnect();
+        } catch {
+          // ignore
+        }
+      });
+      sourceNodesRef.current.clear();
+      
       processorNodeRef.current?.disconnect();
-      sourceNodeRef.current?.disconnect();
+      mixerNodeRef.current?.disconnect();
       silentGainRef.current?.disconnect();
     } catch {
       // ignore
@@ -1278,7 +1473,7 @@ function useRoomAudioRecorder({
     }
 
     audioContextRef.current = null;
-    sourceNodeRef.current = null;
+    mixerNodeRef.current = null;
     processorNodeRef.current = null;
     silentGainRef.current = null;
 

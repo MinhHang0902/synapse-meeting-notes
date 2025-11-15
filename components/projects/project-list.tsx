@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import {
   Plus,
   Users,
@@ -92,13 +92,15 @@ export function ProjectsList() {
 
   const [loading, setLoading] = useState(false);
 
-  const fetchProjects = async (page = currentPage) => {
+  const fetchProjects = async (page = currentPage, keyword?: string) => {
     setLoading(true);
     try {
+      const rawSearch = typeof keyword === "string" ? keyword : searchQuery;
+      const normalizedSearch = rawSearch.trim();
       const res: ProjectListResponse = await ProjectsApi.list({
         pageIndex: page,
         pageSize: itemsPerPage,
-        search: searchQuery || undefined,
+        search: normalizedSearch ? normalizedSearch : undefined,
       });
       setProjects((res.data || []).map(mapProject));
       setTotalPages(res.totalPages || 1);
@@ -118,7 +120,22 @@ export function ProjectsList() {
 
   const handleSearchClick = async () => {
     setCurrentPage(1);
-    await fetchProjects(1);
+    await fetchProjects(1, searchQuery);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim() === "") {
+      setCurrentPage(1);
+      void fetchProjects(1, "");
+    }
+  };
+
+  const handleSearchKeyDown = async (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      await handleSearchClick();
+    }
   };
 
   const handleOpenProject = (id: string) => {
@@ -161,9 +178,8 @@ export function ProjectsList() {
           type="text"
           placeholder="Search projects..."
           value={searchQuery}
-          onChange={(e) => {
-            setSearchQuery(e.target.value);
-          }}
+          onChange={(e) => handleSearchChange(e.target.value)}
+          onKeyDown={handleSearchKeyDown}
           className="flex-1 max-w-sm h-9 px-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
         />
         <Button variant="outline">Filter by Status</Button>
