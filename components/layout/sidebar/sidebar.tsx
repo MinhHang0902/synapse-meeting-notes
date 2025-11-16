@@ -21,10 +21,6 @@ import { ChangePasswordRequest, UpdateProfileRequest, UserInfoResponse } from "@
 import { clearTokens } from "@/lib/utils/cookies";
 
 
-/* =========================
-   Sidebar
-   ========================= */
-
 type NavItem = {
   key: "dashboard" | "projects" | "meetings" | "settings" | "guidance";
   href: string;
@@ -134,7 +130,6 @@ export function Sidebar({
   if (!user) {
     return (
       <div className={cn("h-full flex flex-col bg-white transition-all duration-300", collapsed ? "w-[72px]" : "w-[280px]")}>
-        {/* Loading state */}
         <div className="flex-1 flex items-center justify-center">
           <span className="text-gray-500">Loading...</span>
         </div>
@@ -144,7 +139,6 @@ export function Sidebar({
 
   return (
     <div className={cn("h-full flex flex-col bg-white transition-all duration-300", collapsed ? "w-[72px]" : "w-[280px]")}>
-      {/* Brand */}
       <div className={cn("mx-3 mt-3 mb-4", !collapsed && "p-3 bg-white border border-gray-200 rounded-2xl")}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -173,7 +167,6 @@ export function Sidebar({
         </div>
       )}
 
-      {/* Nav */}
       <nav className={cn("flex-1 space-y-1", collapsed ? "px-2" : "px-3")}>
         {NAV_ITEMS.map((item) => (
           <SidebarItem
@@ -202,11 +195,10 @@ export function Sidebar({
         ))}
       </nav>
 
-      {/* User card + Dropdown */}
       <div className={cn("border-t border-gray-200", collapsed && "border-0")}>
         <div className={cn("p-3 flex items-center gap-3", collapsed ? "justify-center" : "justify-between")}>
           <div className={cn("flex items-center gap-3", collapsed && "hidden")}>
-            <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center shrink-0 font-semibold">
+            <div className="w-10 h-10 rounded-full bg-gray-500 text-white flex items-center justify-center shrink-0 font-semibold">
               {(user.name?.trim()?.[0] || user.email?.trim()?.[0] || "U").toUpperCase()}
             </div>
             <div className="leading-tight">
@@ -216,7 +208,7 @@ export function Sidebar({
           </div>
 
           {collapsed && (
-            <div className="w-9 h-9 rounded-full bg-gray-900 text-white flex items-center justify-center font-semibold">
+            <div className="w-9 h-9 rounded-full bg-gray-500 text-white flex items-center justify-center font-semibold">
               {(user.name?.trim()?.[0] || user.email?.trim()?.[0] || "U").toUpperCase()}
             </div>
           )}
@@ -247,7 +239,6 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* My Account Modal */}
       <MyAccountModal
         open={openAccount}
         onOpenChange={setOpenAccount}
@@ -255,7 +246,6 @@ export function Sidebar({
         onSave={handleSaveChangeProfile}
       />
 
-      {/* Change Password Modal */}
       <ChangePasswordModal
         open={openChangePwd}
         onOpenChange={setOpenChangePwd}

@@ -33,7 +33,7 @@ export default function ForgotPasswordPage() {
                 setError(response.message || "Failed to request password reset. Please try again.");
             }
         } catch (error) {
-            setError("An unexpected error occurred. Please try again later.");
+            setError("Unable to send password reset. Please check your email.");
         }
     }
 

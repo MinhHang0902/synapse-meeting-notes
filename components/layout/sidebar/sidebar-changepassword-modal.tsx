@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Eye, EyeOff, X, Lock } from "lucide-react";
+import { Eye, EyeOff, X, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChangePasswordRequest } from "@/types/interfaces/user";
 
@@ -58,19 +58,16 @@ export default function ChangePasswordModal({
       aria-modal
       role="dialog"
     >
-      {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/50"
         onClick={() => handleClose(false)}
       />
 
-      {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-xl max-w-md w-full overflow-hidden">
-        {/* Header */}
         <div className="bg-black text-white p-6 flex items-start justify-between sticky top-0 z-20 rounded-t-2xl border-b border-white/10">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <Lock className="w-5 h-5" />
+              < KeyRound className="w-5 h-5" />
               <h2 className="text-xl font-semibold">Change Password</h2>
             </div>
             <p className="text-white/70 text-sm">
@@ -86,9 +83,7 @@ export default function ChangePasswordModal({
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-6 space-y-5 bg-white">
-          {/* Current Password */}
           <div>
             <label className="text-sm font-medium text-gray-900 mb-1 block">
               Current Password <span className="text-red-500">*</span>
@@ -111,7 +106,6 @@ export default function ChangePasswordModal({
             </div>
           </div>
 
-          {/* New Password */}
           <div>
             <label className="text-sm font-medium text-gray-900 mb-1 block">
               New Password <span className="text-red-500">*</span>
@@ -134,7 +128,6 @@ export default function ChangePasswordModal({
             </div>
           </div>
 
-          {/* Confirm Password */}
           <div>
             <label className="text-sm font-medium text-gray-900 mb-1 block">
               Confirm New Password <span className="text-red-500">*</span>
@@ -156,7 +149,6 @@ export default function ChangePasswordModal({
               </button>
             </div>
 
-            {/* Validation messages */}
             {confirmPassword.length > 0 && confirmPassword !== newPassword && (
               <p className="mt-1 text-xs text-red-600">
                 Passwords do not match.
@@ -170,7 +162,6 @@ export default function ChangePasswordModal({
           </div>
         </div>
 
-        {/* Footer */}
         <div className="border-t border-gray-200 p-6 flex justify-end gap-3 bg-white rounded-b-2xl">
           <Button
             variant="outline"
@@ -188,7 +179,7 @@ export default function ChangePasswordModal({
                 : "bg-gray-400 cursor-not-allowed"
               }`}
           >
-            <Lock className="w-4 h-4 mr-2" />
+            < KeyRound className="w-4 h-4 mr-2" />
             Apply Change
           </Button>
         </div>

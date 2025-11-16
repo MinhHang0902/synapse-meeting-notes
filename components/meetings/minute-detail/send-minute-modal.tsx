@@ -32,12 +32,7 @@ export default function SendMinuteModal({
   const [message, setMessage] = React.useState(
     `Hi team,
 
-Please find attached the meeting minutes from our ${meetingTitle} session.
-
-Key highlights from the meeting:
-• Q3 performance exceeded expectations with 15% cost savings
-• Cloud migration progressing well (80% complete)
-• User engagement increased by 25%`
+Please find attached the meeting minutes from our ${meetingTitle} session.`
   );
 
   // New: recipients input state

@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { PencilLine, X } from "lucide-react";
 import { UpdateProfileRequest, UserInfoResponse } from "@/types/interfaces/user";
-import { UsersApi } from "@/lib/api/user";
 
 interface AccountModalProps {
   open: boolean;
@@ -49,18 +48,15 @@ export default function MyAccountModal({
       aria-modal
       role="dialog"
     >
-      {/* Overlay */}
       <div
         className="absolute inset-0 bg-black/50"
         onClick={() => close()}
       />
 
-      {/* Modal */}
       <div className="relative bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden">
-        {/* Header */}
         <div className="bg-black text-white p-6 flex items-start justify-between rounded-t-2xl border-b border-white/10 relative">
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full bg-gray-900 text-white flex items-center justify-center shrink-0 font-semibold">
+            <div className="w-10 h-10 rounded-full bg-gray-500 text-white flex items-center justify-center shrink-0 font-semibold">
               {(user.name?.trim()?.[0] || user.email?.trim()?.[0] || "U").toUpperCase()}
             </div>
             <div>
@@ -80,79 +76,73 @@ export default function MyAccountModal({
           </button>
         </div>
 
-        {/* Body */}
         <div className="p-6 space-y-8">
-          {/* Profile Section */}
-          <div className="flex items-start gap-5">
-            <div className="flex-1 flex flex-col gap-4">
-              <div>
-                <label className="text-sm font-medium text-gray-900 mb-1 block">
-                  Full Name <span className="text-red-500">*</span>
-                </label>
+          <div className="flex flex-col gap-4">
+            <div>
+              <label className="text-sm font-medium text-gray-900 mb-1 block">
+                Full Name <span className="text-red-500">*</span>
+              </label>
+              <div className="flex items-center gap-2">
                 <input
                   type="text"
                   value={name}
                   readOnly={!editing}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
-                  className={`w-full rounded-md px-3 py-2 text-sm border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:border-gray-400 ${!editing ? "bg-gray-100 cursor-not-allowed opacity-80" : ""
-                    }`}
+                  className={`flex-1 rounded-md px-3 py-2 text-sm border border-gray-200 bg-white text-gray-900 placeholder:text-gray-400 transition-colors focus:outline-none focus:border-gray-400 ${
+                    !editing ? "bg-gray-100 cursor-not-allowed opacity-80" : ""
+                  }`}
                 />
-              </div>
 
-              <div>
-                <label className="text-sm font-medium text-gray-900 mb-1 block">
-                  Email Address <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="email"
-                  value={user.email}
-                  readOnly
-                  className="w-full rounded-md px-3 py-2 text-sm border border-gray-200 bg-gray-100 text-gray-900 placeholder:text-gray-400 cursor-not-allowed opacity-80"
-                />
+                {!editing ? (
+                  <Button
+                    size="sm"
+                    onClick={() => setEditing(true)}
+                    className="bg-black text-white hover:bg-black/90 gap-2 flex items-center"
+                  >
+                    <PencilLine className="w-4 h-4" /> Edit Profile
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      disabled={!canSave}
+                      onClick={submit}
+                      className={`text-white px-4 ${
+                        canSave ? "bg-black hover:bg-black/90" : "bg-gray-400 cursor-not-allowed"
+                      }`}
+                    >
+                      Save Change
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setName(user.name);
+                        setEditing(false);
+                      }}
+                      className="px-6 bg-transparent"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Edit Buttons */}
-            <div className="flex flex-col gap-2">
-              {!editing ? (
-                <Button
-                  size="sm"
-                  onClick={() => setEditing(true)}
-                  className="bg-black text-white hover:bg-black/90 gap-2"
-                >
-                  <PencilLine className="w-4 h-4" /> Edit Profile
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    size="sm"
-                    disabled={!canSave}
-                    onClick={submit}
-                    className={`text-white px-4 ${canSave
-                      ? "bg-black hover:bg-black/90"
-                      : "bg-gray-400 cursor-not-allowed"
-                      }`}
-                  >
-                    Save Change
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      setName(user.name);
-                      setEditing(false);
-                    }}
-                    className="px-6 bg-transparent"
-                  >
-                    Cancel
-                  </Button>
-                </>
-              )}
+            <div>
+              <label className="text-sm font-medium text-gray-900 mb-1 block">
+                Email Address <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                value={user.email}
+                readOnly
+                className="w-full rounded-md px-3 py-2 text-sm border border-gray-200 bg-gray-100 text-gray-900 placeholder:text-gray-400 cursor-not-allowed opacity-80"
+              />
             </div>
           </div>
 
-          {/* Role Section */}
           <div>
             <h4 className="text-gray-900 font-semibold text-base mb-1">
               System Role
@@ -160,32 +150,28 @@ export default function MyAccountModal({
             <p className="text-sm text-gray-600">{user.systemRole?.role_name} (read-only)</p>
           </div>
 
-          {/* Project List */}
           <div>
             <h4 className="text-gray-900 font-semibold text-base mb-3">
               Projects
             </h4>
             <div className="space-y-3">
-              {user.projectMembers.map(
-                (p) => (
-                  <div
-                    key={p.project.project_id}
-                    className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-2"
-                  >
-                    <span className="text-sm text-gray-800 font-medium">
-                      {p.project.project_name}
-                    </span>
-                    <span className="text-[11px] px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 font-semibold">
-                      {p.projectRole.role_type}
-                    </span>
-                  </div>
-                )
-              )}
+              {user.projectMembers.map((p) => (
+                <div
+                  key={p.project.project_id}
+                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-4 py-2"
+                >
+                  <span className="text-sm text-gray-800 font-medium">
+                    {p.project.project_name}
+                  </span>
+                  <span className="text-[11px] px-2.5 py-1 rounded-md bg-gray-100 text-gray-700 font-semibold">
+                    {p.projectRole.role_type}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Footer */}
         <div className="border-t border-gray-200 p-4 text-center text-sm text-gray-500 bg-gray-50 rounded-b-2xl">
           Account settings are managed by the administrator.
         </div>
