@@ -31,6 +31,30 @@ function safeIsoSlice(input: unknown, sliceEnd: number): string {
   return d.toISOString().slice(0, sliceEnd);
 }
 
+// Helper: format a date-like value to local datetime string for <input type="datetime-local">
+function formatLocalDateTimeForInput(input: unknown): string {
+  if (!input) return "";
+  const d = new Date(input as any);
+  if (Number.isNaN(d.getTime())) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
+}
+
+// Helper: format a date-like value to local date string for <input type="date">
+function formatLocalDateForInput(input: unknown): string {
+  if (!input) return "";
+  const d = new Date(input as any);
+  if (Number.isNaN(d.getTime())) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 /** ==== UI types dành riêng cho editor (không dùng type API) ==== */
 type EditorAttendee = { userId?: number; name: string; role: string };
 type EditorActionItem = {
@@ -170,8 +194,12 @@ export default function MinuteDetailPage({
         // Title
         setMeetingTitle(data.title || "");
 
-        // Date: ưu tiên actual_start (safe parse)
-        setMeetingDate(safeIsoSlice(data.actual_start, 16));
+        // Date & Time: ưu tiên actual_start -> schedule_start -> created_at, hiển thị theo local (tránh lệch timezone)
+        setMeetingDate(
+          formatLocalDateTimeForInput(
+            data.actual_start ?? data.schedule_start ?? data.created_at
+          )
+        );
 
         // Load attendees từ participants (dữ liệu từ AI service)
         setAttendees(
@@ -189,7 +217,7 @@ export default function MinuteDetailPage({
             description: ai.description || "",
             assignee: ai.assignee?.name || "",
             assigneeId: ai.assignee?.user_id, // NEW
-            dueDate: safeIsoSlice(ai.due_date, 10),
+            dueDate: formatLocalDateForInput(ai.due_date),
           }))
         );
       } catch (e) {
@@ -368,7 +396,11 @@ export default function MinuteDetailPage({
       
       // Đồng bộ lại UI state với dữ liệu mới từ server
       setMeetingTitle(updatedDetail.title || "");
-      setMeetingDate(safeIsoSlice(updatedDetail.actual_start, 16));
+      setMeetingDate(
+        formatLocalDateTimeForInput(
+          updatedDetail.actual_start ?? updatedDetail.schedule_start ?? updatedDetail.created_at
+        )
+      );
       
       // Cập nhật attendees từ participants
       setAttendees(
@@ -386,7 +418,7 @@ export default function MinuteDetailPage({
           description: ai.description || "",
           assignee: ai.assignee?.name || "",
           assigneeId: ai.assignee?.user_id,
-          dueDate: safeIsoSlice(ai.due_date, 10),
+          dueDate: formatLocalDateForInput(ai.due_date),
         }))
       );
       
