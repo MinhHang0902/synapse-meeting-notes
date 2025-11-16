@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
-  Edit2,
+  // Edit2,
   Download,
   History,
   Trash2,
@@ -504,7 +504,7 @@ export default function MinuteDetailPage({
                 <h1 className="text-xl font-semibold text-gray-900">
                   {q.get("file") || detail.title}
                 </h1>
-                <Edit2 className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer" />
+                {/* <Edit2 className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer" /> */}
               </div>
               <p className="text-sm text-gray-600">
                 {detail?.project?.project_name || detail.project_id} • Uploaded{" "}

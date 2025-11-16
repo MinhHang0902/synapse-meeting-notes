@@ -131,16 +131,19 @@ export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] 
             {email && !emailValid && emailTouched && <p className="text-xs text-red-500 mt-1">Invalid email address</p>}
           </div>
 
-          <Select value={role} onValueChange={(v: Member["role"]) => setRole(v)}>
-            <SelectTrigger className="h-9 w-[160px]">
-              <SelectValue>{role ? role : "Select Role"}</SelectValue>
-            </SelectTrigger>
-            <SelectContent align="end">
-              <SelectItem value="Viewer">Viewer</SelectItem>
-              <SelectItem value="Reviewer">Reviewer</SelectItem>
-              <SelectItem value="Manager">Manager</SelectItem>
-            </SelectContent>
-          </Select>
+          <Select
+  value={role}
+  onValueChange={(v: Member["role"]) => setRole(v)}
+>
+  <SelectTrigger className="h-9 w-[160px]">
+    <SelectValue placeholder="Select Role">{role}</SelectValue>
+  </SelectTrigger>
+  <SelectContent align="end">
+    <SelectItem value="Viewer">Viewer</SelectItem>
+    <SelectItem value="Reviewer">Reviewer</SelectItem>
+    <SelectItem value="Manager">Manager</SelectItem>
+  </SelectContent>
+</Select>
 
           <Button className="h-9 bg-black hover:bg-black/90 text-white px-4 disabled:opacity-50 disabled:cursor-not-allowed" onClick={invite} disabled={!emailValid || !role}>
             Invite People

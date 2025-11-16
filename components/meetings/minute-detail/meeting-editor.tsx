@@ -43,7 +43,7 @@ export type ActionItem = {
   id: string;
   description: string;
   assignee: string;
-  assigneeId?: number; // NEW: cho phép assign người ngoài attendees
+  assigneeId?: number;
   dueDate: string;
 };
 export type Attendee = { name: string; role?: string; userId?: number };
@@ -91,7 +91,6 @@ type Props = {
   saving?: boolean;
   lastSavedAt?: Date;
 
-  /** seed ban đầu từ API, chỉ dùng 1 lần */
   initialAgenda?: string;
   initialSummary?: string;
   initialDecisions?: string;
@@ -426,27 +425,23 @@ export default function MeetingEditor({
   };
 
   const exportPdf = () => {
-    // Mở cửa sổ in để người dùng "Save as PDF"
     const html = buildExportHtml();
     const w = window.open("", "_blank");
     if (!w) return;
     w.document.open();
     w.document.write(html);
     w.document.close();
-    // đợi layout
     setTimeout(() => {
       w.focus();
       w.print();
     }, 300);
   };
 
-  // --- Local editable text, khởi tạo một lần duy nhất khi nhận seed ---
   const [agenda, setAgenda] = React.useState("");
   const [summary, setSummary] = React.useState("");
   const [decisions, setDecisions] = React.useState("");
 
   React.useEffect(() => {
-    // chỉ seed 1 lần khi component mount, tránh overwrite khi user đang nhập
     setAgenda(initialAgenda ?? "");
     setSummary(initialSummary ?? "");
     setDecisions(initialDecisions ?? "");
@@ -458,7 +453,6 @@ export default function MeetingEditor({
     const selected = projectMembers.find((m) => m.user.user_id === selectedAttendeeId);
     if (!selected) return;
     
-    // Kiểm tra xem user đã được thêm chưa
     const alreadyAdded = attendees.some((a) => a.userId === selected.user.user_id);
     if (alreadyAdded) {
       setSelectedAttendeeId("");
@@ -470,7 +464,9 @@ export default function MeetingEditor({
   };
 
   const handleCalendarClick = () => {
-    dateInputRef.current?.showPicker?.();
+    if (dateInputRef.current) {
+      dateInputRef.current.showPicker?.();
+    }
   };
 
   const emitSave = async () => {
@@ -538,13 +534,6 @@ export default function MeetingEditor({
     <div className={["space-y-6", className || ""].join(" ")}>
       {/* Toolbar */}
       <div className="flex items-center gap-3 pb-4 border-b border-gray-200 -mx-6 px-6">
-        <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="text-sm text-gray-600 whitespace-nowrap">Template:</span>
-          <select className="px-3 py-2 pr-8 border border-gray-300 rounded text-sm bg-white w-[160px] truncate appearance-none bg-[url('data:image/svg+xml;charset=UTF-8,%3csvg%20width%3d%2712%27%20height%3d%278%27%20viewBox%3d%270%200%2012%208%27%20fill%3d%27none%27%20xmlns%3d%27http%3a%2f%2fwww.w3.org%2f2000%2fsvg%27%3e%3cpath%20d%3d%27M1%201.5L6%206.5L11%201.5%27%20stroke%3d%27%23666%27%20stroke-width%3d%271.5%27%20stroke-linecap%3d%27round%27%20stroke-linejoin%3d%27round%27%2f%3e%3c%2fsvg%3e')] bg-[length:12px] bg-[right_0.75rem_center] bg-no-repeat">
-            <option>Default Meeting Template</option>
-          </select>
-        </div>
-
         <Button
           className="gap-2 bg-black text-white hover:bg-black/90 flex-shrink-0"
           onClick={emitSave}
@@ -608,7 +597,7 @@ export default function MeetingEditor({
         />
       </div>
 
-      {/* Date & Time */}
+      {/* Date & Time - FIXED: Bỏ pointer-events-none và ẩn native picker */}
       <div className="space-y-1.5">
         <label className="font-semibold text-gray-900 text-sm inline-flex items-center gap-2">
           <CalendarClock className="w-4 h-4" /> Date & Time
@@ -619,12 +608,12 @@ export default function MeetingEditor({
             type="datetime-local"
             value={meetingDate}
             onChange={(e) => onChangeDate(e.target.value)}
-            className="w-full px-4 py-2 pr-10 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400 [&::-webkit-calendar-picker-indicator]:opacity-0"
+            className="w-full px-4 py-2 pr-10 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400 [&::-webkit-calendar-picker-indicator]:hidden"
           />
           <button
             type="button"
             onClick={handleCalendarClick}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 pointer-events-none"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
           >
             <Calendar className="w-4 h-4" />
           </button>
@@ -947,7 +936,7 @@ export default function MeetingEditor({
   );
 }
 
-/* Action Item Row */
+/* Action Item Row - FIXED: Bỏ pointer-events-none khỏi calendar button */
 function ActionItemRow({
   item,
   projectMembers,
@@ -961,7 +950,9 @@ function ActionItemRow({
 }) {
   const dueDateInputRef = React.useRef<HTMLInputElement>(null);
   const handleDueDateCalendarClick = () => {
-    dueDateInputRef.current?.showPicker?.();
+    if (dueDateInputRef.current) {
+      dueDateInputRef.current.showPicker?.();
+    }
   };
 
   return (
@@ -982,7 +973,6 @@ function ActionItemRow({
             const userId = Number(e.target.value);
             const selectedMember = projectMembers.find((m) => m.user.user_id === userId);
             if (selectedMember) {
-              // Cập nhật cả assigneeId và assignee (name)
               onUpdateActionItem(item.id, "assigneeId", userId);
               onUpdateActionItem(item.id, "assignee", selectedMember.user.name);
             }
@@ -1004,12 +994,12 @@ function ActionItemRow({
             type="date"
             value={item.dueDate}
             onChange={(e) => onUpdateActionItem(item.id, "dueDate", e.target.value)}
-            className="w-full text-sm px-2 py-1 pr-7 bg-white border border-gray-200 rounded focus:border-gray-400 [&::-webkit-calendar-picker-indicator]:opacity-0"
+            className="w-full text-sm px-2 py-1 pr-7 bg-white border border-gray-200 rounded focus:border-gray-400 [&::-webkit-calendar-picker-indicator]:hidden"
           />
           <button
             type="button"
             onClick={handleDueDateCalendarClick}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 pointer-events-none"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
           >
             <Calendar className="w-3.5 h-3.5" />
           </button>

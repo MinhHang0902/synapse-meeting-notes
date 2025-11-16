@@ -27,14 +27,14 @@ export default function OtpPage() {
         const finalEmail = fromQuery || fromSession;
         setEmail(finalEmail);
 
-        // nếu có email từ query thì đồng bộ lại vào session để chống mất khi F5
         if (fromQuery) sessionStorage.setItem("fp_email", fromQuery);
     }, [searchParams]);
 
     useEffect(() => {
+        if (timer === 0) return; 
         const id = setInterval(() => setTimer((t) => t > 0 ? t - 1 : 0), 1000);
         return () => clearInterval(id);
-    }, []);
+    }, [timer]);
 
     const isOtpValid = useMemo(() => /^\d{6}$/.test(otp), [otp]);
 
@@ -60,7 +60,7 @@ export default function OtpPage() {
             } else {
                 setError("Failed to verify OTP. Please try again.");
             }
-        } catch (error) {
+        } catch {
             setError("An unexpected error occurred. Please try again later.");
         }
     }
@@ -75,7 +75,7 @@ export default function OtpPage() {
         try {
             const res = await AuthApi.requestOtp({ email });
             if (res.ok) {
-                setTimer(30);
+                setTimer(30); 
             } else {
                 setError(res.message || "Failed to resend OTP.");
             }
@@ -99,19 +99,29 @@ export default function OtpPage() {
                     />
                 </div>
                 {error && <p className="text-red-400 text-sm">{error}</p>}
-                <p className="mt-1 text-center text-sm font-medium text-red-300">00:{timer < 10 ? `0${timer}` : timer}</p>
-                <Button className="mt-4 w-full h-10 rounded-lg bg-white text-gray-900 font-medium hover:bg-white/90 transition-colors shadow-sm" onClick={handleOtpSubmit}>
+
+                <p className="mt-1 text-center text-sm font-medium text-red-300">
+                    00:{timer < 10 ? `0${timer}` : timer}
+                </p>
+
+                <Button
+                    className="mt-4 w-full h-10 rounded-lg bg-white text-gray-900 font-medium hover:bg-white/90 transition-colors shadow-sm"
+                    onClick={handleOtpSubmit}
+                >
                     Submit
                 </Button>
-                <p className="mt-3 text-center text-sm text-gray-400">
-                    If you didn't receive a code!
-                    <span
-                        className="cursor-pointer text-gray-200 underline hover:text-white transition-colors"
-                        onClick={handleResend}
-                    >
-                        Resend
-                    </span>
-                </p>
+
+                {timer === 0 && (
+                    <p className="mt-3 text-center text-sm text-gray-400">
+                        If you didn't receive a code!{" "}
+                        <span
+                            className="cursor-pointer text-gray-200 underline hover:text-white transition-colors"
+                            onClick={handleResend}
+                        >
+                            Resend
+                        </span>
+                    </p>
+                )}
             </FormLayout>
         </Wrapper>
     );

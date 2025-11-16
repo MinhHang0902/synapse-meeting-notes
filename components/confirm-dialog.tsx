@@ -86,7 +86,7 @@ export default function ConfirmDeleteDialog({
         </AlertDialogHeader>
 
         {/* Footer (same style as EditUserModal) */}
-        <div className="border-t border-gray-200 px-2 py-3 flex gap-3 justify-end bg-white rounded-b-2xl">
+        <div className="border-t border-gray-200 px-2 py-3 flex gap-3 justify-center bg-white rounded-b-2xl">
           <Button
             variant="outline"
             onClick={handleCancel}
