@@ -4,6 +4,13 @@
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { UploadCloud, FileAudio2, Mic, ShieldCheck, CheckCircle2 } from "lucide-react";
 import * as React from "react";
 import { MeetingsApi } from "@/lib/api/meeting";
@@ -17,6 +24,7 @@ export default function UploadMinute() {
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
+  const [selectedLanguage, setSelectedLanguage] = React.useState<"vi" | "en">("vi");
 
   const handleBrowseClick = () => fileInputRef.current?.click();
 
@@ -34,7 +42,7 @@ export default function UploadMinute() {
       await MeetingsApi.process({
         // gửi đúng kiểu File/Blob theo interface mới
         files: selectedFile,
-        language: String(locale || "en"),
+        language: selectedLanguage,
         project_id: Number(id),
         source: "upload",
         meeting_link: "",
@@ -60,12 +68,28 @@ export default function UploadMinute() {
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <div className="w-5 h-5 flex items-center justify-center text-gray-700">
-              <UploadCloud className="w-4 h-4" />
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <div className="w-5 h-5 flex items-center justify-center text-gray-700">
+                <UploadCloud className="w-4 h-4" />
+              </div>
+              Upload Audio & Transcript
+            </h2>
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-gray-700">Language:</label>
+              <Select value={selectedLanguage} onValueChange={(value: "vi" | "en") => setSelectedLanguage(value)}>
+                <SelectTrigger className="h-9 w-[140px]">
+                  <SelectValue>
+                    {selectedLanguage === "vi" ? "Tiếng Việt" : "English"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="vi">Tiếng Việt</SelectItem>
+                  <SelectItem value="en">English</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            Upload Audio & Transcript
-          </h2>
+          </div>
 
           <div className="border-2 border-dashed border-gray-300 rounded-lg p-10 text-center bg-white hover:border-gray-400 transition-colors">
             <FileAudio2 className="w-12 h-12 text-gray-400 mx-auto mb-3" />
