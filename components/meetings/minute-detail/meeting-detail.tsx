@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
-  // Edit2,
+  Edit2,
   Download,
   History,
   Trash2,
@@ -94,30 +94,132 @@ export default function MinuteDetailPage({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
-  // transcript gốc từ AI service - ưu tiên segments (có speaker), fallback về raw_text
+  // transcript gốc từ AI service - ưu tiên segments (có speaker), kết hợp với raw_text
   const transcriptFallback = (() => {
+    console.log(`[DEBUG] detail?.transcripts:`, detail?.transcripts);
     const firstTranscript = detail?.transcripts?.[0];
-    if (!firstTranscript) return [];
+    console.log(`[DEBUG] firstTranscript:`, firstTranscript);
+    if (!firstTranscript) {
+      console.log(`[DEBUG] No firstTranscript found`);
+      return [];
+    }
 
-    // Nếu có segments với speaker info
+    console.log(`[DEBUG] firstTranscript.segments:`, firstTranscript.segments);
+    console.log(`[DEBUG] firstTranscript.segments?.length:`, firstTranscript.segments?.length);
+    console.log(`[DEBUG] firstTranscript.raw_text length:`, firstTranscript.raw_text?.length);
+
+    const result: Array<{ speaker: string; text: string }> = [];
+    const seenTexts = new Set<string>(); // Track normalized text đã thấy từ segments
+
+    // Helper: normalize text để so sánh (loại bỏ whitespace thừa, lowercase)
+    const normalizeForComparison = (text: string): string => {
+      return text
+        .replace(/\s+/g, ' ') // Normalize whitespace
+        .trim()
+        .toLowerCase();
+    };
+
+    // Helper: check xem text đã có trong segments chưa (fuzzy match)
+    const isTextInSegments = (text: string): boolean => {
+      const normalized = normalizeForComparison(text);
+      if (seenTexts.has(normalized)) return true;
+      
+      // Check xem có phải là substring của text đã có không (hoặc ngược lại)
+      const seenArray = Array.from(seenTexts);
+      for (const seen of seenArray) {
+        if (normalized.includes(seen) || seen.includes(normalized)) {
+          // Nếu một trong hai là substring của cái kia và độ dài chênh lệch < 30%, coi như duplicate
+          const lengthDiff = Math.abs(normalized.length - seen.length);
+          const maxLength = Math.max(normalized.length, seen.length);
+          if (maxLength > 0 && lengthDiff / maxLength < 0.3) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+
+    // ƯU TIÊN: Nếu có segments với speaker info, LẤY HẾT TẤT CẢ segments (không filter)
     if (firstTranscript.segments && firstTranscript.segments.length > 0) {
-      return firstTranscript.segments.map((seg) => {
+      console.log(`[DEBUG] Processing ${firstTranscript.segments.length} segments from diarization`);
+      // LẤY HẾT TẤT CẢ segments, không bỏ sót bất kỳ segment nào
+      const segmentLines = firstTranscript.segments.map((seg, index) => {
         // Parse "Speaker: text" format
         const match = seg.content.match(/^([^:]+):\s*(.+)$/);
         if (match) {
-          return { speaker: match[1].trim(), text: match[2].trim() };
+          const speaker = match[1].trim();
+          const text = match[2].trim();
+          const normalized = normalizeForComparison(text);
+          // Luôn thêm segments vào (không check duplicate giữa các segments)
+          // Mỗi segment là unique và cần được hiển thị
+          seenTexts.add(normalized);
+          console.log(`[DEBUG] Segment ${index + 1}: ${speaker} - ${text.substring(0, 50)}...`);
+          return { speaker, text };
         }
-        // Fallback if no colon format
+        // Fallback if no colon format - có thể là text không có speaker
+        const normalized = normalizeForComparison(seg.content);
+        seenTexts.add(normalized);
+        console.log(`[DEBUG] Segment ${index + 1}: Unknown format - ${seg.content.substring(0, 50)}...`);
         return { speaker: "Unknown", text: seg.content };
       });
+      result.push(...segmentLines);
+      console.log(`[DEBUG] Added ALL ${segmentLines.length} segments to result`);
     }
 
-    // Fallback: raw_text without speaker info
-    if (firstTranscript.raw_text?.trim()) {
-      return [{ speaker: "System", text: firstTranscript.raw_text }];
+    // BỔ SUNG: Thêm raw_text CHỈ KHI KHÔNG CÓ segments
+    // Nếu đã có segments, KHÔNG thêm raw_text để tránh duplicate
+    if (firstTranscript.raw_text?.trim() && result.length === 0) {
+      const rawTextTrimmed = firstTranscript.raw_text.trim();
+      
+      console.log(`[DEBUG] Processing raw_text (no segments), rawText length: ${rawTextTrimmed.length}`);
+      
+      // Chỉ thêm raw_text khi KHÔNG có segments
+      if (rawTextTrimmed.length > 0) {
+        // Nếu raw_text không có newlines (là một đoạn text dài), split by sentences
+        let rawTextLines: string[];
+        if (!rawTextTrimmed.includes('\n')) {
+          // Split by sentences (period, question mark, exclamation mark)
+          rawTextLines = rawTextTrimmed
+            .split(/(?<=[.!?])\s+/)
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
+          console.log(`[DEBUG] Split raw_text by sentences: ${rawTextLines.length} sentences`);
+        } else {
+          // Parse raw_text thành các dòng (split by newline)
+          rawTextLines = rawTextTrimmed.split(/\n+/).filter(line => line.trim());
+          console.log(`[DEBUG] Split raw_text by newlines: ${rawTextLines.length} lines`);
+        }
+        
+        // Xử lý từng dòng/câu của raw_text (chỉ chạy khi không có segments)
+        let addedCount = 0;
+        for (const line of rawTextLines) {
+          const trimmedLine = line.trim();
+          if (!trimmedLine) continue;
+          
+          // Parse "Speaker: text" format
+          const match = trimmedLine.match(/^([^:]+):\s*(.+)$/);
+          if (match) {
+            const speaker = match[1].trim();
+            const text = match[2].trim();
+            const normalized = normalizeForComparison(text);
+            seenTexts.add(normalized);
+            result.push({ speaker, text });
+            addedCount++;
+          } else {
+            // Nếu không có format "Speaker: text", thêm như System
+            const normalized = normalizeForComparison(trimmedLine);
+            seenTexts.add(normalized);
+            result.push({ speaker: "System", text: trimmedLine });
+            addedCount++;
+          }
+        }
+        console.log(`[DEBUG] Added ${addedCount} lines from raw_text`);
+      }
     }
 
-    return [];
+    // Nếu không có gì cả, trả về empty
+    console.log(`[DEBUG] Final result: ${result.length} lines`);
+    return result.length > 0 ? result : [];
   })();
 
   // Generate speakers object from transcript lines
@@ -536,7 +638,7 @@ export default function MinuteDetailPage({
                 <h1 className="text-xl font-semibold text-gray-900">
                   {q.get("file") || detail.title}
                 </h1>
-                {/* <Edit2 className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer" /> */}
+                <Edit2 className="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-pointer" />
               </div>
               <p className="text-sm text-gray-600">
                 {detail?.project?.project_name || detail.project_id} • Uploaded{" "}
