@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LayoutGrid, NotebookText, Users2, Edit2, Trash2 } from "lucide-react";
 import ProjectOverview from "./project-overview";
@@ -9,6 +10,7 @@ import ProjectMembers from "./project-members";
 import EditProjectModal from "./edit-project-modal";
 import { ProjectsApi } from "@/lib/api/project";
 import type { ProjectDetailResponse, MemberProjectData } from "@/types/interfaces/project";
+import ConfirmDeleteDialog from "@/components/confirm-dialog";
 
 type TabKey = "overview" | "minutes" | "members";
 
@@ -47,10 +49,12 @@ function membersByRole(
 }
 
 export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [openEdit, setOpenEdit] = useState(false);
 
-  // underline indicator
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const tabs = [
     { key: "overview", label: "Overview", icon: LayoutGrid },
     { key: "minutes", label: "Minutes", icon: NotebookText },
@@ -73,14 +77,13 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
     return () => window.removeEventListener("resize", recalc);
   }, [activeTab]);
 
-  // ===== API state =====
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<ProjectDetailResponse | null>(null);
 
   const project = detail
     ? {
         name: toText(detail.project_name),
-        description: toText((detail as any).project_description), // <<< FIX
+        description: toText((detail as any).project_description),
         createdDate: formatDate(detail.project_createdAt),
         status: toUIStatus(detail.project_status) as "Active" | "Completed",
         managers: membersByRole(detail.project_membersAndRoles, "MANAGER"),
@@ -97,7 +100,6 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
         viewers: [] as string[],
       };
 
-  // minutes
   const meetingMinutes =
     (detail?.project_minutes as any[])?.map((it, idx) => ({
       id: it?.id ?? idx + 1,
@@ -113,7 +115,6 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
         | "image",
     })) ?? [];
 
-  // activities
   const recentActivity =
     (detail?.project_RecentActivities as any[])?.map((a, i) => ({
       id: a?.id ?? i + 1,
@@ -124,7 +125,6 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
       time: toText(a?.time || "just now"),
     })) ?? [];
 
-  // members
   const teamMembers =
     (detail?.project_membersAndRoles || []).map((m, i) => {
       const name = toText(m.user);
@@ -153,7 +153,6 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
       };
     }) ?? [];
 
-  // fetch detail
   const load = async () => {
     try {
       setLoading(true);
@@ -168,21 +167,27 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
   };
   useEffect(() => {
     load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  const handleDelete = async () => {
+  const requestDelete = () => {
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
     try {
+      setDeleting(true);
       await ProjectsApi.remove(Number(id));
       console.log("Deleted project", id);
+      router.push(`/${locale}/pages/projects`);
     } catch (e) {
       console.error("Delete project failed:", e);
+    } finally {
+      setDeleting(false);
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground mb-2">{project.name}</h1>
@@ -193,14 +198,13 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
             <Edit2 size={16} />
             Edit Project
           </Button>
-          <Button className="bg-black text-white hover:bg-black/90 gap-2" onClick={handleDelete}>
+          <Button className="bg-black text-white hover:bg-black/90 gap-2" onClick={requestDelete}>
             <Trash2 size={16} />
             Delete Project
           </Button>
         </div>
       </div>
 
-      {/* Tabs */}
       <div className="border-b border-gray-200">
         <div ref={containerRef} className="relative flex gap-8">
           <span
@@ -233,18 +237,16 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
         </div>
       </div>
 
-      {/* Content */}
       {!loading && activeTab === "overview" && <ProjectOverview project={project} recentActivity={recentActivity} />}
       {!loading && activeTab === "minutes" && <ProjectMinutes meetingMinutes={meetingMinutes} />}
       {!loading && activeTab === "members" && <ProjectMembers teamMembers={teamMembers} />}
 
-      {/* Edit Project Popup */}
       <EditProjectModal
         open={openEdit}
         onOpenChange={setOpenEdit}
         defaultValues={{
           name: project.name,
-          description: project.description, // dùng mô tả đã đúng field
+          description: project.description, 
         }}
         onSubmit={async (data) => {
           try {
@@ -253,11 +255,26 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
               description: data.description,
               status: toAPIStatus(project.status),
             });
-            await load(); // refetch để cập nhật UI
+            await load(); 
           } catch (e) {
             console.error("Update project failed:", e);
           }
         }}
+      />
+      
+      <ConfirmDeleteDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Warning"
+        description={
+          project.name
+            ? `Do you really want to delete this project "${project.name}"? This action cannot be undone.`
+            : "Do you really want to delete this project? This action cannot be undone."
+        }
+        cancelText="Cancel"
+        confirmText="Delete"
+        onConfirm={confirmDelete}
+        loading={deleting}
       />
     </div>
   );

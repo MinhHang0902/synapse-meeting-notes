@@ -8,12 +8,12 @@ import { MoreHorizontal } from "lucide-react";
 import EditMemberModal from "./edit-member-modal";
 import { useParams } from "next/navigation";
 import { ProjectsApi } from "@/lib/api/project";
+import ConfirmDeleteDialog from "@/components/confirm-dialog";
 
 export type Member = {
-  id: number; // giả định = user_id (phù hợp với delete-member nếu backend nhận user_id)
+  id: number; 
   name: string;
   email: string;
-  // role: "Manager" | "Reviewer" | "Viewer";
   role: string;
   avatar: string;
   avatarColor: string;
@@ -31,6 +31,10 @@ export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] 
 
   const [editing, setEditing] = useState<Member | null>(null);
   const [openEdit, setOpenEdit] = useState(false);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
 
   const { id } = useParams();
 
@@ -55,7 +59,7 @@ export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] 
       const avatarColor = palette[Math.floor(Math.random() * palette.length)];
 
       const newMem: Member = {
-        id: nextId, // UI id; nếu backend trả id membership, có thể refetch để đồng bộ
+        id: nextId, 
         name: nameFromEmail,
         email,
         role,
@@ -72,12 +76,22 @@ export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] 
     }
   };
 
-  const deleteMember = async (memberId: number) => {
+  const requestDelete = (member: Member) => {
+    setMemberToDelete(member);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!memberToDelete) return;
     try {
-      await ProjectsApi.deleteMember(Number(id), memberId);
-      setMembers((prev) => prev.filter((m) => m.id !== memberId));
+      setDeleting(true);
+      await ProjectsApi.deleteMember(Number(id), memberToDelete.id);
+      setMembers((prev) => prev.filter((m) => m.id !== memberToDelete.id));
     } catch (e) {
       console.error("Delete member failed:", e);
+    } finally {
+      setDeleting(false);
+      setMemberToDelete(null);
     }
   };
 
@@ -99,7 +113,6 @@ export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] 
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6">
-      {/* Invite section */}
       <div>
         <h3 className="text/base font-semibold text-gray-900">Invite members</h3>
         <p className="text-sm text-gray-500 mt-1">
@@ -183,7 +196,7 @@ export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] 
                     Edit Member
                   </DropdownMenuItem>
 
-                  <DropdownMenuItem onClick={() => deleteMember(m.id)} className="h-9 flex items-center px-3 rounded-md text-sm text-red-600 hover:bg-red-50 hover:text-red-700 cursor-pointer transition-colors">
+                  <DropdownMenuItem onClick={() => requestDelete(m)} className="h-9 flex items-center px-3 rounded-md text-sm text-red-600 hover:bg-red-50 hover:text-red-700 cursor-pointer transition-colors">
                     Delete Member
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -194,6 +207,22 @@ export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] 
       </div>
 
       <EditMemberModal open={openEdit} onOpenChange={setOpenEdit} member={editing} onSave={handleSaveEdit} />
+
+      <ConfirmDeleteDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Warning"
+        description={
+          memberToDelete
+            ? `Do you really want to delete this person "${memberToDelete.name}"? This action cannot be undone.`
+            : "Do you really want to delete this person? This action cannot be undone."
+        }
+        cancelText="Cancel"
+        confirmText="Delete"
+        onConfirm={confirmDelete}
+        onCancel={() => setMemberToDelete(null)}
+        loading={deleting}
+      />
     </div>
   );
 }
