@@ -12,6 +12,7 @@ import {
   NotebookPen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ConfirmDeleteDialog from "../../confirm-dialog";
 import MeetingTranscript from "./meeting-transcript";
 import MeetingEditor, { ActionItem } from "./meeting-editor";
 import { MeetingsApi } from "@/lib/api/meeting";
@@ -23,7 +24,6 @@ import type {
 import type { MemberProjectData } from "@/types/interfaces/project";
 import axios from "axios";
 
-// Helper: safely format date-like input to ISO substring; returns empty string if invalid
 function safeIsoSlice(input: unknown, sliceEnd: number): string {
   if (!input) return "";
   const d = new Date(input as any);
@@ -31,7 +31,6 @@ function safeIsoSlice(input: unknown, sliceEnd: number): string {
   return d.toISOString().slice(0, sliceEnd);
 }
 
-// Helper: format a date-like value to local datetime string for <input type="datetime-local">
 function formatLocalDateTimeForInput(input: unknown): string {
   if (!input) return "";
   const d = new Date(input as any);
@@ -44,7 +43,6 @@ function formatLocalDateTimeForInput(input: unknown): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-// Helper: format a date-like value to local date string for <input type="date">
 function formatLocalDateForInput(input: unknown): string {
   if (!input) return "";
   const d = new Date(input as any);
@@ -55,14 +53,13 @@ function formatLocalDateForInput(input: unknown): string {
   return `${year}-${month}-${day}`;
 }
 
-/** ==== UI types dành riêng cho editor (không dùng type API) ==== */
 type EditorAttendee = { userId?: number; name: string; role: string };
 type EditorActionItem = {
   id: string;
   description: string;
   assignee: string;
-  assigneeId?: number; // NEW: cho phép assign người ngoài attendees
-  dueDate: string; // "YYYY-MM-DD"
+  assigneeId?: number; 
+  dueDate: string; 
 };
 
 type TabKey = "transcript" | "mom";
@@ -83,18 +80,18 @@ export default function MinuteDetailPage({
   const [detail, setDetail] = useState<GetOneMeetingMinuteResponse | null>(null);
   const [projectMembers, setProjectMembers] = useState<MemberProjectData[]>([]);
 
-  // Editor state (UI schema)
   const [meetingTitle, setMeetingTitle] = useState("");
   const [meetingDate, setMeetingDate] = useState(""); // datetime-local
   const [attendees, setAttendees] = useState<EditorAttendee[]>([]);
   const [actionItems, setActionItems] = useState<EditorActionItem[]>([]);
 
-  // Save UI state
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
 
-  // transcript gốc từ AI service - ưu tiên segments (có speaker), kết hợp với raw_text
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   const transcriptFallback = (() => {
     console.log(`[DEBUG] detail?.transcripts:`, detail?.transcripts);
     const firstTranscript = detail?.transcripts?.[0];
@@ -109,12 +106,11 @@ export default function MinuteDetailPage({
     console.log(`[DEBUG] firstTranscript.raw_text length:`, firstTranscript.raw_text?.length);
 
     const result: Array<{ speaker: string; text: string }> = [];
-    const seenTexts = new Set<string>(); // Track normalized text đã thấy từ segments
+    const seenTexts = new Set<string>(); 
 
-    // Helper: normalize text để so sánh (loại bỏ whitespace thừa, lowercase)
     const normalizeForComparison = (text: string): string => {
       return text
-        .replace(/\s+/g, ' ') // Normalize whitespace
+        .replace(/\s+/g, ' ') 
         .trim()
         .toLowerCase();
     };
@@ -166,8 +162,6 @@ export default function MinuteDetailPage({
       console.log(`[DEBUG] Added ALL ${segmentLines.length} segments to result`);
     }
 
-    // BỔ SUNG: Thêm raw_text CHỈ KHI KHÔNG CÓ segments
-    // Nếu đã có segments, KHÔNG thêm raw_text để tránh duplicate
     if (firstTranscript.raw_text?.trim() && result.length === 0) {
       const rawTextTrimmed = firstTranscript.raw_text.trim();
       
@@ -461,7 +455,6 @@ export default function MinuteDetailPage({
       })
       .filter(Boolean) as any[];
 
-    // actual_start hợp lệ
     let actualStartDate: Date;
     if (draft.meetingDate && !Number.isNaN(new Date(draft.meetingDate).getTime())) {
       actualStartDate = new Date(draft.meetingDate);
@@ -476,7 +469,7 @@ export default function MinuteDetailPage({
     const payload: UpdateMeetingMinuteRequest = {
       title: draft.meetingTitle || detail.title,
       status: detail.status || "DRAFT",
-      actual_start: actualStartDate.toISOString(), // Convert Date to ISO-8601 string
+      actual_start: actualStartDate.toISOString(), 
       agenda: agendaArr,
       meeting_summary: draft.summary || "",
       decisions: decisionsArr,
@@ -504,16 +497,14 @@ export default function MinuteDetailPage({
         )
       );
       
-      // Cập nhật attendees từ participants
       setAttendees(
         (updatedDetail.participants || []).map((p) => ({
           userId: p.user?.user_id,
           name: p.user?.name || "",
-          role: "", // User interface không có role field
+          role: "", 
         }))
       );
       
-      // Cập nhật action items từ server response
       setActionItems(
         (updatedDetail.actionItems || []).map((ai) => ({
           id: String(ai.action_id),
@@ -549,21 +540,25 @@ export default function MinuteDetailPage({
     }
   };
 
-  /* ---------- Delete ---------- */
+  const requestDelete = () => {
+    setConfirmOpen(true);
+  };
+
   const handleDelete = async () => {
     if (!minuteId) return;
-    if (!confirm("Delete this meeting minute?")) return;
     try {
+      setDeleting(true);
       await MeetingsApi.remove(Number(minuteId));
-      // Điều hướng về danh sách và làm mới danh sách ngay
       router.replace(`/${locale}/pages/meetings`);
       router.refresh();
     } catch (e) {
+      console.error("Failed to delete meeting minute:", e);
       alert("Failed to delete.");
+    } finally {
+      setDeleting(false);
     }
   };
 
-  /** Cập nhật MoM trước khi gửi email (tùy chọn) */
   const updateBeforeSend = async () => {
     if (!detail) return;
 
@@ -589,7 +584,6 @@ export default function MinuteDetailPage({
         payloadAny as unknown as UpdateMeetingMinuteRequest
       );
     } catch {
-      // không chặn gửi email nếu update fail
     }
   };
 
@@ -601,7 +595,6 @@ export default function MinuteDetailPage({
   }
   if (!detail) return null;
 
-  // Chuỗi seed cho editor (từ AI service)
   const initialAgendaStr = (detail.agenda || []).join("\n");
   const initialSummaryStr = detail.meeting_summary || detail.content || "";
   const initialDecisionsStr = (detail.decisions || [])
@@ -611,7 +604,6 @@ export default function MinuteDetailPage({
 
   return (
     <div className="space-y-8">
-      {/* Back Navigation */}
       <button
         className="inline-flex items-center gap-2 text-gray-700 hover:text-black transition-colors"
         onClick={() => router.back()}
@@ -624,7 +616,6 @@ export default function MinuteDetailPage({
         </span>
       </button>
 
-      {/* Header card */}
       <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-4">
         <div className="flex items-start justify-between">
           <div className="flex items-start gap-4">
@@ -700,9 +691,7 @@ export default function MinuteDetailPage({
         </div>
       </div>
 
-      {/* Content */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 space-y-6">
           {activeTab === "transcript" && (
             <MeetingTranscript
@@ -752,9 +741,7 @@ export default function MinuteDetailPage({
           )}
         </div>
 
-        {/* Sidebar */}
         <div className="space-y-6">
-          {/* File Information */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <h3 className="text-base font-semibold text-gray-900 mb-4">
               File Information
@@ -802,7 +789,6 @@ export default function MinuteDetailPage({
             </dl>
           </div>
 
-          {/* Quick Actions */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <h3 className="text-base font-semibold text-gray-900 mb-4">
               Quick Actions
@@ -836,7 +822,7 @@ export default function MinuteDetailPage({
               </Button>
 
               <Button
-                onClick={handleDelete}
+                onClick={requestDelete}
                 className="w-full justify-start gap-3 h-10 bg-white text-red-600 border border-red-200 hover:bg-red-600 hover:text-white hover:border-red-600 transition-all duration-200 font-medium group"
                 variant="outline"
               >
@@ -847,6 +833,21 @@ export default function MinuteDetailPage({
           </div>
         </div>
       </div>
+
+      <ConfirmDeleteDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Warning"
+        description={
+          detail?.title
+            ? `Do you really want to delete this meeting minute "${detail.title}"? This action cannot be undone.`
+            : "Do you really want to delete this meeting minute? This action cannot be undone."
+        }
+        cancelText="Cancel"
+        confirmText="Delete"
+        onConfirm={handleDelete}
+        loading={deleting}
+      />
     </div>
   );
 }

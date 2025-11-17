@@ -902,7 +902,7 @@ export default function MeetingEditor({
                 setTrelloBoards([]);
               }}
             >
-              Cancle
+              Cancel
             </Button>
             {trelloStatus?.connected && (
               <Button
