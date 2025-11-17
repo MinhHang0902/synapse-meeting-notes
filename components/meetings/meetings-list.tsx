@@ -1,4 +1,3 @@
-// components/meeting/meeting-list.tsx
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
@@ -108,11 +107,6 @@ export function MeetingMinutesList() {
     void fetchMeetings(currentPage, debouncedSearchTerm, selectedProjectId);
   }, [currentPage, debouncedSearchTerm, selectedProjectId, fetchMeetings]);
 
-  const goFirst = () => setCurrentPage(1);
-  const goPrev = () => setCurrentPage((p) => Math.max(1, p - 1));
-  const goNext = () => setCurrentPage((p) => Math.min(totalPages, p + 1));
-  const goLast = () => setCurrentPage(totalPages);
-
   const goToDetail = (id: number | string) => {
     router.push(`${DETAIL_BASE}/${id}`);
   };
@@ -124,9 +118,10 @@ export function MeetingMinutesList() {
     }
   };
 
+  const safePage = Math.min(currentPage, Math.max(1, totalPages));
+
   return (
     <div className="space-y-6">
-      {/* Search & Filter */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch">
         <div className="relative md:col-span-8">
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -180,7 +175,6 @@ export function MeetingMinutesList() {
         </div>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="text-center py-10 text-sm text-gray-500">Loading…</div>
@@ -208,13 +202,12 @@ export function MeetingMinutesList() {
               {list.map((m) => (
                 <tr key={m.minute_id} className="hover:bg-gray-50/50">
                   <td className="px-4 md:px-5 py-3">
-                    {/* --- chỉ Title có điều hướng --- */}
                     <p
                       role="button"
                       tabIndex={0}
                       onClick={() => goToDetail(m.minute_id)}
                       onKeyDown={(e) => onTitleKeyDown(e, m.minute_id)}
-                      title="Xem chi tiết"
+                      title="View details"
                       className="font-medium text-gray-900 text-sm truncate cursor-pointer hover:underline focus:underline focus:outline-none"
                     >
                       {m.title}
@@ -253,38 +246,64 @@ export function MeetingMinutesList() {
         )}
       </div>
 
-      {/* Pagination */}
-      <div className="flex items-center justify-center gap-2">
+      <div className="flex items-center justify-center gap-2 mt-8">
         <button
-          onClick={goFirst}
-          disabled={currentPage === 1}
+          onClick={() => {
+            setCurrentPage(1);
+            fetchMeetings(1, searchTerm, selectedProjectId);
+          }}
+          disabled={safePage === 1}
           className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
           aria-label="First page"
         >
           <ChevronsLeft className="w-4 h-4" />
         </button>
         <button
-          onClick={goPrev}
-          disabled={currentPage === 1}
+          onClick={() => {
+            const next = Math.max(1, safePage - 1);
+            setCurrentPage(next);
+            fetchMeetings(next, searchTerm, selectedProjectId);
+          }}
+          disabled={safePage === 1}
           className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
           aria-label="Previous page"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="px-3 text-sm text-gray-700">
-          Page {currentPage} / {totalPages}
-        </span>
+
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <button
+            key={page}
+            onClick={() => {
+              setCurrentPage(page);
+              fetchMeetings(page, searchTerm, selectedProjectId);
+            }}
+            className={`w-8 h-8 rounded text-sm font-medium flex items-center justify-center transition-colors ${
+              safePage === page ? "bg-black text-white" : "text-gray-900 hover:bg-gray-200/70"
+            }`}
+          >
+            {page}
+          </button>
+        ))}
+
         <button
-          onClick={goNext}
-          disabled={currentPage === totalPages}
+          onClick={() => {
+            const next = Math.min(totalPages, safePage + 1);
+            setCurrentPage(next);
+            fetchMeetings(next, searchTerm, selectedProjectId);
+          }}
+          disabled={safePage === totalPages}
           className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
           aria-label="Next page"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
         <button
-          onClick={goLast}
-          disabled={currentPage === totalPages}
+          onClick={() => {
+            setCurrentPage(totalPages);
+            fetchMeetings(totalPages, searchTerm, selectedProjectId);
+          }}
+          disabled={safePage === totalPages}
           className="p-2 rounded hover:bg-gray-200/70 disabled:opacity-40 disabled:hover:bg-transparent"
           aria-label="Last page"
         >

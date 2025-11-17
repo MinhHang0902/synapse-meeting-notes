@@ -9,11 +9,19 @@ import {
   ChevronsLeft,
   ChevronsRight,
   FileText,
+  Filter,
 } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import CreateProjectModal from "./project-detail/create-project-modal";
 
 import { ProjectsApi } from "@/lib/api/project";
@@ -40,6 +48,8 @@ export interface Project {
 
 const statusToUI = (s?: string | null): "Active" | "Completed" =>
   String(s || "").toUpperCase() === "COMPLETED" ? "Completed" : "Active";
+
+const STATUS_ALL = "ALL";
 
 function toText(v: unknown): string {
   if (v == null) return "-";
@@ -80,7 +90,7 @@ function mapProject(p: ProjectListData): Project {
 export function ProjectsList() {
   const router = useRouter();
   const pathname = usePathname();
-  const localeFromPath = pathname?.split("/").filter(Boolean)?.[0] || "en"; // ví dụ: /en/pages/projects
+  const localeFromPath = pathname?.split("/").filter(Boolean)?.[0] || "en"; 
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
@@ -89,6 +99,7 @@ export function ProjectsList() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"Active" | "Completed" | typeof STATUS_ALL | "">(STATUS_ALL);
 
   const [loading, setLoading] = useState(false);
 
@@ -102,7 +113,13 @@ export function ProjectsList() {
         pageSize: itemsPerPage,
         search: normalizedSearch ? normalizedSearch : undefined,
       });
-      setProjects((res.data || []).map(mapProject));
+      let mappedProjects = (res.data || []).map(mapProject);
+      
+      if (statusFilter !== STATUS_ALL && statusFilter !== "") {
+        mappedProjects = mappedProjects.filter((p) => p.status === statusFilter);
+      }
+      
+      setProjects(mappedProjects);
       setTotalPages(res.totalPages || 1);
     } catch (err) {
       console.error("Fetch projects failed:", err);
@@ -115,8 +132,12 @@ export function ProjectsList() {
 
   useEffect(() => {
     fetchProjects(currentPage);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    void fetchProjects(1);
+  }, [statusFilter]);
 
   const handleSearchClick = async () => {
     setCurrentPage(1);
@@ -139,7 +160,6 @@ export function ProjectsList() {
   };
 
   const handleOpenProject = (id: string) => {
-    // Đẩy đúng path có locale: /{locale}/pages/projects/{id}
     router.push(`/${localeFromPath}/pages/projects/${id}`);
   };
 
@@ -182,9 +202,40 @@ export function ProjectsList() {
           onKeyDown={handleSearchKeyDown}
           className="flex-1 max-w-sm h-9 px-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
         />
-        <Button variant="outline">Filter by Status</Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="h-9">
+              <Filter className="w-4 h-4 mr-2" />
+              {statusFilter === STATUS_ALL ? "Filter by Status" : statusFilter}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            sideOffset={6}
+            className="w-44 min-w-0 bg-white border border-gray-200 rounded-xl shadow-lg p-1.5"
+          >
+            <DropdownMenuItem
+              onClick={() => setStatusFilter(STATUS_ALL)}
+              className="h-9 flex items-center px-3 rounded-md text-sm font-semibold text-gray-700 hover:bg-gray-50 hover:text-gray-900 cursor-pointer"
+            >
+              All Status
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setStatusFilter("Active")}
+              className="h-9 flex items-center px-3 rounded-md text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 cursor-pointer"
+            >
+              Active
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => setStatusFilter("Completed")}
+              className="h-9 flex items-center px-3 rounded-md text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 cursor-pointer"
+            >
+              Completed
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         <Button
-          className="bg-black text-white hover:bg-black/90"
+          className="h-9 bg-black text-white hover:bg-black/90"
           onClick={handleSearchClick}
           disabled={loading}
         >
@@ -261,7 +312,6 @@ export function ProjectsList() {
         ))}
       </div>
 
-      {/* Pagination */}
       <div className="flex items-center justify-center gap-2 mt-8">
         <button
           onClick={() => {
@@ -327,7 +377,6 @@ export function ProjectsList() {
         </button>
       </div>
 
-      {/* Modal */}
       <CreateProjectModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}

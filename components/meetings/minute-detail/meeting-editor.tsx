@@ -159,13 +159,13 @@ export default function MeetingEditor({
           return;
         }
         if (response.status === 401) {
-          throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+          throw new Error("Your session has expired. Please log in again.");
         }
         if (!response.ok) {
           throw new Error(
             typeof data.message === "string"
               ? data.message
-              : "Không thể tải danh sách list Trello. Vui lòng kiểm tra board ID.",
+              : "Unable to load Trello lists. Please check the board ID.",
           );
         }
         const lists = Array.isArray(data.lists) ? data.lists : [];
@@ -177,7 +177,7 @@ export default function MeetingEditor({
         }
       } catch (error) {
         const message =
-          error instanceof Error ? error.message : "Không thể tải danh sách list Trello.";
+          error instanceof Error ? error.message : "Unable to load Trello lists.";
         window.alert(message);
       } finally {
         setLoadingTrelloLists(false);
@@ -200,13 +200,13 @@ export default function MeetingEditor({
         return;
       }
       if (response.status === 401) {
-        throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+        throw new Error("Your session has expired. Please log in again.");
       }
       if (!response.ok) {
         throw new Error(
           typeof data.message === "string"
             ? data.message
-            : "Không thể tải danh sách board Trello. Vui lòng kiểm tra token.",
+            : "Unable to load Trello boards. Please check your token.",
         );
       }
       const boards = Array.isArray(data.boards) ? data.boards : [];
@@ -224,7 +224,7 @@ export default function MeetingEditor({
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Không thể tải danh sách board Trello.";
+        error instanceof Error ? error.message : "Unable to load Trello boards.";
       window.alert(message);
     } finally {
       setLoadingTrelloBoards(false);
@@ -245,13 +245,13 @@ export default function MeetingEditor({
         throw new Error(
           typeof data.message === "string"
             ? data.message
-            : "Không thể khởi tạo kết nối Trello. Vui lòng thử lại.",
+            : "Unable to initiate Trello connection. Please try again.",
         );
       }
       window.location.href = data.redirectUrl;
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Không thể kết nối Trello. Vui lòng thử lại.";
+        error instanceof Error ? error.message : "Unable to connect to Trello. Please try again.";
       window.alert(message);
     } finally {
       setConnectingTrello(false);
@@ -263,7 +263,7 @@ export default function MeetingEditor({
     try {
       setDisconnectingTrello(true);
       await TrelloIntegrationApi.disconnect();
-      window.alert("Đã ngắt kết nối Trello.");
+      window.alert("Disconnected from Trello successfully.");
       setTrelloStatus({ connected: false });
       setTrelloBoards([]);
       setTrelloLists([]);
@@ -271,7 +271,7 @@ export default function MeetingEditor({
       setSelectedTrelloListId("");
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Không thể ngắt kết nối Trello. Vui lòng thử lại.";
+        error instanceof Error ? error.message : "Unable to disconnect from Trello. Please try again.";
       window.alert(message);
     } finally {
       setDisconnectingTrello(false);
@@ -312,9 +312,9 @@ export default function MeetingEditor({
     if (typeof window === "undefined") return;
 
     if (trelloConnectedParam === "1") {
-      window.alert("Kết nối Trello thành công.");
+      window.alert("Connected to Trello successfully.");
     } else {
-      window.alert(trelloErrorParam || "Kết nối Trello thất bại. Vui lòng thử lại.");
+      window.alert(trelloErrorParam || "Failed to connect to Trello. Please try again.");
     }
 
     void refreshTrelloStatus();
@@ -440,13 +440,22 @@ export default function MeetingEditor({
   const [agenda, setAgenda] = React.useState("");
   const [summary, setSummary] = React.useState("");
   const [decisions, setDecisions] = React.useState("");
+  const [showSavedToast, setShowSavedToast] = React.useState(false);
 
   React.useEffect(() => {
     setAgenda(initialAgenda ?? "");
     setSummary(initialSummary ?? "");
     setDecisions(initialDecisions ?? "");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  React.useEffect(() => {
+    if (showSavedToast) {
+      const timer = setTimeout(() => {
+        setShowSavedToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSavedToast]);
 
   const handleAddAttendee = () => {
     if (!selectedAttendeeId) return;
@@ -481,6 +490,7 @@ export default function MeetingEditor({
       decisions,
     };
     await onSave(draft);
+    setShowSavedToast(true);
   };
 
   const handleExportTrello = async (listId: string, boardId: string) => {
@@ -510,12 +520,12 @@ export default function MeetingEditor({
         throw new Error(
           "message" in data && typeof data.message === "string"
             ? data.message
-            : "Xuất Trello thất bại, vui lòng thử lại.",
+            : "Export to Trello failed. Please try again.",
         );
       }
 
       const cardsCreated = "cardsCreated" in data ? data.cardsCreated : 0;
-      window.alert(`Đã tạo ${cardsCreated} card mới trên Trello.`);
+      window.alert(`Successfully created ${cardsCreated} new card(s) on Trello.`);
       setTrelloModalOpen(false);
       setSelectedTrelloListId("");
       setSelectedBoardId("");
@@ -523,7 +533,7 @@ export default function MeetingEditor({
       setTrelloBoards([]);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Xuất Trello thất bại, vui lòng thử lại.";
+        error instanceof Error ? error.message : "Export to Trello failed. Please try again.";
       window.alert(message);
     } finally {
       setExportingTrello(false);
@@ -533,47 +543,25 @@ export default function MeetingEditor({
   return (
     <div className={["space-y-6", className || ""].join(" ")}>
       {/* Toolbar */}
-      <div className="flex items-center gap-3 pb-4 border-b border-gray-200 -mx-6 px-6">
-        <Button
-          className="gap-2 bg-black text-white hover:bg-black/90 flex-shrink-0"
-          onClick={emitSave}
-          disabled={!!saving}
-          title="Save changes"
-        >
-          {saving ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" /> Saving…
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" /> Save
-            </>
-          )}
-        </Button>
-
-        {lastSavedAt && !saving && (
-          <div className="flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded px-2 py-1">
-            <CheckCircle2 className="w-3.5 h-3.5" /> Saved just now
-          </div>
-        )}
-
-        <div className="flex-1" />
-
-        <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200 flex-shrink-0" onClick={exportPdf}>
+      <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+        <Button className="gap-1.5 px-3 py-2 text-sm bg-gray-100 text-gray-900 hover:bg-gray-200" onClick={exportPdf}>
           <FileText className="w-4 h-4" /> Export PDF
         </Button>
-        <Button className="gap-2 bg-gray-100 text-gray-900 hover:bg-gray-200 flex-shrink-0" onClick={downloadWord}>
+        
+        <Button className="gap-1.5 px-3 py-2 text-sm bg-gray-100 text-gray-900 hover:bg-gray-200" onClick={downloadWord}>
           <NotebookPen className="w-4 h-4" /> Export Word
         </Button>
+        
         <Button
-          className="gap-2 bg-blue-600 text-white hover:bg-blue-700 flex-shrink-0"
+          className="gap-1.5 px-3 py-2 text-sm bg-blue-600 text-white hover:bg-blue-700"
           onClick={() => setTrelloModalOpen(true)}
           disabled={exportingTrello}
         >
           <Share2 className="w-4 h-4" /> Export Trello
         </Button>
+        
         <Button
-          className="gap-2 bg-gray-900 text-white hover:bg-black flex-shrink-0"
+          className="gap-1.5 px-3 py-2 text-sm bg-gray-900 text-white hover:bg-black"
           onClick={async () => {
             if (onSave) await emitSave();
             if (onBeforeSend) await onBeforeSend();
@@ -582,9 +570,34 @@ export default function MeetingEditor({
         >
           <Mail className="w-4 h-4" /> Send Email
         </Button>
+
+        <div className="relative">
+          {showSavedToast && (
+            <div className="absolute bottom-full right-0 mb-2 flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-sm font-medium">Saved just now!</span>
+            </div>
+          )}
+
+          <Button
+            className="gap-1.5 px-3 py-2 text-sm bg-black text-white hover:bg-black/90"
+            onClick={emitSave}
+            disabled={!!saving}
+            title="Save changes"
+          >
+            {saving ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" /> Saving…
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" /> Save
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
-      {/* Meeting Title */}
       <div className="space-y-1.5">
         <label className="font-semibold text-gray-900 text-sm inline-flex items-center gap-2">
           <Type className="w-4 h-4" /> Meeting Title
@@ -597,7 +610,6 @@ export default function MeetingEditor({
         />
       </div>
 
-      {/* Date & Time - FIXED: Bỏ pointer-events-none và ẩn native picker */}
       <div className="space-y-1.5">
         <label className="font-semibold text-gray-900 text-sm inline-flex items-center gap-2">
           <CalendarClock className="w-4 h-4" /> Date & Time
@@ -620,7 +632,6 @@ export default function MeetingEditor({
         </div>
       </div>
 
-      {/* Attendees */}
       <div className="space-y-2">
         <label className="font-semibold text-gray-900 text-sm inline-flex items-center gap-2">
           <Users2 className="w-4 h-4" /> Attendees
@@ -668,10 +679,8 @@ export default function MeetingEditor({
         </div>
       </div>
 
-      {/* Divider */}
       <div className="-mx-6 border-t border-gray-200"></div>
 
-      {/* Agenda */}
       <div>
         <div className="flex items-center gap-2 mb-2">
           <ListTodo className="w-4 h-4" />
@@ -684,7 +693,6 @@ export default function MeetingEditor({
         />
       </div>
 
-      {/* Summary */}
       <div>
         <div className="flex items-center gap-2 mb-2 mt-4">
           <StickyNote className="w-4 h-4" />
@@ -697,7 +705,6 @@ export default function MeetingEditor({
         />
       </div>
 
-      {/* Decisions */}
       <div>
         <div className="flex items-center gap-2 mb-2 mt-4">
           <Gavel className="w-4 h-4" />
@@ -710,7 +717,6 @@ export default function MeetingEditor({
         />
       </div>
 
-      {/* Action Items */}
       <div className="space-y-3 mt-4">
         <div className="flex items-center gap-2">
           <CheckSquare className="w-4 h-4" />
@@ -762,19 +768,19 @@ export default function MeetingEditor({
           <DialogHeader>
             <DialogTitle>Export Trello</DialogTitle>
             <DialogDescription>
-              Chọn list trên Trello để tạo card từ các action item hiện có.
+              Select a Trello list to create cards from the current action items.
             </DialogDescription>
           </DialogHeader>
 
           {loadingTrelloStatus ? (
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Loader2 className="w-4 h-4 animate-spin" /> Đang kiểm tra trạng thái Trello…
+              <Loader2 className="w-4 h-4 animate-spin" /> Checking Trello status…
             </div>
           ) : trelloStatus?.connected ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
                 <div>
-                  Đang kết nối dưới tên{" "}
+                  Connected as ...{" "}
                   <span className="font-medium">
                     {trelloStatus.member?.fullName || trelloStatus.member?.username || "Trello user"}
                   </span>
@@ -787,10 +793,10 @@ export default function MeetingEditor({
                   {disconnectingTrello ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Đang ngắt…
+                      Disconnecting…
                     </>
                   ) : (
-                    "Ngắt kết nối"
+                    "Disconnect"
                   )}
                 </Button>
               </div>
@@ -814,7 +820,7 @@ export default function MeetingEditor({
                   }}
                   disabled={loadingTrelloBoards || exportingTrello}
                 >
-                  <option value="">Chọn board…</option>
+                  <option value="">Select board…</option>
                   {trelloBoards.map((board) => (
                     <option key={board.id} value={board.id}>
                       {board.name}
@@ -823,14 +829,14 @@ export default function MeetingEditor({
                 </select>
                 {loadingTrelloBoards && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Đang tải board…
+                    <Loader2 className="w-4 h-4 animate-spin" /> Loading boards…
                   </div>
                 )}
               </div>
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-900" htmlFor="trello-list-select">
-                  Danh sách Trello
+                  Trello List
                 </label>
                 <select
                   id="trello-list-select"
@@ -845,7 +851,7 @@ export default function MeetingEditor({
                   }
                 >
                   {trelloLists.length === 0 ? (
-                    <option value="">Không có list khả dụng</option>
+                    <option value="">No lists available</option>
                   ) : (
                     trelloLists.map((list) => (
                       <option key={list.id} value={list.id}>
@@ -856,17 +862,16 @@ export default function MeetingEditor({
                 </select>
                 {loadingTrelloLists && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Loader2 className="w-4 h-4 animate-spin" /> Đang tải list…
+                    <Loader2 className="w-4 h-4 animate-spin" /> Loading lists…
                   </div>
                 )}
-                <p className="text-xs text-gray-500">Board cần thuộc tài khoản Trello hiện tại.</p>
+                <p className="text-xs text-gray-500">Board must belong to the connected Trello account.</p>
               </div>
             </div>
           ) : (
             <div className="space-y-4">
               <p className="text-sm text-gray-600">
-                Tài khoản của bạn chưa kết nối với Trello. Hãy kết nối để xuất action items dưới dạng
-                Trello cards.
+                Your account is not connected to Trello. Connect to export action items as Trello cards.
               </p>
               <Button
                 className="bg-blue-600 text-white hover:bg-blue-700"
@@ -876,10 +881,10 @@ export default function MeetingEditor({
                 {connectingTrello ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Đang mở Trello…
+                    Opening Trello…
                   </>
                 ) : (
-                  "Kết nối Trello"
+                  "Connect Trello"
                 )}
               </Button>
             </div>
@@ -897,18 +902,18 @@ export default function MeetingEditor({
                 setTrelloBoards([]);
               }}
             >
-              Hủy
+              Cancle
             </Button>
             {trelloStatus?.connected && (
               <Button
                 className="bg-blue-600 text-white hover:bg-blue-700"
                 onClick={() => {
                   if (!selectedBoardId) {
-                    window.alert("Vui lòng chọn board Trello.");
+                    window.alert("Please select a Trello board.");
                     return;
                   }
                   if (!selectedTrelloListId) {
-                    window.alert("Vui lòng chọn list Trello trước khi export.");
+                    window.alert("Please select a Trello list before exporting.");
                     return;
                   }
                   void handleExportTrello(selectedTrelloListId, selectedBoardId);
@@ -922,10 +927,10 @@ export default function MeetingEditor({
               >
                 {exportingTrello ? (
                   <>
-                    <Loader2 className="w-4 h-4 animate-spin" /> Đang export…
+                    <Loader2 className="w-4 h-4 animate-spin" /> Exporting…
                   </>
                 ) : (
-                  "Xác nhận"
+                  "Confirm"
                 )}
               </Button>
             )}
@@ -936,7 +941,6 @@ export default function MeetingEditor({
   );
 }
 
-/* Action Item Row - FIXED: Bỏ pointer-events-none khỏi calendar button */
 function ActionItemRow({
   item,
   projectMembers,
@@ -1015,5 +1019,5 @@ function ActionItemRow({
         </button>
       </div>
     </div>
-  );
+  )
 }
