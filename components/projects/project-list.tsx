@@ -279,7 +279,7 @@ export function ProjectsList() {
               <h3 className="text-lg font-bold text-gray-900">{project.name}</h3>
             </div>
 
-            <p className="text-gray-600 text-sm mb-4">{project.description}</p>
+            <p className="text-gray-600 text-sm mb-4 text-justify hyphens-auto">{project.description}</p>
 
             <div className="mb-4">
               <Badge

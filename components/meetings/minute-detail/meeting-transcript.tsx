@@ -609,7 +609,7 @@ const MeetingTranscript: React.FC<MeetingTranscriptProps> = ({
       {/* Nội dung transcript */}
       <div className="pt-5 space-y-3">
         {lines.map((line, idx) => (
-          <div key={idx} className="leading-6 text-sm text-gray-800">
+          <div key={idx} className="leading-6 text-sm text-gray-800 text-justify">
             {/* Speaker pill + dấu : */}
             <span className={namePill}>{line.speaker}</span>
             <span className="mx-1 text-gray-500">:</span>

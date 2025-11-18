@@ -102,7 +102,9 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
 
   const meetingMinutes =
     (detail?.project_minutes as any[])?.map((it, idx) => ({
-      id: it?.id ?? idx + 1,
+      // minute_id là khóa chính thực tế của meeting minute,
+      // dùng để điều hướng sang trang detail /meeting-minutes/{minute_id}
+      id: it?.minute_id ?? it?.id ?? idx + 1,
       fileName: toText(it?.file_name || it?.title || "Untitled"),
       uploader: toText(it?.uploader_name),
       uploadDate: formatDate(it?.uploaded_at),
