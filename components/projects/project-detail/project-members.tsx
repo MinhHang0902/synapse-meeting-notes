@@ -14,7 +14,6 @@ import EditMemberModal from "./edit-member-modal";
 import { useParams } from "next/navigation";
 import { ProjectsApi } from "@/lib/api/project";
 import ConfirmDeleteDialog from "@/components/confirm-dialog";
-import { UsersApi } from "@/lib/api/user";
 
 export type Member = {
   id: number;
@@ -62,13 +61,9 @@ export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] 
   useEffect(() => {
     (async () => {
       try {
-        const res = await UsersApi.getAll({
-          pageIndex: 1,
-          pageSize: 100,
-          status: "ACTIVE",
-        });
+        const res = await ProjectsApi.usersNotInProject(Number(id));
         const users: SelectableUser[] =
-          res.data?.map((u) => ({
+          res?.map((u) => ({
             id: u.user_id,
             name: u.name,
             email: u.email,
@@ -207,57 +202,57 @@ export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] 
         </div>
       )}
       <div className="flex gap-3">
-          <div className="flex-1 space-y-1">
-            <div className="relative">
-              <input
-                type="email"
-                placeholder="Enter email address"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onBlur={() => setEmailTouched(true)}
-                className={`w-full h-9 pl-3 pr-8 text-sm bg-white text-gray-900 border rounded-lg
+        <div className="flex-1 space-y-1">
+          <div className="relative">
+            <input
+              type="email"
+              placeholder="Enter email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              onBlur={() => setEmailTouched(true)}
+              className={`w-full h-9 pl-3 pr-8 text-sm bg-white text-gray-900 border rounded-lg
                   ${!emailValid && emailTouched ? "border-red-500" : "border-gray-200"}`}
-              />
+            />
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button 
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    type="button"
-                  >
-                    <ChevronDown size={16} />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-64">
-                  {availableUsers.length === 0 && (
-                    <div className="px-2 py-1.5 text-sm text-gray-500">
-                      No users
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  type="button"
+                >
+                  <ChevronDown size={16} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                {availableUsers.length === 0 && (
+                  <div className="px-2 py-1.5 text-sm text-gray-500">
+                    No users
+                  </div>
+                )}
+                {availableUsers.map((u) => (
+                  <DropdownMenuItem key={u.id} onClick={() => addFromDropdown(u)}>
+                    <div>
+                      <div className="font-medium">{u.name}</div>
+                      <div className="text-xs text-gray-500">{u.email}</div>
                     </div>
-                  )}
-                  {availableUsers.map((u) => (
-                    <DropdownMenuItem key={u.id} onClick={() => addFromDropdown(u)}>
-                      <div>
-                        <div className="font-medium">{u.name}</div>
-                        <div className="text-xs text-gray-500">{u.email}</div>
-                      </div>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-            {/* HẾT PHẦN SỬA */}
-
-            {!email && emailTouched && (
-              <p className="text-xs text-red-500 mt-1">
-                Email is required
-              </p>
-            )}
-            {email && !emailValid && emailTouched && (
-              <p className="text-xs text-red-500 mt-1">
-                Invalid email address
-              </p>
-            )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
+          {/* HẾT PHẦN SỬA */}
+
+          {!email && emailTouched && (
+            <p className="text-xs text-red-500 mt-1">
+              Email is required
+            </p>
+          )}
+          {email && !emailValid && emailTouched && (
+            <p className="text-xs text-red-500 mt-1">
+              Invalid email address
+            </p>
+          )}
+        </div>
 
         <Select value={role} onValueChange={(v: Member["role"]) => setRole(v)}>
           <SelectTrigger className="h-9 w-[160px]">
@@ -278,7 +273,7 @@ export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] 
           Invite People
         </Button>
       </div>
-      
+
       <div className="mt-6 mb-4 h-px bg-gray-200" />
       <h3 className="text-base font-semibold text-gray-900 mb-3">People with access</h3>
 

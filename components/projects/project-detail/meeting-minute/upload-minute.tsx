@@ -49,13 +49,12 @@ export default function UploadMinute() {
       const resp = await MeetingsApi.process({
         files: selectedFile,
         language: selectedLanguage,
-        project_id: Number(id),
         source: "upload",
         meeting_link: "",
         location: "",
         actual_start: new Date(),
         actual_end: new Date(),
-      });
+      }, id);
 
       alert("Upload successfully!");
 

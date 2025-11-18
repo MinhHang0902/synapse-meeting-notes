@@ -1,4 +1,3 @@
-// components/meeting/send-minute-modal.tsx
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,6 @@ import React from "react";
 import { MeetingsApi } from "@/lib/api/meeting";
 
 function isValidEmail(email: string) {
-  // validate đơn giản
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 }
 
@@ -15,9 +13,9 @@ export default function SendMinuteModal({
   isOpen,
   onClose,
   minuteId,
-  fileName = "Q3_Financial_Report.pdf",
-  projectName = "Digital Transformation Initiative",
-  meetingTitle = "Q3 Financial Review",
+  fileName,
+  projectName,
+  meetingTitle,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -26,23 +24,29 @@ export default function SendMinuteModal({
   projectName?: string;
   meetingTitle?: string;
 }) {
-  const [subject, setSubject] = React.useState(
-    `Meeting Minutes: ${meetingTitle} – ${projectName}`
-  );
-  const [message, setMessage] = React.useState(
-    `Hi team,
+  const [subject, setSubject] = React.useState("");
+  const [message, setMessage] = React.useState("");
 
-Please find attached the meeting minutes from our ${meetingTitle} session.`
-  );
 
-  // New: recipients input state
+  React.useEffect(() => {
+    if (!isOpen) return;
+    setSubject(
+      `Meeting Minutes: ${meetingTitle ?? ""}${projectName ? ` – ${projectName}` : ""}`
+    );
+
+    setMessage(
+      `Hi team,
+Please find attached the meeting minutes from our ${meetingTitle ?? "recent"
+      } session.`
+    );
+  }, [isOpen, meetingTitle, projectName]);
+
   const [recipientInput, setRecipientInput] = React.useState("");
   const [recipientEmails, setRecipientEmails] = React.useState<string[]>([]);
   const [recipientError, setRecipientError] = React.useState<string | null>(
     null
   );
 
-  // File attachment state
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
 
   const [sending, setSending] = React.useState(false);
@@ -50,7 +54,7 @@ Please find attached the meeting minutes from our ${meetingTitle} session.`
   const pushEmails = (raw: string) => {
     if (!raw) return;
 
-    // tách theo dấu phẩy / khoảng trắng / xuống dòng
+    // tách theo dấu phẩy, khoảng trắng, xuống dòng
     const candidates = raw
       .split(/[,\s\n]+/g)
       .map((e) => e.trim())

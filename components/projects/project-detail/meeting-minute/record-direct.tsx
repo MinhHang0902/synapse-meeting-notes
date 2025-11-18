@@ -175,13 +175,12 @@ export default function RecordDirect() {
     const resp = await MeetingsApi.process({
       files: file, 
       language: String(locale || "en"),
-      project_id: Number(id),
       source: "realtime",
       meeting_link: "",
       location: "",
       actual_start: new Date(),
       actual_end: new Date(),
-    });
+    }, id);
 
     alert(`Created minute #${resp.minute_id} from realtime transcript`);
   } catch (e) {

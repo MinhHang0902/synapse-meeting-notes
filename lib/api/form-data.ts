@@ -13,7 +13,6 @@ export function buildProcessFormData(payload: ProcessMeetingMinuteRequest): Form
     }
 
     if (payload.language) fd.append("language", payload.language);
-    fd.append("project_id", String(payload.project_id));
     if (payload.source) fd.append("source", payload.source);
     if (payload.meeting_link) fd.append("meeting_link", payload.meeting_link);
     if (payload.location) fd.append("location", payload.location);

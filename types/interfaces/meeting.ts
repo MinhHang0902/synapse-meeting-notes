@@ -183,7 +183,6 @@ export interface Decision {
 export interface ProcessMeetingMinuteRequest {
   files: File | Blob | (File | Blob)[];
   language?: string;
-  project_id: number;
   source?: string;
   meeting_link?: string;
   location?: string;

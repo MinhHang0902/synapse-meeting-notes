@@ -183,16 +183,22 @@ export function Sidebar({
         <div className="h-px bg-gray-200 mx-1" />
         <div className="pt-2" />
 
-        {NAV_FOOTER.map((item) => (
-          <SidebarItem
-            key={item.key}
-            icon={item.icon}
-            href={lhref(item.href)}
-            label={t(item.key)}
-            collapsed={collapsed}
-            active={isActive(trimLocale(pathname), item)}
-          />
-        ))}
+        {NAV_FOOTER.map((item) => {
+          // Hide settings for non-admin users
+          if (item.key === "settings" && user.systemRole?.role_name !== "ADMIN") {
+            return null;
+          }
+          return (
+            <SidebarItem
+              key={item.key}
+              icon={item.icon}
+              href={lhref(item.href)}
+              label={t(item.key)}
+              collapsed={collapsed}
+              active={isActive(trimLocale(pathname), item)}
+            />
+          );
+        })}
       </nav>
 
       <div className={cn("border-t border-gray-200", collapsed && "border-0")}>

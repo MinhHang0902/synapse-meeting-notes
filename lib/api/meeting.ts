@@ -52,11 +52,12 @@ export const MeetingsApi = {
 
   process: async (
     data: ProcessMeetingMinuteRequest,
+    project_id: string,
     signal?: AbortSignal
   ): Promise<GetOneMeetingMinuteResponse> => {
     const formData = buildProcessFormData(data);
     const res = await axiosInstance.post(
-      "/api/core/v1/meeting-minutes/process",
+      `/api/core/v1/meeting-minutes/process/${project_id}`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },

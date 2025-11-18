@@ -1,35 +1,35 @@
 import { Button } from "@/components/ui/button";
 import {
-  Crown,
-  Eye,
-  FileText,
-  Folder,
-  FolderPlus,
-  Mail,
-  Plus,
-  UserCheck,
-  Users,
-  X,
-  ChevronDown,
+    Crown,
+    Eye,
+    FileText,
+    Folder,
+    FolderPlus,
+    Mail,
+    Plus,
+    UserCheck,
+    Users,
+    X,
+    ChevronDown,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
+    DropdownMenu,
+    DropdownMenuTrigger,
+    DropdownMenuContent,
+    DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { UsersApi } from "@/lib/api/user";
 
 interface TeamMember {
-  email: string;
-  name: string;
+    email: string;
+    name: string;
 }
 
 interface SelectableUser {
-  id: number;
-  name: string;
-  email: string;
+    id: number;
+    name: string;
+    email: string;
 }
 
 export default function CreateProjectModal({
@@ -37,140 +37,140 @@ export default function CreateProjectModal({
     onClose,
     onCreateProject,
 }: {
-  isOpen: boolean;
-  onClose: () => void;
-  onCreateProject?: (data: {
-    projectName: string;
-    description: string;
-    managers: TeamMember[];
-    reviewers: TeamMember[];
-    viewers: TeamMember[];
-  }) => void;
+    isOpen: boolean;
+    onClose: () => void;
+    onCreateProject?: (data: {
+        projectName: string;
+        description: string;
+        managers: TeamMember[];
+        reviewers: TeamMember[];
+        viewers: TeamMember[];
+    }) => void;
 }) {
-  const [projectName, setProjectName] = useState("");
-  const [description, setDescription] = useState("");
-  const [managers, setManagers] = useState<TeamMember[]>([]);
-  const [reviewers, setReviewers] = useState<TeamMember[]>([]);
-  const [viewers, setViewers] = useState<TeamMember[]>([]);
-  const [managerInput, setManagerInput] = useState("");
-  const [reviewerInput, setReviewerInput] = useState("");
-  const [viewerInput, setViewerInput] = useState("");
-  const [availableUsers, setAvailableUsers] = useState<SelectableUser[]>([]);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [projectName, setProjectName] = useState("");
+    const [description, setDescription] = useState("");
+    const [managers, setManagers] = useState<TeamMember[]>([]);
+    const [reviewers, setReviewers] = useState<TeamMember[]>([]);
+    const [viewers, setViewers] = useState<TeamMember[]>([]);
+    const [managerInput, setManagerInput] = useState("");
+    const [reviewerInput, setReviewerInput] = useState("");
+    const [viewerInput, setViewerInput] = useState("");
+    const [availableUsers, setAvailableUsers] = useState<SelectableUser[]>([]);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      setProjectName("");
-      setDescription("");
-      setManagers([]);
-      setReviewers([]);
-      setViewers([]);
-      setManagerInput("");
-      setReviewerInput("");
-      setViewerInput("");
-      setErrorMessage(null);
-    }
-  }, [isOpen]);
+    useEffect(() => {
+        if (isOpen) {
+            setProjectName("");
+            setDescription("");
+            setManagers([]);
+            setReviewers([]);
+            setViewers([]);
+            setManagerInput("");
+            setReviewerInput("");
+            setViewerInput("");
+            setErrorMessage(null);
+        }
+    }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    (async () => {
-      try {
-        const res = await UsersApi.getAll({
-          pageIndex: 1,
-          pageSize: 100,
-          status: "ACTIVE",
-        });
-        const users: SelectableUser[] =
-          res.data?.map((u) => ({
-            id: u.user_id,
-            name: u.name,
-            email: u.email,
-          })) ?? [];
-        setAvailableUsers(users);
-      } catch (e) {
-        console.error("Failed to load users for project members:", e);
-        setAvailableUsers([]);
-      }
-    })();
-  }, [isOpen]);
+    useEffect(() => {
+        if (!isOpen) return;
+        (async () => {
+            try {
+                const res = await UsersApi.getAll({
+                    pageIndex: 1,
+                    pageSize: 100,
+                    status: "ACTIVE",
+                });
+                const users: SelectableUser[] =
+                    res.data?.map((u) => ({
+                        id: u.user_id,
+                        name: u.name,
+                        email: u.email,
+                    })) ?? [];
+                setAvailableUsers(users);
+            } catch (e) {
+                console.error("Failed to load users for project members:", e);
+                setAvailableUsers([]);
+            }
+        })();
+    }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [isOpen, onClose]);
+    useEffect(() => {
+        if (!isOpen) return;
+        const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+    if (!isOpen) return null;
 
-  type RoleKey = "managers" | "reviewers" | "viewers";
+    type RoleKey = "managers" | "reviewers" | "viewers";
 
-  const roleLabels: Record<RoleKey, string> = {
-    managers: "Manager",
-    reviewers: "Reviewer",
-    viewers: "Viewer",
-  };
+    const roleLabels: Record<RoleKey, string> = {
+        managers: "Manager",
+        reviewers: "Reviewer",
+        viewers: "Viewer",
+    };
 
-  const findRoleByEmail = (email: string): RoleKey | null => {
-    const normalized = email.trim().toLowerCase();
-    if (managers.some((m) => m.email.toLowerCase() === normalized)) return "managers";
-    if (reviewers.some((m) => m.email.toLowerCase() === normalized)) return "reviewers";
-    if (viewers.some((m) => m.email.toLowerCase() === normalized)) return "viewers";
-    return null;
-  };
+    const findRoleByEmail = (email: string): RoleKey | null => {
+        const normalized = email.trim().toLowerCase();
+        if (managers.some((m) => m.email.toLowerCase() === normalized)) return "managers";
+        if (reviewers.some((m) => m.email.toLowerCase() === normalized)) return "reviewers";
+        if (viewers.some((m) => m.email.toLowerCase() === normalized)) return "viewers";
+        return null;
+    };
 
-  const ensureUniqueRole = (email: string, targetRole: RoleKey) => {
-    const existingRole = findRoleByEmail(email);
-    if (!existingRole) {
-      setErrorMessage(null);
-      return true;
-    }
-    if (existingRole === targetRole) {
-      setErrorMessage(`${email} has already been added with the role ${roleLabels[targetRole]}.`);
-      return false;
-    }
-    setErrorMessage(
-      `Email ${email} is currently assigned the role ${roleLabels[existingRole]}. Each member can only have one role.`
-    );
-    return false;
-  };
+    const ensureUniqueRole = (email: string, targetRole: RoleKey) => {
+        const existingRole = findRoleByEmail(email);
+        if (!existingRole) {
+            setErrorMessage(null);
+            return true;
+        }
+        if (existingRole === targetRole) {
+            setErrorMessage(`${email} has already been added with the role ${roleLabels[targetRole]}.`);
+            return false;
+        }
+        setErrorMessage(
+            `Email ${email} is currently assigned the role ${roleLabels[existingRole]}. Each member can only have one role.`
+        );
+        return false;
+    };
 
-  const addFromInput = (
-    value: string,
-    role: RoleKey,
-    setList: (value: TeamMember[]) => void,
-    list: TeamMember[],
-    clearInput: () => void
-  ) => {
-    const v = value.trim();
-    if (!v) return;
-    if (!ensureUniqueRole(v, role)) return;
-    const name = v.split("@")[0] || v;
-    setList([...list, { email: v, name }]);
-    clearInput();
-    setErrorMessage(null);
-  };
+    const addFromInput = (
+        value: string,
+        role: RoleKey,
+        setList: (value: TeamMember[]) => void,
+        list: TeamMember[],
+        clearInput: () => void
+    ) => {
+        const v = value.trim();
+        if (!v) return;
+        if (!ensureUniqueRole(v, role)) return;
+        const name = v.split("@")[0] || v;
+        setList([...list, { email: v, name }]);
+        clearInput();
+        setErrorMessage(null);
+    };
 
-  const addFromUser = (
-    user: SelectableUser,
-    role: RoleKey,
-    setList: (value: TeamMember[]) => void,
-    list: TeamMember[]
-  ) => {
-    if (!ensureUniqueRole(user.email, role)) return;
-    setList([...list, { email: user.email, name: user.name }]);
-    setErrorMessage(null);
-  };
+    const addFromUser = (
+        user: SelectableUser,
+        role: RoleKey,
+        setList: (value: TeamMember[]) => void,
+        list: TeamMember[]
+    ) => {
+        if (!ensureUniqueRole(user.email, role)) return;
+        setList([...list, { email: user.email, name: user.name }]);
+        setErrorMessage(null);
+    };
 
-  const isValid = projectName.trim().length > 0 && managers.length > 0;
-  const canSubmit = isValid && !errorMessage;
+    const isValid = projectName.trim().length > 0;
+    const canSubmit = isValid && !errorMessage;
 
-  const handleCreate = () => {
-    if (!canSubmit) return;
-    onCreateProject?.({ projectName, description, managers, reviewers, viewers });
-    onClose();
-  };
+    const handleCreate = () => {
+        if (!canSubmit) return;
+        onCreateProject?.({ projectName, description, managers, reviewers, viewers });
+        onClose();
+    };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" aria-modal role="dialog">
@@ -226,9 +226,9 @@ export default function CreateProjectModal({
 
                     <div className="border border-gray-200 rounded-xl p-6 bg-gray-50">
                         {errorMessage && (
-                          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                            {errorMessage}
-                          </div>
+                            <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                                {errorMessage}
+                            </div>
                         )}
 
                         <div className="flex items-start gap-3 mb-6">
@@ -241,13 +241,11 @@ export default function CreateProjectModal({
                             </div>
                         </div>
 
-    
+
                         <div className="mb-8">
                             <div className="flex items-center gap-2 mb-3">
                                 <Crown className="w-4 h-4 text-gray-900" />
                                 <span className="font-semibold text-gray-900">Managers</span>
-                            
-                                <span className="text-red-500">*</span>
                             </div>
 
                             <div className="flex gap-2 mb-4">
@@ -328,7 +326,7 @@ export default function CreateProjectModal({
                             <div className="flex items-center gap-2 mb-3">
                                 <UserCheck className="w-4 h-4 text-gray-900" />
                                 <span className="font-semibold text-gray-900">Reviewers</span>
-                        
+
                             </div>
 
                             <div className="flex gap-2 mb-4">
@@ -491,11 +489,10 @@ export default function CreateProjectModal({
                     <Button
                         onClick={handleCreate}
                         disabled={!canSubmit}
-                        className={`px-6 text-white ${
-                          canSubmit
-                            ? "bg-black hover:bg-black/90"
-                            : "bg-gray-400 cursor-not-allowed"
-                        }`}
+                        className={`px-6 text-white ${canSubmit
+                                ? "bg-black hover:bg-black/90"
+                                : "bg-gray-400 cursor-not-allowed"
+                            }`}
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         Create Project
