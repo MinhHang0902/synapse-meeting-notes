@@ -11,7 +11,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UploadCloud, FileAudio2, Mic, ShieldCheck, CheckCircle2 } from "lucide-react";
+import {
+  UploadCloud,
+  FileAudio2,
+  Users,
+  ShieldCheck,
+  CheckCircle2,
+  Calendar,
+  Mic,
+} from "lucide-react";
 import * as React from "react";
 import { MeetingsApi } from "@/lib/api/meeting";
 
@@ -33,14 +41,12 @@ export default function UploadMinute() {
     setSelectedFile(f);
   };
 
-  // GỬI FILE TRỰC TIẾP, KHÔNG base64
   const handleGenerateMinute = async () => {
     if (!selectedFile) return;
     try {
       setSubmitting(true);
 
-      await MeetingsApi.process({
-        // gửi đúng kiểu File/Blob theo interface mới
+      const resp = await MeetingsApi.process({
         files: selectedFile,
         language: selectedLanguage,
         project_id: Number(id),
@@ -51,11 +57,16 @@ export default function UploadMinute() {
         actual_end: new Date(),
       });
 
-      alert("Upload thành công!");
+      alert("Upload successfully!");
+
+      //clear state
       setSelectedFile(null);
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
       }
+
+      router.push(`/${locale}/pages/meetings/${resp.minute_id}`);
+
     } catch (e) {
       console.error(e);
       alert("Process failed");
@@ -77,7 +88,10 @@ export default function UploadMinute() {
             </h2>
             <div className="flex items-center gap-2">
               <label className="text-sm font-medium text-gray-700">Language:</label>
-              <Select value={selectedLanguage} onValueChange={(value: "vi" | "en") => setSelectedLanguage(value)}>
+              <Select
+                value={selectedLanguage}
+                onValueChange={(value: "vi" | "en") => setSelectedLanguage(value)}
+              >
                 <SelectTrigger className="h-9 w-[140px]">
                   <SelectValue>
                     {selectedLanguage === "vi" ? "Tiếng Việt" : "English"}
@@ -97,15 +111,16 @@ export default function UploadMinute() {
               Drag and drop your files here
             </p>
             <p className="text-xs text-gray-500 mb-4">or</p>
-            <Button className="bg-black text-white hover:bg-black/90" onClick={handleBrowseClick}>
+            <Button
+              className="bg-black text-white hover:bg-black/90"
+              onClick={handleBrowseClick}
+            >
               Browse File
             </Button>
 
             <input
               ref={fileInputRef}
               type="file"
-              // có thể bật multiple nếu BE hỗ trợ mảng File:
-              // multiple
               accept=".mp3,.wav,.m4a,.ogg,.txt,.md"
               onChange={handleFileChange}
               className="hidden"
@@ -127,7 +142,11 @@ export default function UploadMinute() {
                     </div>
                   </div>
                 </div>
-                <Button onClick={handleGenerateMinute} disabled={submitting} className="bg-black text-white hover:bg-black/90">
+                <Button
+                  onClick={handleGenerateMinute}
+                  disabled={submitting}
+                  className="bg-black text-white hover:bg-black/90"
+                >
                   {submitting ? "Processing…" : "Generate Minute"}
                 </Button>
               </div>
@@ -138,7 +157,10 @@ export default function UploadMinute() {
             <p className="text-sm font-medium text-gray-900 mb-2">Supports</p>
             <div className="flex flex-wrap gap-2 mb-2">
               {formats.map((f) => (
-                <span key={f} className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium">
+                <span
+                  key={f}
+                  className="px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-xs font-medium"
+                >
                   {f}
                 </span>
               ))}
@@ -150,19 +172,33 @@ export default function UploadMinute() {
         <div className="bg-white rounded-lg border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <div className="w-5 h-5 flex items-center justify-center text-gray-700">
-              <Mic className="w-4 h-4" />
+              <Users className="w-4 h-4" />
             </div>
-            Record Meeting Realtime
+            Meeting Realtime
           </h2>
 
           <div className="rounded-lg border border-gray-200 p-8 text-center bg-gray-50">
-            <Mic className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-sm font-medium text-gray-800 mb-4">Ready to record</p>
             <Button className="bg-black text-white hover:bg-black/90">
-              <Link href={`/${locale}/pages/projects/${id}/upload-minute/real-time`}>Start Recording</Link>
+              <Link href={`/${locale}/pages/projects/${id}/upload-minute/real-time`}>
+                Start Meeting
+              </Link>
             </Button>
             <p className="text-xs text-gray-500 mt-4">
-              Real-time transcription and AI-powered minute generation
+              Real-time meeting and AI-powered minute generation
+            </p>
+          </div>
+
+          <div className="mt-6 rounded-lg border border-gray-200 p-8 text-center bg-gray-50">
+            <div className="flex items-center justify-center gap-2 mb-4 text-gray-800">
+              {/* <Mic className="w-8 h-8 text-gray-400 mx-auto mb-1" /> */}
+            </div>
+            <Button className="bg-black text-white hover:bg-black/90">
+              <Link href={`/${locale}/pages/projects/${id}/upload-minute/record-direct`}>
+                Start Recording
+              </Link>
+            </Button>
+            <p className="text-xs text-gray-500 mt-4">
+              Real-time recording and AI-powered minute generation
             </p>
           </div>
         </div>
