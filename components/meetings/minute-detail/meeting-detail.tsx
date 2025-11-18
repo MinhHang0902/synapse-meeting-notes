@@ -333,8 +333,137 @@ export default function MinuteDetailPage({
   const addAttendee = (userId: number, name: string, role: string = "") =>
     setAttendees((s) => [...s, { userId, name, role }]);
 
-  const removeActionItem = (id: string) =>
-    setActionItems((s) => s.filter((i) => i.id !== id));
+  const saveActionItemsOnly = async (updatedActionItems: EditorActionItem[]) => {
+    if (!detail) return;
+    setSaving(true);
+    setSaveError(null);
+
+    const attendeeIds = attendees
+      .map((a) => a.userId)
+      .filter((id): id is number => typeof id === "number" && !Number.isNaN(id));
+    const attendeeIdSet = new Set<number>(attendeeIds);
+
+    const nameToUserId = new Map<string, number>();
+    attendees.forEach((a) => {
+      if (a.name && typeof a.userId === "number") {
+        nameToUserId.set(a.name.trim(), a.userId);
+      }
+    });
+
+    const actionItemsApi = updatedActionItems
+      .map((a) => {
+        const desc = (a.description || "").trim();
+        const isExisting = /^\d+$/.test(a.id);
+        if (!desc && !isExisting) return null;
+
+        let assigneeId: number | undefined =
+          typeof a.assigneeId === "number" && !Number.isNaN(a.assigneeId)
+            ? a.assigneeId
+            : undefined;
+
+        if (!assigneeId) {
+          const name = (a.assignee || "").trim();
+          assigneeId = name ? nameToUserId.get(name) : undefined;
+        }
+
+        if (assigneeId) attendeeIdSet.add(assigneeId);
+
+        const item: any = {};
+
+        if (desc) {
+          item.description = desc;
+        } else if (!isExisting) {
+          return null;
+        }
+
+        if (assigneeId !== undefined) {
+          item.assigneeId = assigneeId;
+        }
+
+        if (isExisting) {
+          item.id = Number(a.id);
+        } else {
+          item.status = "OPEN";
+        }
+
+        if (a.dueDate) {
+          const d = new Date(a.dueDate);
+          if (!Number.isNaN(d.getTime())) item.due_date = d.toISOString();
+        }
+        return item;
+      })
+      .filter(Boolean) as any[];
+
+    const agendaArr = Array.isArray(detail.agenda) 
+      ? detail.agenda 
+      : [];
+    
+    const decisionsArr = Array.isArray(detail.decisions)
+      ? detail.decisions.map((d: any) => d.statement || d).filter(Boolean)
+      : [];
+
+    let actualStartDate: Date;
+    if (meetingDate && !Number.isNaN(new Date(meetingDate).getTime())) {
+      actualStartDate = new Date(meetingDate);
+    } else if (detail.actual_start) {
+      actualStartDate = new Date(detail.actual_start);
+    } else if (detail.schedule_start) {
+      actualStartDate = new Date(detail.schedule_start);
+    } else {
+      actualStartDate = new Date();
+    }
+
+    const payload: UpdateMeetingMinuteRequest = {
+      title: meetingTitle || detail.title,
+      status: detail.status || "DRAFT",
+      actual_start: actualStartDate.toISOString(),
+      agenda: agendaArr,
+      meeting_summary: detail.meeting_summary || detail.content || "",
+      decisions: decisionsArr,
+      attendeeIds: Array.from(attendeeIdSet),
+      action_items: actionItemsApi,
+    };
+
+    try {
+      const updatedDetail = await MeetingsApi.update(
+        Number(detail.minute_id),
+        payload
+      );
+      setDetail(updatedDetail);
+      setActionItems(
+        (updatedDetail.actionItems || []).map((ai) => ({
+          id: String(ai.action_id),
+          description: ai.description || "",
+          assignee: ai.assignee?.name || "",
+          assigneeId: ai.assignee?.user_id,
+          dueDate: formatLocalDateForInput(ai.due_date),
+        }))
+      );
+      setLastSavedAt(new Date());
+    } catch (e: any) {
+      console.error("Failed to save action items:", e);
+      if (axios.isAxiosError(e)) {
+        const msg =
+          e.response?.data?.message ||
+          e.response?.data?.error ||
+          e.response?.data?.detail ||
+          e.message;
+        setSaveError(`Save failed: ${msg}`);
+      } else {
+        setSaveError("Save failed: Unexpected error");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeActionItem = async (id: string) => {
+    const updatedActionItems = actionItems.filter((i) => i.id !== id);
+    setActionItems(updatedActionItems);
+    
+    // Tự động lưu khi xóa action item
+    await saveActionItemsOnly(updatedActionItems);
+  };
 
   const updateActionItem = (
     id: string,

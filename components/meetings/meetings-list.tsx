@@ -58,7 +58,13 @@ export function MeetingMinutesList() {
       setErr(null);
       try {
         const normalizedKeyword = keyword.trim();
-        const projectFilter = projectId !== ALL_PROJECTS_VALUE ? projectId : undefined;
+        let projectFilter: string | undefined = undefined;
+        if (projectId !== ALL_PROJECTS_VALUE) {
+          const numProjectId = Number(projectId);
+          if (!Number.isNaN(numProjectId)) {
+            projectFilter = String(numProjectId);
+          }
+        }
 
         const res: MeetingMinutesResponse = await MeetingsApi.getAll({
           search: normalizedKeyword ? normalizedKeyword : undefined,

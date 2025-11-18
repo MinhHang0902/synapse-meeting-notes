@@ -83,7 +83,7 @@ type Props = {
   onAddAttendee: (userId: number, name: string, role?: string) => void;
   onRemoveAttendee: (index: number) => void;
   onUpdateActionItem: (id: string, field: keyof ActionItem, value: string | number) => void;
-  onRemoveActionItem: (id: string) => void;
+  onRemoveActionItem: (id: string) => void | Promise<void>;
   onAddActionItem: () => void;
 
   onBeforeSend?: () => Promise<void> | void;
@@ -950,7 +950,7 @@ function ActionItemRow({
   item: ActionItem;
   projectMembers: ProjectMember[];
   onUpdateActionItem: (id: string, field: keyof ActionItem, value: string | number) => void;
-  onRemoveActionItem: (id: string) => void;
+  onRemoveActionItem: (id: string) => void | Promise<void>;
 }) {
   const dueDateInputRef = React.useRef<HTMLInputElement>(null);
   const handleDueDateCalendarClick = () => {
@@ -1011,7 +1011,9 @@ function ActionItemRow({
       </div>
       <div className="col-span-1 flex items-center justify-center">
         <button
-          onClick={() => onRemoveActionItem(item.id)}
+          onClick={async () => {
+            await onRemoveActionItem(item.id);
+          }}
           className="text-red-500 hover:text-red-700"
           aria-label="Remove action item"
         >
