@@ -99,10 +99,10 @@ Please find attached the meeting minutes from our ${meetingTitle ?? "recent"
   const handleSendEmail = async () => {
     try {
       // đảm bảo có ít nhất 1 email
-      if (recipientEmails.length === 0) {
-        setRecipientError("Please enter at least one recipient email.");
-        return;
-      }
+      // if (recipientEmails.length === 0) {
+      //   setRecipientError("Please enter at least one recipient email.");
+      //   return;
+      // }
       // đảm bảo có file đính kèm
       if (!selectedFile) {
         alert("Please select a file to attach.");
@@ -111,7 +111,7 @@ Please find attached the meeting minutes from our ${meetingTitle ?? "recent"
       setSending(true);
 
       await MeetingsApi.sendEmail(minuteId, {
-        recipientEmails,
+        // recipientEmails,
         subject,
         message,
         attachment: selectedFile,

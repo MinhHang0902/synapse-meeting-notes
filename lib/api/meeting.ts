@@ -78,7 +78,7 @@ export const MeetingsApi = {
         fileType: data.attachment.type,
       });
       const formData = new FormData();
-      formData.append('recipientEmails', JSON.stringify(data.recipientEmails));
+      // formData.append('recipientEmails', JSON.stringify(data.recipientEmails));
       formData.append('subject', data.subject);
       formData.append('message', data.message);
       formData.append('attachment', data.attachment);

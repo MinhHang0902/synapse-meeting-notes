@@ -192,7 +192,7 @@ export interface ProcessMeetingMinuteRequest {
 
 //POST: /meeting-minutes/{meetingId}/send-email DONE
 export interface SendMeetingMinuteEmailRequest {
-  recipientEmails: string[];
+  // recipientEmails: string[];
   subject: string;
   message: string;
   attachment?: File; // Optional: custom file to attach
