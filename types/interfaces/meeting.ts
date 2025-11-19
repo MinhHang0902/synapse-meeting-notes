@@ -201,3 +201,8 @@ export interface SendMeetingMinuteEmailRequest {
 export interface SendMeetingMinuteEmailResponse {
   message: string;
 }
+
+//GET: /meeting-minutes/{minuteId}/file 
+export interface GetMeetingMinuteFileResponse {
+  url: string;
+}

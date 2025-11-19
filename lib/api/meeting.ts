@@ -7,6 +7,7 @@ import {
   SendMeetingMinuteEmailRequest,
   SendMeetingMinuteEmailResponse,
   GetOneMeetingMinuteResponse,
+  GetMeetingMinuteFileResponse,
 } from "@/types/interfaces/meeting";
 import { sendGet, sendPost, sendDelete, sendPut, axiosInstance } from "./axios";
 import { buildProcessFormData } from "./form-data";
@@ -99,8 +100,9 @@ export const MeetingsApi = {
 
   getDownloadUrl: async (
     minuteId: number
-  ): Promise<{ url: string }> => {
+  ): Promise<GetMeetingMinuteFileResponse> => {
     const res = await sendGet(`/api/core/v1/meeting-minutes/${minuteId}/file`);
-    return res.data as { url: string };
+    return res.data as GetMeetingMinuteFileResponse;
   },
+
 };
