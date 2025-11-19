@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   try {
     if (!trelloKey || !trelloSecret) {
       return NextResponse.json(
-        { message: "Thiếu cấu hình Trello (cần TRELLO_API_KEY, TRELLO_API_SECRET)." },
+        { message: "Missing Trello configuration (TRELLO_API_KEY, TRELLO_API_SECRET required)." },
         { status: 500 },
       );
     }
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`Không thể khởi tạo OAuth Trello: ${res.status} ${text}`);
+      throw new Error(`Unable to initialize Trello OAuth: ${res.status} ${text}`);
     }
 
     const text = await res.text();
@@ -82,7 +82,7 @@ export async function GET(req: NextRequest) {
     const requestTokenSecret = parsed.oauth_token_secret;
 
     if (!requestToken || !requestTokenSecret) {
-      throw new Error("Không nhận được request token từ Trello.");
+      throw new Error("Did not receive request token from Trello.");
     }
 
     const redirectParams = new URLSearchParams({
@@ -123,9 +123,7 @@ export async function GET(req: NextRequest) {
       console.error("[Trello OAuth] request-token stack", error.stack);
     }
     const message =
-      error instanceof Error ? error.message : "Không thể khởi tạo phiên OAuth Trello.";
+      error instanceof Error ? error.message : "Unable to initialize Trello OAuth session.";
     return NextResponse.json({ message }, { status: 500 });
   }
 }
-
-

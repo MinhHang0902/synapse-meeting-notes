@@ -34,7 +34,7 @@ async function fetchMemberProfile(accessToken: string): Promise<TrelloIntegratio
   });
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`Không thể tải thông tin Trello user: ${res.status} ${text}`);
+    throw new Error(`Unable to load Trello user information: ${res.status} ${text}`);
   }
   const data = await res.json();
   return {
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
   try {
     if (!trelloKey || !trelloSecret) {
       return NextResponse.json(
-        { message: "Thiếu cấu hình Trello (cần TRELLO_API_KEY, TRELLO_API_SECRET)." },
+        { message: "Missing Trello configuration (TRELLO_API_KEY, TRELLO_API_SECRET required)." },
         { status: 500 },
       );
     }
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
     const returnTo = req.cookies.get("trello_return_to")?.value ?? "/";
 
     if (!cookieToken || !cookieSecret || cookieToken !== oauthToken) {
-      throw new Error("Session Trello OAuth không hợp lệ hoặc đã hết hạn.");
+      throw new Error("Trello OAuth session is invalid or has expired.");
     }
 
     const requestData = {
@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
 
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`Không thể lấy access token Trello: ${res.status} ${text}`);
+      throw new Error(`Unable to obtain Trello access token: ${res.status} ${text}`);
     }
 
     const text = await res.text();
@@ -104,14 +104,14 @@ export async function GET(req: NextRequest) {
     const accessTokenSecret = parsed.oauth_token_secret;
 
     if (!accessToken) {
-      throw new Error("Không nhận được access token Trello.");
+      throw new Error("Did not receive Trello access token.");
     }
 
     const member = await fetchMemberProfile(accessToken);
 
     const appAccessToken = req.cookies.get("access_token")?.value;
     if (!appAccessToken) {
-      throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      throw new Error("Session has expired. Please log in again.");
     }
 
     const payload: TrelloIntegrationCredential = {
@@ -137,7 +137,7 @@ export async function GET(req: NextRequest) {
 
     if (!backendRes.ok) {
       const text = await backendRes.text();
-      throw new Error(`Không thể lưu kết nối Trello: ${backendRes.status} ${text}`);
+      throw new Error(`Unable to save Trello connection: ${backendRes.status} ${text}`);
     }
 
     const target = new URL(returnTo, appUrl);
@@ -163,5 +163,3 @@ export async function GET(req: NextRequest) {
     return response;
   }
 }
-
-

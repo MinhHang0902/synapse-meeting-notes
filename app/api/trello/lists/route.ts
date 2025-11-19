@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     if (!trelloKey) {
       return NextResponse.json(
         {
-          message: "Thiếu cấu hình Trello (cần TRELLO_API_KEY).",
+          message: "Missing Trello configuration (TRELLO_API_KEY required).",
         },
         { status: 500 },
       );
@@ -22,14 +22,14 @@ export async function GET(req: NextRequest) {
     const boardId = searchParams.get("boardId");
 
     if (!boardId) {
-      return NextResponse.json({ message: "Thiếu boardId trong request." }, { status: 400 });
+      return NextResponse.json({ message: "Missing boardId in request." }, { status: 400 });
     }
 
     const appAccessToken = requireAppAccessToken();
     const credential = await fetchTrelloCredential(appAccessToken);
     if (!credential) {
       return NextResponse.json(
-        { message: "Tài khoản chưa kết nối Trello." },
+        { message: "Account not connected to Trello." },
         { status: 404 },
       );
     }
@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
     });
     if (!res.ok) {
       const text = await res.text();
-      throw new Error(`Không thể lấy danh sách list từ Trello: ${res.status} ${text}`);
+      throw new Error(`Unable to fetch list from Trello: ${res.status} ${text}`);
     }
 
     const lists = (await res.json()) as TrelloList[];
@@ -52,11 +52,10 @@ export async function GET(req: NextRequest) {
   } catch (error) {
     console.error("[Trello Lists] error", error);
     if (error instanceof Error && error.message === "APP_UNAUTHORIZED") {
-      return NextResponse.json({ message: "Phiên đăng nhập đã hết hạn." }, { status: 401 });
+      return NextResponse.json({ message: "Session has expired." }, { status: 401 });
     }
     const message =
-      error instanceof Error ? error.message : "Không thể lấy danh sách list Trello.";
+      error instanceof Error ? error.message : "Unable to fetch Trello list.";
     return NextResponse.json({ message }, { status: 500 });
   }
 }
-
