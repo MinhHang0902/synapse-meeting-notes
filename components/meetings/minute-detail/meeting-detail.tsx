@@ -45,11 +45,23 @@ function formatLocalDateTimeForInput(input: unknown): string {
 
 function formatLocalDateForInput(input: unknown): string {
   if (!input) return "";
+  
+  // Nếu input là string dạng date-only (YYYY-MM-DD), parse trực tiếp
+  if (typeof input === "string") {
+    const dateOnlyMatch = input.match(/^(\d{4})-(\d{2})-(\d{2})(?:T|$)/);
+    if (dateOnlyMatch) {
+      return `${dateOnlyMatch[1]}-${dateOnlyMatch[2]}-${dateOnlyMatch[3]}`;
+    }
+  }
+  
   const d = new Date(input as any);
   if (Number.isNaN(d.getTime())) return "";
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
+  
+  // Sử dụng UTC methods để lấy date components từ ISO string
+  // Điều này đảm bảo không bị lệch khi server trả về UTC date
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(d.getUTCDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -447,9 +459,25 @@ export default function MinuteDetailPage({
           item.status = "OPEN";
         }
 
-        if (a.dueDate) {
-          const d = new Date(a.dueDate);
-          if (!Number.isNaN(d.getTime())) item.due_date = d.toISOString();
+        if (a.dueDate && a.dueDate.trim()) {
+          // Parse date-only string (YYYY-MM-DD) thành UTC date để tránh lệch timezone
+          const dateMatch = a.dueDate.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+          if (dateMatch) {
+            const [, year, month, day] = dateMatch;
+            // Tạo Date object với UTC time để tránh timezone conversion
+            const d = new Date(Date.UTC(
+              parseInt(year, 10),
+              parseInt(month, 10) - 1, // month is 0-indexed
+              parseInt(day, 10)
+            ));
+            if (!Number.isNaN(d.getTime())) {
+              item.due_date = d.toISOString();
+            }
+          } else {
+            // Fallback: parse như bình thường nếu format không đúng
+            const d = new Date(a.dueDate);
+            if (!Number.isNaN(d.getTime())) item.due_date = d.toISOString();
+          }
         }
         return item;
       })
