@@ -131,11 +131,11 @@ Please find attached the meeting minutes from our ${meetingTitle ?? "recent"
 
   const handleSendEmail = async () => {
     try {
-      // đảm bảo có ít nhất 1 email
-      if (recipientEmails.length === 0) {
-        setRecipientError("Please enter at least one recipient email.");
-        return;
-      }
+      // // đảm bảo có ít nhất 1 email
+      // if (recipientEmails.length === 0) {
+      //   setRecipientError("Please enter at least one recipient email.");
+      //   return;
+      // }
       // đảm bảo có file đính kèm
       if (!selectedFile) {
         showError("Please select a file to attach.");
@@ -151,7 +151,7 @@ Please find attached the meeting minutes from our ${meetingTitle ?? "recent"
       });
 
       showSuccess("Email sent successfully!");
-      
+
       // Reset and close after a short delay
       setTimeout(() => {
         setSelectedFile(null);
@@ -227,7 +227,11 @@ Please find attached the meeting minutes from our ${meetingTitle ?? "recent"
               Recipients
             </label>
 
-            <div className="w-full border border-gray-200 rounded-lg p-2">
+            <p className="text-sm text-gray-500 mt-1">
+              The system will automatically send to all members from the project.
+            </p>
+
+            {/* <div className="w-full border border-gray-200 rounded-lg p-2">
               <div className="flex flex-wrap gap-2">
                 {recipientEmails.map((email) => (
                   <span
@@ -267,7 +271,7 @@ Please find attached the meeting minutes from our ${meetingTitle ?? "recent"
               <p className="text-sm text-gray-500 mt-1">
                 You can paste multiple emails separated by comma or whitespace.
               </p>
-            )}
+            )} */}
           </div>
 
           {/* Subject */}
