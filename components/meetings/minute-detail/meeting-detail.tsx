@@ -559,31 +559,7 @@ export default function MinuteDetailPage({
   };
 
   const updateBeforeSend = async () => {
-    if (!detail) return;
-
-    const attendeeIds = attendees
-      .map((a) => a.userId)
-      .filter((id): id is number => typeof id === "number" && !Number.isNaN(id));
-
-    const payloadAny: any = {
-      title: meetingTitle || detail.title,
-      status: detail.status || "DRAFT",
-      actual_start: detail.actual_start || detail.schedule_start || new Date(),
-      agenda: (detail.agenda as any) || [],
-      meeting_summary: "",
-      decisions: [],
-      action_items: [],
-      attendeeIds: [],
-    };
-    if (attendeeIds.length > 0) payloadAny.attendeeIds = attendeeIds;
-
-    try {
-      await MeetingsApi.update(
-        Number(detail.minute_id),
-        payloadAny as unknown as UpdateMeetingMinuteRequest
-      );
-    } catch {
-    }
+    return;
   };
 
   if (loading) {
