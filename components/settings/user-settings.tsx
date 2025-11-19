@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import {
   Search, Filter, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  MoreVertical, UserPlus, ShieldAlert,
+  MoreVertical, UserPlus, ShieldAlert, CheckCircle2, X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -36,8 +36,8 @@ type UserRow = {
   id: string;
   name: string;
   email: string;
-  role: RoleUI;      // "Admin" | "User"
-  status: StatusUI;  // "Active" | "Inactive"
+  role: RoleUI;
+  status: StatusUI;
   lastLogin: string;
   created: string;
   initials: string;
@@ -122,6 +122,12 @@ export function UsersSettings() {
   const [loading, setLoading] = useState(false);
   const [userRows, setUserRows] = useState<UserRow[]>([]);
 
+  // Toast states
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [showErrorToast, setShowErrorToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
   useEffect(() => {
     (async () => {
       try {
@@ -137,6 +143,26 @@ export function UsersSettings() {
       }
     })();
   }, []);
+
+  // Auto-hide success toast after 3s
+  useEffect(() => {
+    if (showSuccessToast) {
+      const timer = setTimeout(() => {
+        setShowSuccessToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessToast]);
+
+  // Auto-hide error toast after 5s
+  useEffect(() => {
+    if (showErrorToast) {
+      const timer = setTimeout(() => {
+        setShowErrorToast(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showErrorToast]);
 
   const buildQuery = (
     overrides?: Partial<UserListRequestFilterRequest>
@@ -175,7 +201,6 @@ export function UsersSettings() {
       const res = await UsersApi.getAll(query);
       setTotalPages(res.totalPages || 1);
       let rows = res.data.map(mapUser);
-      //client-side safety filter in case backend ignores filters
       if (roleFilter !== ROLE_ALL && roleFilter !== "") {
         rows = rows.filter((r) => r.role === roleFilter);
       }
@@ -198,7 +223,6 @@ export function UsersSettings() {
     }
   }, [pageIndex, accessLoading, accessDenied]);
 
-  //refresh when filters change
   useEffect(() => {
     if (!accessLoading && !accessDenied) {
       setPageIndex(1);
@@ -213,19 +237,16 @@ export function UsersSettings() {
     }
   };
 
-  //handle search input change - refresh list when cleared
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
     
-    //if search is cleared, refresh the list
     if (value === "") {
       setPageIndex(1);
       void fetchUsers({ pageIndex: 1, search: "" });
     }
   };
 
-  //handle Enter key press in search input
   const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       void onClickSearch();
@@ -237,8 +258,19 @@ export function UsersSettings() {
       await UsersApi.create(payload);
       setOpenAdd(false);
       await fetchUsers({ pageIndex: 1 });
+      
+      // Show success toast
+      setSuccessMessage("User added successfully!");
+      setShowSuccessToast(true);
     } catch (e) {
       console.error("Create user failed:", e);
+      
+      // Show error toast
+      const errorMsg = e instanceof Error ? e.message : "Failed to add user. Please try again.";
+      setErrorMessage(errorMsg);
+      setShowErrorToast(true);
+      
+      throw e; // Re-throw để modal có thể xử lý
     }
   };
 
@@ -249,8 +281,19 @@ export function UsersSettings() {
       setOpenEdit(false);
       setSelectedUser(null);
       await fetchUsers({ pageIndex });
+      
+      // Show success toast
+      setSuccessMessage("User updated successfully!");
+      setShowSuccessToast(true);
     } catch (e) {
       console.error("Update user failed:", e);
+      
+      // Show error toast
+      const errorMsg = e instanceof Error ? e.message : "Failed to update user. Please try again.";
+      setErrorMessage(errorMsg);
+      setShowErrorToast(true);
+      
+      throw e; // Re-throw để modal có thể xử lý
     }
   };
 
@@ -264,14 +307,23 @@ export function UsersSettings() {
     try {
       setDeleting(true);
       await UsersApi.remove(Number(userToDelete.id));
-      // nếu xoá ở trang cuối mà trang hiện tại chỉ còn 1 item → lùi 1 trang
+      
       if (userRows.length === 1 && pageIndex > 1) {
         setPageIndex((p) => p - 1);
       } else {
         await fetchUsers({ pageIndex });
       }
+      
+      // Show success toast
+      setSuccessMessage("User deleted successfully!");
+      setShowSuccessToast(true);
     } catch (e) {
       console.error("Remove user failed:", e);
+      
+      // Show error toast
+      const errorMsg = e instanceof Error ? e.message : "Failed to delete user. Please try again.";
+      setErrorMessage(errorMsg);
+      setShowErrorToast(true);
     } finally {
       setDeleting(false);
       setUserToDelete(null);
@@ -310,77 +362,93 @@ export function UsersSettings() {
 
   return (
     <div className="flex flex-col gap-4">
-        <h2 className="text-xl font-semibold text-gray-900">Synapse User List</h2>
-
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search name or email..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              onKeyPress={handleSearchKeyPress}
-              className="w-full h-9 pl-10 pr-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
-            />
-          </div>
-          
-          <Select
-            value={roleFilter || ROLE_ALL}
-            onValueChange={(v) =>
-              setRoleFilter(v as RoleUI | typeof ROLE_ALL | "")
-            }
-          >
-            <SelectTrigger className="w-40 h-9">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Role">
-                {roleFilter === ROLE_ALL ? "All roles" : roleFilter || "Role"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={ROLE_ALL}>All roles</SelectItem>
-              <SelectItem value="Admin">Admin</SelectItem>
-              <SelectItem value="User">User</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select
-            value={statusFilter || STATUS_ALL}
-            onValueChange={(v) =>
-              setStatusFilter(v as StatusUI | typeof STATUS_ALL | "")
-            }
-          >
-            <SelectTrigger className="w-44 h-9">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue placeholder="Status">
-                {statusFilter === STATUS_ALL ? "All status" : statusFilter || "Status"}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={STATUS_ALL}>All status</SelectItem>
-              <SelectItem value="Active">Active</SelectItem>
-              <SelectItem value="Inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Button
-            className="bg-black hover:bg-black/80 text-white h-9"
-            onClick={onClickSearch}
-            disabled={loading}
-          >
-            {loading ? "Searching..." : "Search"}
-          </Button>
-
-          <div className="flex items-center justify-end">
-            <Button
-              className="bg-black hover:bg-black/80 text-white h-9 flex items-center"
-              onClick={() => setOpenAdd(true)}
-            >
-              <UserPlus className="w-4 h-4 mr-2 text-white" />
-              Add New User
-            </Button>
-          </div>
+      {/* Toast Success */}
+      {showSuccessToast && (
+        <div className="fixed top-4 right-4 flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 px-4 py-3 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-top-2 duration-300 z-50">
+          <CheckCircle2 className="w-4 h-4" />
+          <span className="text-sm font-medium">{successMessage}</span>
         </div>
+      )}
+
+      {/* Toast Error */}
+      {showErrorToast && (
+        <div className="fixed top-4 right-4 flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 px-4 py-3 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-top-2 duration-300 z-50">
+          <X className="w-4 h-4" />
+          <span className="text-sm font-medium">{errorMessage}</span>
+        </div>
+      )}
+
+      <h2 className="text-xl font-semibold text-gray-900">Synapse User List</h2>
+
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search name or email..."
+            value={searchQuery}
+            onChange={handleSearchChange}
+            onKeyPress={handleSearchKeyPress}
+            className="w-full h-9 pl-10 pr-3 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors"
+          />
+        </div>
+        
+        <Select
+          value={roleFilter || ROLE_ALL}
+          onValueChange={(v) =>
+            setRoleFilter(v as RoleUI | typeof ROLE_ALL | "")
+          }
+        >
+          <SelectTrigger className="w-40 h-9">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Role">
+              {roleFilter === ROLE_ALL ? "All roles" : roleFilter || "Role"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ROLE_ALL}>All roles</SelectItem>
+            <SelectItem value="Admin">Admin</SelectItem>
+            <SelectItem value="User">User</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={statusFilter || STATUS_ALL}
+          onValueChange={(v) =>
+            setStatusFilter(v as StatusUI | typeof STATUS_ALL | "")
+          }
+        >
+          <SelectTrigger className="w-44 h-9">
+            <Filter className="w-4 h-4 mr-2" />
+            <SelectValue placeholder="Status">
+              {statusFilter === STATUS_ALL ? "All status" : statusFilter || "Status"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={STATUS_ALL}>All status</SelectItem>
+            <SelectItem value="Active">Active</SelectItem>
+            <SelectItem value="Inactive">Inactive</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Button
+          className="bg-black hover:bg-black/80 text-white h-9"
+          onClick={onClickSearch}
+          disabled={loading}
+        >
+          {loading ? "Searching..." : "Search"}
+        </Button>
+
+        <div className="flex items-center justify-end">
+          <Button
+            className="bg-black hover:bg-black/80 text-white h-9 flex items-center"
+            onClick={() => setOpenAdd(true)}
+          >
+            <UserPlus className="w-4 h-4 mr-2 text-white" />
+            Add New User
+          </Button>
+        </div>
+      </div>
 
       {/* Table */}
       <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">

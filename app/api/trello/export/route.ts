@@ -9,16 +9,16 @@ const trelloKey = process.env.TRELLO_API_KEY;
 
 function validateRequestBody(body: TrelloExportRequest): asserts body is TrelloExportRequest {
   if (!body) {
-    throw new Error("Payload trống");
+    throw new Error("Payload is empty");
   }
   if (!body.meetingTitle || typeof body.meetingTitle !== "string") {
-    throw new Error("Thiếu meetingTitle");
+    throw new Error("Missing meetingTitle");
   }
   if (!body.listId || typeof body.listId !== "string") {
-    throw new Error("Thiếu listId");
+    throw new Error("Missing listId");
   }
   if (!Array.isArray(body.actionItems)) {
-    throw new Error("actionItems phải là mảng");
+    throw new Error("actionItems must be an array");
   }
 }
 
@@ -36,7 +36,7 @@ async function createTrelloCard({
   accessToken: string;
 }) {
   if (!trelloKey) {
-    throw new Error("Thiếu cấu hình Trello (TRELLO_API_KEY)");
+    throw new Error("Missing Trello configuration (TRELLO_API_KEY)");
   }
 
   const params = new URLSearchParams();
@@ -44,7 +44,7 @@ async function createTrelloCard({
   params.set("token", accessToken);
   params.set("idList", listId);
   params.set("name", title.slice(0, 256));
-  params.set("desc", description.slice(0, 16384)); // Trello giới hạn 16384 ký tự
+  params.set("desc", description.slice(0, 16384)); // Trello limit: 16384 characters
   params.set("pos", "bottom");
 
   if (dueDate && !Number.isNaN(new Date(dueDate).getTime())) {
@@ -61,7 +61,7 @@ async function createTrelloCard({
 
   if (!res.ok) {
     const errorText = await res.text();
-    throw new Error(`Trello trả về ${res.status}: ${errorText}`);
+    throw new Error(`Trello returned ${res.status}: ${errorText}`);
   }
 }
 
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
   try {
     if (!trelloKey) {
       return NextResponse.json(
-        { message: "Thiếu cấu hình Trello (cần TRELLO_API_KEY)." },
+        { message: "Missing Trello configuration (TRELLO_API_KEY required)." },
         { status: 500 },
       );
     }
@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
 
     if (cleanActionItems.length === 0) {
       return NextResponse.json(
-        { message: "Không có action item hợp lệ để tạo card Trello." },
+        { message: "No valid action items to create Trello cards." },
         { status: 400 },
       );
     }
@@ -96,7 +96,7 @@ export async function POST(req: NextRequest) {
     const credential = await fetchTrelloCredential(appAccessToken);
     if (!credential) {
       return NextResponse.json(
-        { message: "Tài khoản chưa kết nối Trello." },
+        { message: "Account is not connected to Trello." },
         { status: 404 },
       );
     }
@@ -129,11 +129,10 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error("[Trello Export] error", error);
     if (error instanceof Error && error.message === "APP_UNAUTHORIZED") {
-      return NextResponse.json({ message: "Phiên đăng nhập đã hết hạn." }, { status: 401 });
+      return NextResponse.json({ message: "Session has expired." }, { status: 401 });
     }
     const message =
-      error instanceof Error ? error.message : "Xuất Trello thất bại do lỗi không xác định";
+      error instanceof Error ? error.message : "Trello export failed due to an unknown error";
     return NextResponse.json({ message }, { status: 500 });
   }
 }
-

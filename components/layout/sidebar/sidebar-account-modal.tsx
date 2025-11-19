@@ -53,7 +53,7 @@ export default function MyAccountModal({
         onClick={() => close()}
       />
 
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-2xl w-full overflow-hidden">
+      <div className="relative bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="bg-black text-white p-6 flex items-start justify-between rounded-t-2xl border-b border-white/10 relative">
           <div className="flex items-center gap-4">
             <div className="w-10 h-10 rounded-full bg-gray-500 text-white flex items-center justify-center shrink-0 font-semibold">

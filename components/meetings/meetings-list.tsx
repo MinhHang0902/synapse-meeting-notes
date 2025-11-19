@@ -7,8 +7,9 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  CheckCircle2,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import {
@@ -32,6 +33,8 @@ const ALL_PROJECTS_VALUE = "ALL";
 
 export function MeetingMinutesList() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const locale = useLocale();
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,6 +48,7 @@ export function MeetingMinutesList() {
   const [projectOptions, setProjectOptions] = useState<ProjectOption[]>([
     { value: ALL_PROJECTS_VALUE, label: "All Projects" },
   ]);
+  const [showDeleteToast, setShowDeleteToast] = useState(false);
 
   const pageSize = 6;
 
@@ -113,6 +117,23 @@ export function MeetingMinutesList() {
     void fetchMeetings(currentPage, debouncedSearchTerm, selectedProjectId);
   }, [currentPage, debouncedSearchTerm, selectedProjectId, fetchMeetings]);
 
+  useEffect(() => {
+    if (showDeleteToast) {
+      const timer = setTimeout(() => {
+        setShowDeleteToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showDeleteToast]);
+
+  useEffect(() => {
+    if (searchParams.get("deleted") === "true") {
+      setShowDeleteToast(true);
+      // Clear the query param
+      router.replace(pathname);
+    }
+  }, [searchParams, router, pathname]);
+
   const goToDetail = (id: number | string) => {
     router.push(`${DETAIL_BASE}/${id}`);
   };
@@ -128,6 +149,14 @@ export function MeetingMinutesList() {
 
   return (
     <div className="space-y-6">
+      {/* Toast Success - Positioned at top right like upload-minute */}
+      {showDeleteToast && (
+        <div className="fixed top-4 right-4 flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 px-4 py-3 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-top-2 duration-300 z-50">
+          <CheckCircle2 className="w-4 h-4" />
+          <span className="text-sm font-medium">Meeting minute deleted successfully!</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch">
         <div className="relative md:col-span-8">
           <Search className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
