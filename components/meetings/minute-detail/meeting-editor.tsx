@@ -681,21 +681,52 @@ export default function MeetingEditor({
         <label className="font-semibold text-gray-900 text-sm inline-flex items-center gap-2">
           <CalendarClock className="w-4 h-4" /> Date & Time
         </label>
-        <div className="relative">
-          <input
-            ref={dateInputRef}
-            type="datetime-local"
-            value={meetingDate}
-            onChange={(e) => onChangeDate(e.target.value)}
-            className="w-full px-4 py-2 pr-10 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400 [&::-webkit-calendar-picker-indicator]:hidden"
-          />
-          <button
-            type="button"
-            onClick={handleCalendarClick}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
-          >
-            <Calendar className="w-4 h-4" />
-          </button>
+        <div className="grid grid-cols-2 gap-3">
+          {/* Date Input (DD/MM/YYYY) */}
+          <div className="relative">
+            <input
+              ref={dateInputRef}
+              type="text"
+              placeholder="DD/MM/YYYY"
+              value={meetingDate ? new Date(meetingDate).toLocaleDateString('en-GB') : ''}
+              onChange={(e) => {
+                const [day, month, year] = e.target.value.split('/');
+                if (day && month && year && year.length === 4) {
+                  const time = meetingDate ? new Date(meetingDate).toTimeString().slice(0, 5) : '00:00';
+                  const isoString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time}`;
+                  onChangeDate(isoString);
+                }
+              }}
+              className="w-full px-4 py-2 pr-10 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
+            />
+            <button
+              type="button"
+              onClick={handleCalendarClick}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+            >
+              <Calendar className="w-4 h-4" />
+            </button>
+          </div>
+          
+          {/* Time Input (HH:MM) */}
+          <div>
+            <input
+              type="time"
+              value={meetingDate ? new Date(meetingDate).toTimeString().slice(0, 5) : ''}
+              onChange={(e) => {
+                if (meetingDate) {
+                  const date = new Date(meetingDate);
+                  const [hours, minutes] = e.target.value.split(':');
+                  date.setHours(parseInt(hours), parseInt(minutes));
+                  const year = date.getFullYear();
+                  const month = String(date.getMonth() + 1).padStart(2, '0');
+                  const day = String(date.getDate()).padStart(2, '0');
+                  onChangeDate(`${year}-${month}-${day}T${e.target.value}`);
+                }
+              }}
+              className="w-full px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
+            />
+          </div>
         </div>
       </div>
 
@@ -1144,10 +1175,26 @@ function ActionItemRow({
         <div className="relative">
           <input
             ref={dueDateInputRef}
-            type="date"
-            value={item.dueDate}
-            onChange={(e) => onUpdateActionItem(item.id, "dueDate", e.target.value)}
-            className="w-full h-8 text-sm px-2 py-1 pr-7 bg-white border border-gray-200 rounded focus:border-gray-400 [&::-webkit-calendar-picker-indicator]:hidden"
+            type="text"
+            placeholder="DD/MM/YYYY"
+            value={item.dueDate ? (() => {
+              // Convert YYYY-MM-DD to DD/MM/YYYY for display
+              const date = new Date(item.dueDate + 'T00:00:00');
+              if (isNaN(date.getTime())) return item.dueDate;
+              return date.toLocaleDateString('en-GB');
+            })() : ''}
+            onChange={(e) => {
+              // Parse DD/MM/YYYY to YYYY-MM-DD for storage
+              const value = e.target.value;
+              const [day, month, year] = value.split('/');
+              if (day && month && year && year.length === 4) {
+                const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                onUpdateActionItem(item.id, "dueDate", isoDate);
+              } else if (value === '') {
+                onUpdateActionItem(item.id, "dueDate", '');
+              }
+            }}
+            className="w-full h-8 text-sm px-2 py-1 pr-7 bg-white border border-gray-200 rounded focus:border-gray-400"
           />
           <button
             type="button"

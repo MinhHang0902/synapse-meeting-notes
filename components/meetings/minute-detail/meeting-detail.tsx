@@ -35,6 +35,21 @@ function formatLocalDateTimeForInput(input: unknown): string {
   if (!input) return "";
   const d = new Date(input as any);
   if (Number.isNaN(d.getTime())) return "";
+  
+  // Kiểm tra xem date có phải là "date-only" (midnight UTC) không
+  // Nếu có, dùng UTC methods để tránh lệch timezone
+  const isDateOnly = d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && d.getUTCSeconds() === 0;
+  
+  if (isDateOnly) {
+    // Date-only: dùng UTC để tránh lệch ngày
+    const year = d.getUTCFullYear();
+    const month = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    // Set default time là 00:00 local
+    return `${year}-${month}-${day}T00:00`;
+  }
+  
+  // DateTime với time cụ thể: dùng local time
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
@@ -303,11 +318,9 @@ export default function MinuteDetailPage({
         setMeetingTitle(data.title || "");
 
         // Date & Time: ưu tiên actual_start -> schedule_start -> created_at, hiển thị theo local (tránh lệch timezone)
-        setMeetingDate(
-          formatLocalDateTimeForInput(
-            data.actual_start ?? data.schedule_start ?? data.created_at
-          )
-        );
+        const rawDate = data.actual_start ?? data.schedule_start ?? data.created_at;
+        const formatted = formatLocalDateTimeForInput(rawDate);
+        setMeetingDate(formatted);
 
         // Load attendees từ participants (dữ liệu từ AI service)
         setAttendees(
