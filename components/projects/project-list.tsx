@@ -10,8 +10,9 @@ import {
   ChevronsRight,
   FileText,
   Filter,
+  CheckCircle2,
 } from "lucide-react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,10 +91,13 @@ function mapProject(p: ProjectListData): Project {
 export function ProjectsList() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const localeFromPath = pathname?.split("/").filter(Boolean)?.[0] || "en"; 
 
   const [projects, setProjects] = useState<Project[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [showDeleteToast, setShowDeleteToast] = useState(false);
 
   const itemsPerPage = 5;
   const [currentPage, setCurrentPage] = useState(1);
@@ -139,6 +143,32 @@ export function ProjectsList() {
     void fetchProjects(1);
   }, [statusFilter]);
 
+  useEffect(() => {
+    if (showSuccessToast) {
+      const timer = setTimeout(() => {
+        setShowSuccessToast(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessToast]);
+
+  useEffect(() => {
+    if (showDeleteToast) {
+      const timer = setTimeout(() => {
+        setShowDeleteToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showDeleteToast]);
+
+  useEffect(() => {
+    if (searchParams.get("deleted") === "true") {
+      setShowDeleteToast(true);
+      // Clear the query param
+      router.replace(pathname);
+    }
+  }, [searchParams, router, pathname]);
+
   const handleSearchClick = async () => {
     setCurrentPage(1);
     await fetchProjects(1, searchQuery);
@@ -183,6 +213,7 @@ export function ProjectsList() {
       setModalOpen(false);
       setCurrentPage(1);
       await fetchProjects(1);
+      setShowSuccessToast(true);
     } catch (err) {
       console.error("Create project failed:", err);
     }
@@ -193,7 +224,7 @@ export function ProjectsList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-3 mb-6">
+      <div className="flex gap-3 mb-6 items-center">
         <input
           type="text"
           placeholder="Search projects..."
@@ -241,6 +272,20 @@ export function ProjectsList() {
         >
           {loading ? "Searching..." : "Search"}
         </Button>
+        
+        {showSuccessToast && (
+          <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-bottom-2 duration-300 ml-auto">
+            <CheckCircle2 className="w-4 h-4" />
+            <span className="text-sm font-medium">Project created successfully!</span>
+          </div>
+        )}
+
+        {showDeleteToast && (
+          <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-bottom-2 duration-300 ml-auto">
+            <CheckCircle2 className="w-4 h-4" />
+            <span className="text-sm font-medium">Project deleted successfully!</span>
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

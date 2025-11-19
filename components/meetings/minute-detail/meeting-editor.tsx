@@ -21,6 +21,8 @@ import {
   CheckCircle2,
   Loader2,
   Share2,
+  ChevronDown,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,6 +32,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import SendMinuteModal from "./send-minute-modal";
 import { TrelloIntegrationApi } from "@/lib/api/trello-integration";
 import type {
@@ -140,6 +148,41 @@ export default function MeetingEditor({
   const [selectedTrelloListId, setSelectedTrelloListId] = React.useState("");
   const dateInputRef = React.useRef<HTMLInputElement>(null);
 
+  // Toast states
+  const [showSuccessToast, setShowSuccessToast] = React.useState(false);
+  const [successMessage, setSuccessMessage] = React.useState("");
+  const [showErrorToast, setShowErrorToast] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
+
+  // Toast helper functions
+  const showSuccess = (message: string) => {
+    setSuccessMessage(message);
+    setShowSuccessToast(true);
+  };
+
+  const showError = (message: string) => {
+    setErrorMessage(message);
+    setShowErrorToast(true);
+  };
+
+  React.useEffect(() => {
+    if (showSuccessToast) {
+      const timer = setTimeout(() => {
+        setShowSuccessToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessToast]);
+
+  React.useEffect(() => {
+    if (showErrorToast) {
+      const timer = setTimeout(() => {
+        setShowErrorToast(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showErrorToast]);
+
   const loadTrelloLists = React.useCallback(
     async (boardId: string) => {
       if (!boardId) {
@@ -178,7 +221,7 @@ export default function MeetingEditor({
       } catch (error) {
         const message =
           error instanceof Error ? error.message : "Unable to load Trello lists.";
-        window.alert(message);
+        showError(message);
       } finally {
         setLoadingTrelloLists(false);
       }
@@ -225,7 +268,7 @@ export default function MeetingEditor({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unable to load Trello boards.";
-      window.alert(message);
+      showError(message);
     } finally {
       setLoadingTrelloBoards(false);
     }
@@ -252,7 +295,7 @@ export default function MeetingEditor({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unable to connect to Trello. Please try again.";
-      window.alert(message);
+      showError(message);
     } finally {
       setConnectingTrello(false);
     }
@@ -263,7 +306,7 @@ export default function MeetingEditor({
     try {
       setDisconnectingTrello(true);
       await TrelloIntegrationApi.disconnect();
-      window.alert("Disconnected from Trello successfully.");
+      showSuccess("Disconnected from Trello successfully.");
       setTrelloStatus({ connected: false });
       setTrelloBoards([]);
       setTrelloLists([]);
@@ -272,7 +315,7 @@ export default function MeetingEditor({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Unable to disconnect from Trello. Please try again.";
-      window.alert(message);
+      showError(message);
     } finally {
       setDisconnectingTrello(false);
     }
@@ -312,9 +355,9 @@ export default function MeetingEditor({
     if (typeof window === "undefined") return;
 
     if (trelloConnectedParam === "1") {
-      window.alert("Connected to Trello successfully.");
+      showSuccess("Connected to Trello successfully.");
     } else {
-      window.alert(trelloErrorParam || "Failed to connect to Trello. Please try again.");
+      showError(trelloErrorParam || "Failed to connect to Trello. Please try again.");
     }
 
     void refreshTrelloStatus();
@@ -520,12 +563,12 @@ export default function MeetingEditor({
         throw new Error(
           "message" in data && typeof data.message === "string"
             ? data.message
-            : "Export to Trello failed. Please try again.",
+            : "Failed to export to Trello. Please try again.",
         );
       }
 
       const cardsCreated = "cardsCreated" in data ? data.cardsCreated : 0;
-      window.alert(`Successfully created ${cardsCreated} new card(s) on Trello.`);
+      showSuccess(`Successfully created ${cardsCreated} card(s) on Trello.`);
       setTrelloModalOpen(false);
       setSelectedTrelloListId("");
       setSelectedBoardId("");
@@ -533,15 +576,39 @@ export default function MeetingEditor({
       setTrelloBoards([]);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Export to Trello failed. Please try again.";
-      window.alert(message);
+        error instanceof Error ? error.message : "Failed to export to Trello. Please try again.";
+      showError(message);
     } finally {
       setExportingTrello(false);
     }
   };
 
+  const addFromUser = (member: ProjectMember) => {
+    const alreadyAdded = attendees.some((a) => a.userId === member.user.user_id);
+    if (alreadyAdded) {
+      return;
+    }
+    onAddAttendee(member.user.user_id, member.user.name, member.projectRole.role_type);
+  };
+
   return (
     <div className={["space-y-6", className || ""].join(" ")}>
+      {/* Toast Success */}
+      {showSuccessToast && (
+        <div className="fixed top-4 right-4 flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 px-4 py-3 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-top-2 duration-300 z-50">
+          <CheckCircle2 className="w-4 h-4" />
+          <span className="text-sm font-medium">{successMessage}</span>
+        </div>
+      )}
+
+      {/* Toast Error */}
+      {showErrorToast && (
+        <div className="fixed top-4 right-4 flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 px-4 py-3 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-top-2 duration-300 z-50">
+          <AlertCircle className="w-4 h-4" />
+          <span className="text-sm font-medium">{errorMessage}</span>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex items-center justify-between pb-4 border-b border-gray-200">
         <Button className="gap-1.5 px-3 py-2 text-sm bg-gray-100 text-gray-900 hover:bg-gray-200" onClick={exportPdf}>
@@ -655,20 +722,47 @@ export default function MeetingEditor({
           ))}
         </div>
         <div className="flex gap-2">
-          <select
-            value={selectedAttendeeId}
-            onChange={(e) => setSelectedAttendeeId(e.target.value ? Number(e.target.value) : "")}
-            className="flex-1 px-4 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
-          >
-            <option value="">Select member to add...</option>
-            {projectMembers
-              .filter((m) => !attendees.some((a) => a.userId === m.user.user_id))
-              .map((member) => (
-                <option key={member.user.user_id} value={member.user.user_id}>
-                  {member.user.name} ({member.user.email}) - {member.projectRole.role_type}
-                </option>
-              ))}
-          </select>
+          <div className="relative flex-1">
+            <input
+              type="text"
+              placeholder="Select member to add..."
+              value={
+                selectedAttendeeId
+                  ? projectMembers.find((m) => m.user.user_id === selectedAttendeeId)?.user.name || ""
+                  : ""
+              }
+              readOnly
+              className="w-full h-9 px-3 pr-9 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors cursor-pointer"
+            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-1 rounded focus:outline-none"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64 max-h-72 overflow-auto" align="end">
+                {projectMembers.filter((m) => !attendees.some((a) => a.userId === m.user.user_id)).length === 0 && (
+                  <DropdownMenuItem disabled>No available members</DropdownMenuItem>
+                )}
+                {projectMembers
+                  .filter((m) => !attendees.some((a) => a.userId === m.user.user_id))
+                  .map((member) => (
+                    <DropdownMenuItem
+                      key={member.user.user_id}
+                      onClick={() => setSelectedAttendeeId(member.user.user_id)}
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-sm text-gray-900">{member.user.name}</span>
+                        <span className="text-xs text-gray-500">{member.user.email} - {member.projectRole.role_type}</span>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
           <Button
             onClick={handleAddAttendee}
             disabled={!selectedAttendeeId}
@@ -766,7 +860,7 @@ export default function MeetingEditor({
       >
         <DialogContent className="space-y-6">
           <DialogHeader>
-            <DialogTitle>Export Trello</DialogTitle>
+            <DialogTitle>Export to Trello</DialogTitle>
             <DialogDescription>
               Select a Trello list to create cards from the current action items.
             </DialogDescription>
@@ -780,7 +874,7 @@ export default function MeetingEditor({
             <div className="space-y-4">
               <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
                 <div>
-                  Connected as ...{" "}
+                  Connected as{" "}
                   <span className="font-medium">
                     {trelloStatus.member?.fullName || trelloStatus.member?.username || "Trello user"}
                   </span>
@@ -805,28 +899,49 @@ export default function MeetingEditor({
                 <label className="text-sm font-medium text-gray-900" htmlFor="trello-board-select">
                   Trello Board
                 </label>
-                <select
-                  id="trello-board-select"
-                  className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
-                  value={selectedBoardId}
-                  onChange={(event) => {
-                    const boardId = event.target.value;
-                    setSelectedBoardId(boardId);
-                    setSelectedTrelloListId("");
-                    setTrelloLists([]);
-                    if (boardId) {
-                      void loadTrelloLists(boardId);
-                    }
-                  }}
-                  disabled={loadingTrelloBoards || exportingTrello}
-                >
-                  <option value="">Select board…</option>
-                  {trelloBoards.map((board) => (
-                    <option key={board.id} value={board.id}>
-                      {board.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Select board..."
+                    value={selectedBoardId ? trelloBoards.find((b) => b.id === selectedBoardId)?.name || "" : ""}
+                    readOnly
+                    className="w-full h-9 px-3 pr-9 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors cursor-pointer"
+                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        disabled={loadingTrelloBoards || exportingTrello}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-1 rounded focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-64 max-h-72 overflow-auto" align="end">
+                      {trelloBoards.length === 0 ? (
+                        <DropdownMenuItem disabled>No boards available</DropdownMenuItem>
+                      ) : (
+                        trelloBoards.map((board) => (
+                          <DropdownMenuItem
+                            key={board.id}
+                            onClick={() => {
+                              setSelectedBoardId(board.id);
+                              setSelectedTrelloListId("");
+                              setTrelloLists([]);
+                              if (board.id) {
+                                void loadTrelloLists(board.id);
+                              }
+                            }}
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-sm text-gray-900">{board.name}</span>
+                            </div>
+                          </DropdownMenuItem>
+                        ))
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
                 {loadingTrelloBoards && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Loader2 className="w-4 h-4 animate-spin" /> Loading boards…
@@ -838,28 +953,42 @@ export default function MeetingEditor({
                 <label className="text-sm font-medium text-gray-900" htmlFor="trello-list-select">
                   Trello List
                 </label>
-                <select
-                  id="trello-list-select"
-                  className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
-                  value={selectedTrelloListId}
-                  onChange={(event) => setSelectedTrelloListId(event.target.value)}
-                  disabled={
-                    trelloLists.length === 0 ||
-                    exportingTrello ||
-                    loadingTrelloLists ||
-                    !selectedBoardId
-                  }
-                >
-                  {trelloLists.length === 0 ? (
-                    <option value="">No lists available</option>
-                  ) : (
-                    trelloLists.map((list) => (
-                      <option key={list.id} value={list.id}>
-                        {list.name}
-                      </option>
-                    ))
-                  )}
-                </select>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="No lists available"
+                    value={selectedTrelloListId ? trelloLists.find((l) => l.id === selectedTrelloListId)?.name || "" : ""}
+                    readOnly
+                    className="w-full h-9 px-3 pr-9 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 transition-colors cursor-pointer"
+                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        disabled={trelloLists.length === 0 || exportingTrello || loadingTrelloLists || !selectedBoardId}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-1 rounded focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-64 max-h-72 overflow-auto" align="end">
+                      {trelloLists.length === 0 ? (
+                        <DropdownMenuItem disabled>No lists available</DropdownMenuItem>
+                      ) : (
+                        trelloLists.map((list) => (
+                          <DropdownMenuItem
+                            key={list.id}
+                            onClick={() => setSelectedTrelloListId(list.id)}
+                          >
+                            <div className="flex flex-col">
+                              <span className="text-sm text-gray-900">{list.name}</span>
+                            </div>
+                          </DropdownMenuItem>
+                        ))
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
                 {loadingTrelloLists && (
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Loader2 className="w-4 h-4 animate-spin" /> Loading lists…
@@ -884,7 +1013,7 @@ export default function MeetingEditor({
                     Opening Trello…
                   </>
                 ) : (
-                  "Connect Trello"
+                  "Connect to Trello"
                 )}
               </Button>
             </div>
@@ -909,11 +1038,11 @@ export default function MeetingEditor({
                 className="bg-blue-600 text-white hover:bg-blue-700"
                 onClick={() => {
                   if (!selectedBoardId) {
-                    window.alert("Please select a Trello board.");
+                    showError("Please select a Trello board.");
                     return;
                   }
                   if (!selectedTrelloListId) {
-                    window.alert("Please select a Trello list before exporting.");
+                    showError("Please select a Trello list before exporting.");
                     return;
                   }
                   void handleExportTrello(selectedTrelloListId, selectedBoardId);
@@ -967,29 +1096,49 @@ function ActionItemRow({
           value={item.description}
           onChange={(e) => onUpdateActionItem(item.id, "description", e.target.value)}
           placeholder="Enter action item description..."
-          className="w-full text-sm px-2 py-1 bg-white border border-gray-200 rounded focus:border-gray-400"
+          className="w-full h-8 text-sm px-2 py-1 bg-white border border-gray-200 rounded focus:border-gray-400"
         />
       </div>
       <div className="col-span-6 md:col-span-3">
-        <select
-          value={item.assigneeId || ""}
-          onChange={(e) => {
-            const userId = Number(e.target.value);
-            const selectedMember = projectMembers.find((m) => m.user.user_id === userId);
-            if (selectedMember) {
-              onUpdateActionItem(item.id, "assigneeId", userId);
-              onUpdateActionItem(item.id, "assignee", selectedMember.user.name);
-            }
-          }}
-          className="w-full text-sm px-2 py-1 bg-white border border-gray-200 rounded focus:border-gray-400 appearance-auto"
-        >
-          <option value="">Select assignee...</option>
-          {projectMembers.map((member) => (
-            <option key={member.user.user_id} value={member.user.user_id}>
-              {member.user.name} ({member.user.email})
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Select assignee..."
+            value={item.assigneeId ? projectMembers.find((m) => m.user.user_id === item.assigneeId)?.user.name || "" : ""}
+            readOnly
+            className="w-full h-8 px-2 pr-7 text-sm bg-white text-gray-900 placeholder:text-gray-400 border border-gray-200 rounded focus:outline-none focus:border-gray-400 transition-colors cursor-pointer"
+          />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                className="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 p-1 rounded focus:outline-none"
+              >
+                <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-64 max-h-72 overflow-auto" align="end">
+              {projectMembers.length === 0 ? (
+                <DropdownMenuItem disabled>No members available</DropdownMenuItem>
+              ) : (
+                projectMembers.map((member) => (
+                  <DropdownMenuItem
+                    key={member.user.user_id}
+                    onClick={() => {
+                      onUpdateActionItem(item.id, "assigneeId", member.user.user_id);
+                      onUpdateActionItem(item.id, "assignee", member.user.name);
+                    }}
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-sm text-gray-900">{member.user.name}</span>
+                      <span className="text-xs text-gray-500">{member.user.email}</span>
+                    </div>
+                  </DropdownMenuItem>
+                ))
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <div className="col-span-5 md:col-span-2">
         <div className="relative">
@@ -998,7 +1147,7 @@ function ActionItemRow({
             type="date"
             value={item.dueDate}
             onChange={(e) => onUpdateActionItem(item.id, "dueDate", e.target.value)}
-            className="w-full text-sm px-2 py-1 pr-7 bg-white border border-gray-200 rounded focus:border-gray-400 [&::-webkit-calendar-picker-indicator]:hidden"
+            className="w-full h-8 text-sm px-2 py-1 pr-7 bg-white border border-gray-200 rounded focus:border-gray-400 [&::-webkit-calendar-picker-indicator]:hidden"
           />
           <button
             type="button"
@@ -1021,5 +1170,5 @@ function ActionItemRow({
         </button>
       </div>
     </div>
-  )
+  );
 }

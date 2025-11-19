@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   Calendar,
   Mic,
+  X,
 } from "lucide-react";
 import * as React from "react";
 import { MeetingsApi } from "@/lib/api/meeting";
@@ -33,6 +34,9 @@ export default function UploadMinute() {
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [submitting, setSubmitting] = React.useState(false);
   const [selectedLanguage, setSelectedLanguage] = React.useState<"vi" | "en">("vi");
+  const [showSuccessToast, setShowSuccessToast] = React.useState(false);
+  const [showErrorToast, setShowErrorToast] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
 
   const handleBrowseClick = () => fileInputRef.current?.click();
 
@@ -40,6 +44,24 @@ export default function UploadMinute() {
     const f = e.target.files?.[0] ?? null;
     setSelectedFile(f);
   };
+
+  React.useEffect(() => {
+    if (showSuccessToast) {
+      const timer = setTimeout(() => {
+        setShowSuccessToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessToast]);
+
+  React.useEffect(() => {
+    if (showErrorToast) {
+      const timer = setTimeout(() => {
+        setShowErrorToast(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showErrorToast]);
 
   const handleGenerateMinute = async () => {
     if (!selectedFile) return;
@@ -56,7 +78,7 @@ export default function UploadMinute() {
         actual_end: new Date(),
       }, id);
 
-      alert("Upload successfully!");
+      setShowSuccessToast(true);
 
       //clear state
       setSelectedFile(null);
@@ -64,11 +86,15 @@ export default function UploadMinute() {
         fileInputRef.current.value = "";
       }
 
-      router.push(`/${locale}/pages/meetings/${resp.minute_id}`);
+      setTimeout(() => {
+        router.push(`/${locale}/pages/meetings/${resp.minute_id}`);
+      }, 1500);
 
     } catch (e) {
       console.error(e);
-      alert("Process failed");
+      const errorMsg = e instanceof Error ? e.message : "Upload failed. Please try again.";
+      setErrorMessage(errorMsg);
+      setShowErrorToast(true);
     } finally {
       setSubmitting(false);
     }
@@ -76,6 +102,22 @@ export default function UploadMinute() {
 
   return (
     <div className="space-y-8">
+      {/* Toast Success */}
+      {showSuccessToast && (
+        <div className="fixed top-4 right-4 flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 px-4 py-3 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-top-2 duration-300 z-50">
+          <CheckCircle2 className="w-4 h-4" />
+          <span className="text-sm font-medium">Minute generated successfully!</span>
+        </div>
+      )}
+
+      {/* Toast Error */}
+      {showErrorToast && (
+        <div className="fixed top-4 right-4 flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 px-4 py-3 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-top-2 duration-300 z-50">
+          <X className="w-4 h-4" />
+          <span className="text-sm font-medium">{errorMessage || "Upload failed"}</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">

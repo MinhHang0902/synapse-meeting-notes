@@ -33,7 +33,7 @@ interface SelectableUser {
 const roleUI2API = (r: Member["role"]) =>
   r === "Manager" ? "MANAGER" : r === "Reviewer" ? "REVIEWER" : "VIEWER";
 
-export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] }) {
+export default function ProjectMembers({ teamMembers, onInviteSuccess, onEditMemberSuccess, onDeleteMemberSuccess }: { teamMembers: Member[]; onInviteSuccess?: () => void; onEditMemberSuccess?: () => void; onDeleteMemberSuccess?: () => void }) {
   const [members, setMembers] = useState<Member[]>(teamMembers);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Member["role"] | undefined>(undefined);
@@ -140,6 +140,7 @@ export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] 
       setRole(undefined);
       setEmailTouched(false);
       setErrorMessage(null);
+      onInviteSuccess?.();
     } catch (e) {
       console.error("Add member failed:", e);
     }
@@ -162,6 +163,7 @@ export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] 
       setDeleting(true);
       await ProjectsApi.deleteMember(Number(id), memberToDelete.id);
       setMembers((prev) => prev.filter((m) => m.id !== memberToDelete.id));
+      onDeleteMemberSuccess?.();
     } catch (e) {
       console.error("Delete member failed:", e);
     } finally {
@@ -184,6 +186,7 @@ export default function ProjectMembers({ teamMembers }: { teamMembers: Member[] 
         role: roleUI2API(payload.role),
       });
       setMembers((prev) => prev.map((m) => (m.id === payload.id ? { ...m, role: payload.role } : m)));
+      onEditMemberSuccess?.();
     } catch (e) {
       console.error("Update member failed:", e);
     }

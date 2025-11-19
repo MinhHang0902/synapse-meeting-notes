@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { LayoutGrid, NotebookText, Users2, Edit2, Trash2 } from "lucide-react";
+import { LayoutGrid, NotebookText, Users2, Edit2, Trash2, CheckCircle2 } from "lucide-react";
 import ProjectOverview from "./project-overview";
 import ProjectMinutes from "./project-minutes";
 import ProjectMembers from "./project-members";
@@ -55,6 +55,10 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
 
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showEditToast, setShowEditToast] = useState(false);
+  const [showInviteToast, setShowInviteToast] = useState(false);
+  const [showEditMemberToast, setShowEditMemberToast] = useState(false);
+  const [showDeleteMemberToast, setShowDeleteMemberToast] = useState(false);
   const tabs = [
     { key: "overview", label: "Overview", icon: LayoutGrid },
     { key: "minutes", label: "Minutes", icon: NotebookText },
@@ -171,6 +175,42 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
     load();
   }, [id]);
 
+  useEffect(() => {
+    if (showEditToast) {
+      const timer = setTimeout(() => {
+        setShowEditToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showEditToast]);
+
+  useEffect(() => {
+    if (showInviteToast) {
+      const timer = setTimeout(() => {
+        setShowInviteToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showInviteToast]);
+
+  useEffect(() => {
+    if (showEditMemberToast) {
+      const timer = setTimeout(() => {
+        setShowEditMemberToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showEditMemberToast]);
+
+  useEffect(() => {
+    if (showDeleteMemberToast) {
+      const timer = setTimeout(() => {
+        setShowDeleteMemberToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showDeleteMemberToast]);
+
   const requestDelete = () => {
     setConfirmOpen(true);
   };
@@ -180,7 +220,7 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
       setDeleting(true);
       await ProjectsApi.remove(Number(id));
       console.log("Deleted project", id);
-      router.push(`/${locale}/pages/projects`);
+      router.push(`/${locale}/pages/projects?deleted=true`);
     } catch (e) {
       console.error("Delete project failed:", e);
     } finally {
@@ -195,15 +235,41 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
           <h1 className="text-2xl font-bold text-foreground mb-2">{project.name}</h1>
           <p className="text-gray-600">{project.description}</p>
         </div>
-        <div className="flex gap-3">
-          <Button className="bg-black text-white hover:bg-black/90 gap-2" onClick={() => setOpenEdit(true)}>
-            <Edit2 size={16} />
-            Edit Project
-          </Button>
-          <Button className="bg-black text-white hover:bg-black/90 gap-2" onClick={requestDelete}>
-            <Trash2 size={16} />
-            Delete Project
-          </Button>
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-3">
+            <Button className="bg-black text-white hover:bg-black/90 gap-2" onClick={() => setOpenEdit(true)}>
+              <Edit2 size={16} />
+              Edit Project
+            </Button>
+            <Button className="bg-black text-white hover:bg-black/90 gap-2" onClick={requestDelete}>
+              <Trash2 size={16} />
+              Delete Project
+            </Button>
+          </div>
+          {showEditToast && (
+            <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-sm font-medium">Project updated successfully!</span>
+            </div>
+          )}
+          {showInviteToast && (
+            <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-sm font-medium">Member invited successfully!</span>
+            </div>
+          )}
+          {showEditMemberToast && (
+            <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-sm font-medium">Member updated successfully!</span>
+            </div>
+          )}
+          {showDeleteMemberToast && (
+            <div className="flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <CheckCircle2 className="w-4 h-4" />
+              <span className="text-sm font-medium">Member deleted successfully!</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -241,7 +307,7 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
 
       {!loading && activeTab === "overview" && <ProjectOverview project={project} recentActivity={recentActivity} />}
       {!loading && activeTab === "minutes" && <ProjectMinutes meetingMinutes={meetingMinutes} />}
-      {!loading && activeTab === "members" && <ProjectMembers teamMembers={teamMembers} />}
+      {!loading && activeTab === "members" && <ProjectMembers teamMembers={teamMembers} onInviteSuccess={() => setShowInviteToast(true)} onEditMemberSuccess={() => setShowEditMemberToast(true)} onDeleteMemberSuccess={() => setShowDeleteMemberToast(true)} />}
 
       <EditProjectModal
         open={openEdit}
@@ -257,7 +323,8 @@ export function ProjectDetail({ id, locale }: { id: string; locale: string }) {
               description: data.description,
               status: toAPIStatus(project.status),
             });
-            await load(); 
+            await load();
+            setShowEditToast(true);
           } catch (e) {
             console.error("Update project failed:", e);
           }

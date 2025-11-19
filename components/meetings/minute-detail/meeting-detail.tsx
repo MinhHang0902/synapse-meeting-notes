@@ -549,8 +549,7 @@ export default function MinuteDetailPage({
     try {
       setDeleting(true);
       await MeetingsApi.remove(Number(minuteId));
-      router.replace(`/${locale}/pages/meetings`);
-      router.refresh();
+      router.replace(`/${locale}/pages/meetings?deleted=true`);
     } catch (e) {
       console.error("Failed to delete meeting minute:", e);
       alert("Failed to delete.");

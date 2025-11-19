@@ -1,7 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { FileText, Mail, X } from "lucide-react";
+import { FileText, Mail, X, CheckCircle2, AlertCircle } from "lucide-react";
 import React from "react";
 import { MeetingsApi } from "@/lib/api/meeting";
 
@@ -27,11 +27,45 @@ export default function SendMinuteModal({
   const [subject, setSubject] = React.useState("");
   const [message, setMessage] = React.useState("");
 
+  // Toast states
+  const [showSuccessToast, setShowSuccessToast] = React.useState(false);
+  const [successMessage, setSuccessMessage] = React.useState("");
+  const [showErrorToast, setShowErrorToast] = React.useState(false);
+  const [errorMessage, setErrorMessage] = React.useState("");
+
+  // Toast helper functions
+  const showSuccess = (msg: string) => {
+    setSuccessMessage(msg);
+    setShowSuccessToast(true);
+  };
+
+  const showError = (msg: string) => {
+    setErrorMessage(msg);
+    setShowErrorToast(true);
+  };
+
+  React.useEffect(() => {
+    if (showSuccessToast) {
+      const timer = setTimeout(() => {
+        setShowSuccessToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessToast]);
+
+  React.useEffect(() => {
+    if (showErrorToast) {
+      const timer = setTimeout(() => {
+        setShowErrorToast(false);
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [showErrorToast]);
 
   React.useEffect(() => {
     if (!isOpen) return;
     setSubject(
-      `Meeting Minutes: ${meetingTitle ?? ""}${projectName ? ` – ${projectName}` : ""}`
+      `Meeting Minutes: ${meetingTitle ?? ""}${projectName ? ` — ${projectName}` : ""}`
     );
 
     setMessage(
@@ -54,7 +88,7 @@ Please find attached the meeting minutes from our ${meetingTitle ?? "recent"
   const pushEmails = (raw: string) => {
     if (!raw) return;
 
-    // tách theo dấu phẩy, khoảng trắng, xuống dòng
+    // Split by comma, space, or newline
     const candidates = raw
       .split(/[,\s\n]+/g)
       .map((e) => e.trim())
@@ -92,20 +126,19 @@ Please find attached the meeting minutes from our ${meetingTitle ?? "recent"
   };
 
   const handleRecipientsBlur: React.FocusEventHandler<HTMLInputElement> = () => {
-    // blur để auto thêm nếu đang gõ dở
     if (recipientInput.trim()) pushEmails(recipientInput);
   };
 
   const handleSendEmail = async () => {
     try {
       // đảm bảo có ít nhất 1 email
-      // if (recipientEmails.length === 0) {
-      //   setRecipientError("Please enter at least one recipient email.");
-      //   return;
-      // }
+      if (recipientEmails.length === 0) {
+        setRecipientError("Please enter at least one recipient email.");
+        return;
+      }
       // đảm bảo có file đính kèm
       if (!selectedFile) {
-        alert("Please select a file to attach.");
+        showError("Please select a file to attach.");
         return;
       }
       setSending(true);
@@ -117,15 +150,20 @@ Please find attached the meeting minutes from our ${meetingTitle ?? "recent"
         attachment: selectedFile,
       });
 
-      onClose();
-      alert("Email sent");
-      // Reset file selection
-      setSelectedFile(null);
+      showSuccess("Email sent successfully!");
+      
+      // Reset and close after a short delay
+      setTimeout(() => {
+        setSelectedFile(null);
+        setRecipientEmails([]);
+        setRecipientInput("");
+        onClose();
+      }, 3000);
     } catch (e) {
       console.error(e);
       const anyErr = e as any;
-      const msg = anyErr?.response?.data?.message || anyErr?.message || "Failed to send email";
-      alert(msg);
+      const msg = anyErr?.response?.data?.message || anyErr?.message || "Failed to send email. Please try again.";
+      showError(msg);
     } finally {
       setSending(false);
     }
@@ -144,6 +182,22 @@ Please find attached the meeting minutes from our ${meetingTitle ?? "recent"
       aria-modal
       role="dialog"
     >
+      {/* Toast Success */}
+      {showSuccessToast && (
+        <div className="fixed top-4 right-4 flex items-center gap-2 text-green-700 bg-green-50 border border-green-200 px-4 py-3 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-top-2 duration-300 z-[60]">
+          <CheckCircle2 className="w-4 h-4" />
+          <span className="text-sm font-medium">{successMessage}</span>
+        </div>
+      )}
+
+      {/* Toast Error */}
+      {showErrorToast && (
+        <div className="fixed top-4 right-4 flex items-center gap-2 text-red-700 bg-red-50 border border-red-200 px-4 py-3 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-top-2 duration-300 z-[60]">
+          <AlertCircle className="w-4 h-4" />
+          <span className="text-sm font-medium">{errorMessage}</span>
+        </div>
+      )}
+
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
@@ -167,7 +221,7 @@ Please find attached the meeting minutes from our ${meetingTitle ?? "recent"
 
         {/* Body */}
         <div className="p-6 space-y-8">
-          {/* Recipients (NEW) */}
+          {/* Recipients */}
           <div>
             <label className="flex items-center gap-2 font-medium text-gray-900 mb-2">
               Recipients
