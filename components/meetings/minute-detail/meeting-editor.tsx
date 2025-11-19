@@ -684,17 +684,34 @@ export default function MeetingEditor({
         <div className="grid grid-cols-2 gap-3">
           {/* Date Input (DD/MM/YYYY) */}
           <div className="relative">
+            {/* Hidden date input for picker */}
             <input
               ref={dateInputRef}
+              type="date"
+              value={meetingDate ? new Date(meetingDate).toISOString().split('T')[0] : ''}
+              onChange={(e) => {
+                if (e.target.value) {
+                  const time = meetingDate ? new Date(meetingDate).toTimeString().slice(0, 5) : '00:00';
+                  const isoString = `${e.target.value}T${time}`;
+                  onChangeDate(isoString);
+                }
+              }}
+              className="absolute opacity-0 pointer-events-none"
+            />
+            {/* Visible text input for display */}
+            <input
               type="text"
               placeholder="DD/MM/YYYY"
               value={meetingDate ? new Date(meetingDate).toLocaleDateString('en-GB') : ''}
               onChange={(e) => {
-                const [day, month, year] = e.target.value.split('/');
+                const value = e.target.value;
+                const [day, month, year] = value.split('/');
                 if (day && month && year && year.length === 4) {
                   const time = meetingDate ? new Date(meetingDate).toTimeString().slice(0, 5) : '00:00';
                   const isoString = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${time}`;
                   onChangeDate(isoString);
+                } else if (value === '') {
+                  onChangeDate('');
                 }
               }}
               className="w-full px-4 py-2 pr-10 text-sm bg-white border border-gray-200 rounded-lg focus:border-gray-400"
@@ -1173,18 +1190,26 @@ function ActionItemRow({
       </div>
       <div className="col-span-5 md:col-span-2">
         <div className="relative">
+          {/* Hidden date input for picker */}
           <input
             ref={dueDateInputRef}
+            type="date"
+            value={item.dueDate || ''}
+            onChange={(e) => {
+              onUpdateActionItem(item.id, "dueDate", e.target.value);
+            }}
+            className="absolute opacity-0 pointer-events-none"
+          />
+          {/* Visible text input for display */}
+          <input
             type="text"
             placeholder="DD/MM/YYYY"
             value={item.dueDate ? (() => {
-              // Convert YYYY-MM-DD to DD/MM/YYYY for display
               const date = new Date(item.dueDate + 'T00:00:00');
               if (isNaN(date.getTime())) return item.dueDate;
               return date.toLocaleDateString('en-GB');
             })() : ''}
             onChange={(e) => {
-              // Parse DD/MM/YYYY to YYYY-MM-DD for storage
               const value = e.target.value;
               const [day, month, year] = value.split('/');
               if (day && month && year && year.length === 4) {
